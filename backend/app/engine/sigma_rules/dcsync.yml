@@ -1,0 +1,9 @@
+id: sigma-custom-004
+name: DCSync Attack
+mitre:
+  technique_id: T1003.006
+  technique_name: "OS Credential Dumping: DCSync"
+  tactic: credential-access
+conditions:
+  message: "(?i)dcsync|replicat.*directory|drsuapi|getncchanges"
+confidence: 0.92

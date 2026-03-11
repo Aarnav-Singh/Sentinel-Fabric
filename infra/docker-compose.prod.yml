@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    environment:
+      - ENVIRONMENT=production
+      # - JWT_SECRET_KEY=generate_this_for_prod
+    # Link to the databases defined in docker-compose.yml
+    # This requires running: docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+    networks:
+      - default
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/certs:/etc/nginx/certs:ro
+    depends_on:
+      - backend
+    networks:
+      - default

@@ -1,0 +1,25 @@
+title: Suspicious PowerShell Download
+id: ps_001
+description: Detects PowerShell being used to download remote files, often part of an initial payload staging.
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  selection:
+    Image|endswith:
+      - '\powershell.exe'
+      - '\pwsh.exe'
+    CommandLine|contains|all:
+      - 'Net.WebClient'
+      - 'DownloadString'
+  selection2:
+    Image|endswith:
+      - '\powershell.exe'
+      - '\pwsh.exe'
+    CommandLine|contains|all:
+      - 'Invoke-WebRequest'
+      - 'OutFile'
+  condition: selection or selection2
+tags:
+  - attack.execution
+  - attack.t1059.001

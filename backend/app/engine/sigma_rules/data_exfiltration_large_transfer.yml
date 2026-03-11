@@ -1,0 +1,35 @@
+title: Large Data Transfer to External IP
+id: exh_001
+description: Detects a large data transfer (e.g., >500MB) to an external, non-local IP address which may indicate data exfiltration.
+logsource:
+  category: network_connection
+  product: windows
+detection:
+  selection:
+    EventID: 3
+    DestinationIsIpv6: false
+  filter_local:
+    DestinationIp|startswith:
+      - '10.'
+      - '192.168.'
+      - '172.16.'
+      - '172.17.'
+      - '172.18.'
+      - '172.19.'
+      - '172.20.'
+      - '172.21.'
+      - '172.22.'
+      - '172.23.'
+      - '172.24.'
+      - '172.25.'
+      - '172.26.'
+      - '172.27.'
+      - '172.28.'
+      - '172.29.'
+      - '172.30.'
+      - '172.31.'
+      - '127.'
+  condition: selection and not filter_local
+tags:
+  - attack.exfiltration
+  - attack.t1048

@@ -1,0 +1,9 @@
+id: sigma-custom-002
+name: Log4Shell Exploitation Attempt
+mitre:
+  technique_id: T1190
+  technique_name: Exploit Public-Facing Application
+  tactic: initial-access
+conditions:
+  message: "(?i)log4(j|shell)|jndi.*ldap|\\$\\{jndi:"
+confidence: 0.95

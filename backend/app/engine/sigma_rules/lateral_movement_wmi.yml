@@ -1,0 +1,17 @@
+title: Lateral Movement via WMI
+id: lat_001
+description: Detects lateral movement using Windows Management Instrumentation (WMI) to spawn processes remotely.
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  selection:
+    ParentImage|endswith: '\WmiPrvSE.exe'
+    Image|endswith:
+      - '\cmd.exe'
+      - '\powershell.exe'
+      - '\pwsh.exe'
+  condition: selection
+tags:
+  - attack.lateral_movement
+  - attack.t1047

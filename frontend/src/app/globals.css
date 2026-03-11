@@ -1,0 +1,167 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* ── Sentinel Fabric Modern SOC Palette ── */
+    --sf-bg: #020617;        /* slate-950 */
+    --sf-surface: #0f172a;   /* slate-900 */
+    --sf-surface-alt: #1e293b; /* slate-800 */
+    
+    /* Using transparent whites for borders to achieve glass effect */
+    --sf-border: rgba(255, 255, 255, 0.08); 
+    --sf-border-bright: rgba(255, 255, 255, 0.15);
+    
+    /* Vibrant Cyber Accents */
+    --sf-teal: #06b6d4;      /* cyan-500 */
+    --sf-teal-dim: #0891b2;  /* cyan-600 */
+    --sf-teal-glow: rgba(6, 182, 212, 0.2);
+    
+    --sf-red: #ef4444;       /* red-500 */
+    --sf-red-dim: #dc2626;   /* red-600 */
+    --sf-red-glow: rgba(239, 68, 68, 0.2);
+
+    --sf-amber: #f59e0b;     /* amber-500 */
+    --sf-green: #10b981;     /* emerald-500 */
+    --sf-purple: #8b5cf6;    /* violet-500 */
+    
+    /* Typography Colors */
+    --sf-text-primary: #f8fafc;   /* slate-50 */
+    --sf-text-secondary: #94a3b8; /* slate-400 */
+    --sf-text-muted: #475569;     /* slate-600 */
+  }
+
+  body {
+    background-color: var(--sf-bg);
+    color: var(--sf-text-primary);
+  }
+
+  /* Global SVG Noise Overlay - Subtle 3% opacity for texture */
+  body::before {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none;
+    z-index: 9999;
+    opacity: 0.03;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+  }
+}
+
+@layer utilities {
+  /* ── Glassmorphism Core ── */
+  .glass-card {
+    background: rgba(15, 23, 42, 0.5); /* surface with opacity */
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--sf-border);
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  }
+
+  .glass-panel {
+    background: rgba(30, 41, 59, 0.4); /* surface-alt with opacity */
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--sf-border);
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  }
+
+  .glass-navbar {
+    background: rgba(2, 6, 23, 0.7); /* bg with opacity */
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--sf-border);
+  }
+
+  .glass-sidebar {
+    background: rgba(2, 6, 23, 0.6); /* bg with opacity */
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-right: 1px solid var(--sf-border);
+  }
+
+  /* ── Text Glows ── */
+  .text-glow {
+    text-shadow: 0 0 20px rgba(249, 115, 22, 0.4);
+  }
+
+  .text-glow-teal {
+    text-shadow: 0 0 20px var(--sf-teal-glow);
+  }
+  
+  .text-glow-red {
+    text-shadow: 0 0 15px var(--sf-red-glow);
+  }
+
+  /* ── Fonts ── */
+  .font-display { font-family: var(--font-sora); }
+  .font-condensed { font-family: var(--font-barlow-condensed), 'Barlow Condensed', sans-serif; }
+  .font-space { font-family: var(--font-space-mono), 'Space Mono', monospace; }
+
+  /* ── Legacy Fallbacks (Still used in some places) ── */
+  .sf-card { background: var(--sf-surface); border: 1px solid var(--sf-border); border-radius: 8px; }
+  .sf-card-alt { background: var(--sf-surface-alt); border: 1px solid var(--sf-border); border-radius: 8px; }
+
+  /* ── Custom UI Effects ── */
+  .glow-border {
+    transition: all 0.3s ease;
+  }
+  .glow-border:hover {
+    box-shadow: 0 0 15px var(--sf-teal-glow);
+    border-color: rgba(6, 182, 212, 0.5);
+  }
+  
+  .glow-border-red:hover {
+    box-shadow: 0 0 15px var(--sf-red-glow);
+    border-color: rgba(239, 68, 68, 0.5);
+  }
+
+  .scan-line {
+    background: linear-gradient(to bottom, transparent 0%, rgba(6, 182, 212, 0.05) 50%, transparent 100%);
+    background-size: 100% 4px;
+    animation: scanline 8s linear infinite;
+  }
+
+  .node-map-bg {
+    background-image: radial-gradient(circle at 2px 2px, rgba(255,255,255,0.05) 1px, transparent 0);
+    background-size: 24px 24px;
+  }
+}
+
+/* ── Keyframe Animations ── */
+@keyframes scanline {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100vh); }
+}
+
+@keyframes sf-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+@keyframes sf-fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes sf-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(6, 182, 212, 0.4); }
+  50% { box-shadow: 0 0 0 8px rgba(6, 182, 212, 0); }
+}
+
+@keyframes sf-pulse-red {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+  50% { box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); }
+}
+
+/* ── Scrollbar Styling ── */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: var(--sf-bg); }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.3); }

@@ -1,0 +1,9 @@
+id: sigma-custom-001
+name: Kerberoasting Activity
+mitre:
+  technique_id: T1558.003
+  technique_name: Kerberoasting
+  tactic: credential-access
+conditions:
+  message: "(?i)kerberoast|ticket.*request.*rc4"
+confidence: 0.85

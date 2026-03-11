@@ -1,0 +1,9 @@
+id: sigma-custom-003
+name: Golden Ticket Attack
+mitre:
+  technique_id: T1558.001
+  technique_name: Golden Ticket
+  tactic: credential-access
+conditions:
+  message: "(?i)golden.*ticket|krbtgt|forged.*tgt"
+confidence: 0.90

@@ -1,0 +1,217 @@
+version: '3.8'
+
+services:
+  # ==========================================
+  # Zookeeper (for Kafka and ClickHouse Cluster)
+  # ==========================================
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.4.0
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    networks:
+      - sf_network
+
+  # ==========================================
+  # Kafka (High-Throughput Ingestion)
+  # ==========================================
+  kafka:
+    image: confluentinc/cp-kafka:7.4.0
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_INTERNAL:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092,PLAINTEXT_INTERNAL://kafka:29092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    networks:
+      - sf_network
+
+  # ==========================================
+  # ClickHouse Cluster (ReplicatedMergeTree)
+  # ==========================================
+  clickhouse-node1:
+    image: clickhouse/clickhouse-server:24.3-alpine
+    container_name: clickhouse-node1
+    hostname: clickhouse-node1
+    ports:
+      - "8123:8123"
+      - "9000:9000"
+    volumes:
+      - clickhouse_data1:/var/lib/clickhouse
+      # Note: In a real cluster, you would map custom config.xml defining the <zookeeper> and <remote_servers> macros
+    networks:
+      - sf_network
+    depends_on:
+      - zookeeper
+
+  clickhouse-node2:
+    image: clickhouse/clickhouse-server:24.3-alpine
+    container_name: clickhouse-node2
+    hostname: clickhouse-node2
+    ports:
+      - "8124:8123"
+      - "9001:9000"
+    volumes:
+      - clickhouse_data2:/var/lib/clickhouse
+    networks:
+      - sf_network
+    depends_on:
+      - zookeeper
+
+  # ==========================================
+  # Redis HA (Sentinel Topology representation)
+  # ==========================================
+  redis-master:
+    image: redis:7.2-alpine
+    container_name: redis-master
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    networks:
+      - sf_network
+
+  redis-replica:
+    image: redis:7.2-alpine
+    container_name: redis-replica
+    command: redis-server --slaveof redis-master 6379
+    depends_on:
+      - redis-master
+    networks:
+      - sf_network
+
+  redis-sentinel:
+    image: bitnami/redis-sentinel:7.2
+    container_name: redis-sentinel
+    environment:
+      - REDIS_MASTER_HOST=redis-master
+      - REDIS_MASTER_PORT_NUMBER=6379
+      - REDIS_MASTER_SET=sf_master
+      - REDIS_SENTINEL_QUORUM=1
+    depends_on:
+      - redis-master
+      - redis-replica
+    networks:
+      - sf_network
+
+  # ==========================================
+  # Qdrant Vector DB
+  # ==========================================
+  qdrant:
+    image: qdrant/qdrant:v1.8.0
+    ports:
+      - "6333:6333"
+    volumes:
+      - qdrant_data:/qdrant/storage
+    networks:
+      - sf_network
+
+  # ==========================================
+  # Postgres (SOAR & App Config)
+  # ==========================================
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: sentinel
+      POSTGRES_PASSWORD: password123
+      POSTGRES_DB: sentinel_fabric
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    networks:
+      - sf_network
+
+  # ==========================================
+  # Kafka Worker (Decoupled Pipeline Execution)
+  # ==========================================
+  worker:
+    build: 
+      context: ./backend
+      dockerfile: Dockerfile.worker
+    depends_on:
+      - kafka
+      - clickhouse-node1
+      - clickhouse-node2
+      - redis-master
+      - qdrant
+      - postgres
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+      - CLICKHOUSE_HOST=clickhouse-node1
+      - REDIS_HOST=redis-master
+      - QDRANT_HOST=qdrant
+      - POSTGRES_DSN=postgresql+asyncpg://sentinel:password123@postgres:5432/sentinel_fabric
+    networks:
+      - sf_network
+
+  # ==========================================
+  # API Gateway & Frontend
+  # ==========================================
+  api:
+    build: 
+      context: ./backend
+    ports:
+      - "8000:8000"
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+      # The API pushes to Kafka, does not run the pipeline directly
+    networks:
+      - sf_network
+    depends_on:
+      - kafka
+
+  frontend:
+    build:
+      context: ./frontend
+    ports:
+      - "3000:3000"
+    networks:
+      - sf_network
+
+  # ==========================================
+  # Edge Ingestion Gateways (Phase 16)
+  # ==========================================
+  gateway-eu-west:
+    build:
+      context: ./backend
+    command: uvicorn app.edge_gateway:app --host 0.0.0.0 --port 8001
+    ports:
+      - "8001:8001"
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+      - EDGE_REGION=eu-west
+    networks:
+      - sf_network
+    depends_on:
+      - kafka
+
+  gateway-us-east:
+    build:
+      context: ./backend
+    command: uvicorn app.edge_gateway:app --host 0.0.0.0 --port 8002
+    ports:
+      - "8002:8002"
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+      - EDGE_REGION=us-east
+    networks:
+      - sf_network
+    depends_on:
+      - kafka
+
+networks:
+  sf_network:
+    driver: bridge
+
+volumes:
+  clickhouse_data1:
+  clickhouse_data2:
+  redis_data:
+  qdrant_data:
+  pg_data:

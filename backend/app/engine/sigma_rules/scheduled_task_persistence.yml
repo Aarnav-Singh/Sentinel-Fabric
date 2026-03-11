@@ -1,0 +1,9 @@
+id: sigma-custom-005
+name: Scheduled Task Persistence
+mitre:
+  technique_id: T1053.005
+  technique_name: "Scheduled Task/Job: Scheduled Task"
+  tactic: persistence
+conditions:
+  message: "(?i)schtasks|scheduled.*task.*creat|at\\s+\\d+:\\d+|task\\s*scheduler"
+confidence: 0.75
