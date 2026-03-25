@@ -42,9 +42,9 @@ dependencies = [
     "mlflow==2.14.0",
 
     # ── AI Agents ──
-    "langchain==0.1.0",
-    "langchain-openai==0.1.0",
-    "langgraph==0.0.26",
+    "langchain>=0.1.0",
+    "langchain-openai>=0.1.0",
+    "langgraph>=0.0.26",
 
     # ── Reporting ──
     "reportlab==4.0.0",

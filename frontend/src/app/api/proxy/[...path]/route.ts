@@ -35,7 +35,13 @@ async function handleProxyRequest(request: NextRequest, pathArray: string[]) {
         const targetUrl = `${backendUrl}/${pathString}${query}`;
 
         const headers = new Headers();
-        headers.set("Authorization", `Bearer ${apiKey}`);
+        const clientAuth = request.headers.get("Authorization");
+        if (clientAuth) {
+            headers.set("Authorization", clientAuth);
+        } else {
+            headers.set("Authorization", `Bearer ${apiKey}`);
+        }
+        headers.set("x-api-key", apiKey);
 
         // Pass along content type if we have a body
         const reqContentType = request.headers.get("Content-Type");

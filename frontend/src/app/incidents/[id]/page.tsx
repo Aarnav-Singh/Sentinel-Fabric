@@ -15,7 +15,8 @@ import {
     CheckCircle2,
     ShieldOff,
     Search,
-    Radar
+    Radar,
+    Target
 } from "lucide-react";
 
 // The shape coming from our v1 findings API

@@ -4,9 +4,7 @@ This acts as the bridge between Sigma rules/generic alerts
 and actionable responses from the execution engine.
 """
 from typing import Dict, Any, List
-
 from app.schemas.canonical_event import CanonicalEvent
-from app.services.soar.engine import execution_engine as soar_engine
 
 import logging
 
@@ -40,6 +38,8 @@ async def map_and_execute_soar_actions(event: CanonicalEvent) -> bool:
         return False
 
     success = True
+    from app.dependencies import get_app_engine
+    soar_engine = await get_app_engine()
     for act in set(actions):
         context: Dict[str, Any] = {}
         if act == "block_ip":
