@@ -89,11 +89,18 @@ class Settings(BaseSettings):
     # ── Narrative ──────────────────────────────────────
     narrative_mode: str = "llm"  # "llm" or "template"
     anthropic_api_key: str = ""
-    openai_api_key: str = ""
+    anthropic_model_triage: str = "claude-sonnet-4-6"    # routine findings
+    anthropic_model_deep: str = "claude-opus-4-6"       # high-stakes findings
+    anthropic_deep_threshold_score: float = 0.7       # meta_score threshold for deep model
+    openai_api_key: str = ""   # kept for narrative engine backward compat
     llama_cpp_model: str = "deepseek-coder"
     llama_cpp_base_url: str = "http://localhost:8080/v1"
     llama_cpp_temperature: float = 0.2
     llama_cpp_max_tokens: int = 200
+
+    # ── CVE/NVD Enrichment ────────────────────────────────
+    nvd_api_key: str = ""  # NVD API key for higher rate limits
+    shodan_api_key: str = ""  # Shodan API key for exposure checks
 
     # ── SOAR Integrations ─────────────────────────────
     # CrowdStrike Falcon

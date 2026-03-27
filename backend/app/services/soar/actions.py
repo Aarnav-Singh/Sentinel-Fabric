@@ -19,8 +19,16 @@ import httpx
 
 from app.config import settings
 from app.services.soar.notification_providers import SlackActionProvider, TeamsActionProvider
+from app.services.vault_service import vault_service
 
 logger = logging.getLogger(__name__)
+
+def get_soar_secret(key: str, fallback: str) -> str:
+    """Fetch from Vault first, fallback to env var."""
+    val = vault_service.get_secret(key)
+    if val:
+        return val
+    return fallback
 
 
 # ---------------------------------------------------------------------------
@@ -48,7 +56,9 @@ class CrowdStrikeProvider(ActionProvider):
     name = "CrowdStrike"
 
     def _is_configured(self) -> bool:
-        return bool(settings.crowdstrike_client_id and settings.crowdstrike_client_secret)
+        cid = get_soar_secret("crowdstrike_client_id", settings.crowdstrike_client_id)
+        csec = get_soar_secret("crowdstrike_client_secret", settings.crowdstrike_client_secret)
+        return bool(cid and csec)
 
     async def execute(self, action_type: str, context: Dict[str, Any]) -> str:
         if action_type == "isolate_host":
@@ -72,8 +82,8 @@ class CrowdStrikeProvider(ActionProvider):
         try:
             from falconpy import Hosts
             hosts_api = Hosts(
-                client_id=settings.crowdstrike_client_id,
-                client_secret=settings.crowdstrike_client_secret,
+                client_id=get_soar_secret("crowdstrike_client_id", settings.crowdstrike_client_id),
+                client_secret=get_soar_secret("crowdstrike_client_secret", settings.crowdstrike_client_secret),
                 base_url=settings.crowdstrike_base_url,
             )
 
@@ -116,8 +126,8 @@ class CrowdStrikeProvider(ActionProvider):
         try:
             from falconpy import Hosts
             hosts_api = Hosts(
-                client_id=settings.crowdstrike_client_id,
-                client_secret=settings.crowdstrike_client_secret,
+                client_id=get_soar_secret("crowdstrike_client_id", settings.crowdstrike_client_id),
+                client_secret=get_soar_secret("crowdstrike_client_secret", settings.crowdstrike_client_secret),
                 base_url=settings.crowdstrike_base_url,
             )
             resp = hosts_api.perform_action(
@@ -150,7 +160,9 @@ class PaloAltoProvider(ActionProvider):
     name = "PaloAlto"
 
     def _is_configured(self) -> bool:
-        return bool(settings.paloalto_host and settings.paloalto_api_key)
+        host = get_soar_secret("paloalto_host", settings.paloalto_host)
+        key = get_soar_secret("paloalto_api_key", settings.paloalto_api_key)
+        return bool(host and key)
 
     async def execute(self, action_type: str, context: Dict[str, Any]) -> str:
         if action_type == "block_ip":
@@ -173,7 +185,9 @@ class PaloAltoProvider(ActionProvider):
             return "success"
 
         try:
-            base = f"https://{settings.paloalto_host}/api"
+            host = get_soar_secret("paloalto_host", settings.paloalto_host)
+            api_key = get_soar_secret("paloalto_api_key", settings.paloalto_api_key)
+            base = f"https://{host}/api"
             async with httpx.AsyncClient(verify=settings.paloalto_verify_ssl, timeout=30.0) as client:
                 # 1. Create the address object
                 addr_xpath = (
@@ -186,7 +200,7 @@ class PaloAltoProvider(ActionProvider):
                     "action": "set",
                     "xpath": addr_xpath,
                     "element": addr_element,
-                    "key": settings.paloalto_api_key,
+                    "key": api_key,
                 })
                 if resp.status_code != 200 or "<response status=\"success\"" not in resp.text:
                     logger.error(f"[SOAR] [PaloAlto] Create address failed: {resp.text}")
@@ -203,14 +217,14 @@ class PaloAltoProvider(ActionProvider):
                     "action": "set",
                     "xpath": group_xpath,
                     "element": group_element,
-                    "key": settings.paloalto_api_key,
+                    "key": api_key,
                 })
 
                 # 3. Commit
                 await client.get(base, params={
                     "type": "commit",
                     "cmd": "<commit></commit>",
-                    "key": settings.paloalto_api_key,
+                    "key": api_key,
                 })
 
             logger.info(f"[SOAR] [PaloAlto] Blocked IP {ip} and committed config")
@@ -230,7 +244,9 @@ class PaloAltoProvider(ActionProvider):
             return "success"
 
         try:
-            base = f"https://{settings.paloalto_host}/api"
+            host = get_soar_secret("paloalto_host", settings.paloalto_host)
+            api_key = get_soar_secret("paloalto_api_key", settings.paloalto_api_key)
+            base = f"https://{host}/api"
             async with httpx.AsyncClient(verify=settings.paloalto_verify_ssl, timeout=30.0) as client:
                 addr_xpath = (
                     f"/config/devices/entry[@name='localhost.localdomain']"
@@ -240,12 +256,12 @@ class PaloAltoProvider(ActionProvider):
                     "type": "config",
                     "action": "delete",
                     "xpath": addr_xpath,
-                    "key": settings.paloalto_api_key,
+                    "key": api_key,
                 })
                 await client.get(base, params={
                     "type": "commit",
                     "cmd": "<commit></commit>",
-                    "key": settings.paloalto_api_key,
+                    "key": api_key,
                 })
             logger.info(f"[SOAR] [PaloAlto] Unblocked IP {ip}")
             return "success"
@@ -267,11 +283,14 @@ class OktaProvider(ActionProvider):
     name = "Okta"
 
     def _is_configured(self) -> bool:
-        return bool(settings.okta_domain and settings.okta_api_token)
+        domain = get_soar_secret("okta_domain", settings.okta_domain)
+        token = get_soar_secret("okta_api_token", settings.okta_api_token)
+        return bool(domain and token)
 
     def _headers(self) -> dict:
+        token = get_soar_secret("okta_api_token", settings.okta_api_token)
         return {
-            "Authorization": f"SSWS {settings.okta_api_token}",
+            "Authorization": f"SSWS {token}",
             "Accept": "application/json",
             "Content-Type": "application/json",
         }
@@ -292,9 +311,10 @@ class OktaProvider(ActionProvider):
 
     async def _find_user_id(self, username: str) -> str | None:
         """Look up Okta user ID by login or email."""
+        domain = get_soar_secret("okta_domain", settings.okta_domain)
         async with httpx.AsyncClient(timeout=15.0) as client:
             resp = await client.get(
-                f"{settings.okta_domain}/api/v1/users/{username}",
+                f"{domain}/api/v1/users/{username}",
                 headers=self._headers(),
             )
             if resp.status_code == 200:
@@ -317,9 +337,10 @@ class OktaProvider(ActionProvider):
                 logger.error(f"[SOAR] [Okta] User {username} not found")
                 return "failed"
 
+            domain = get_soar_secret("okta_domain", settings.okta_domain)
             async with httpx.AsyncClient(timeout=15.0) as client:
                 resp = await client.post(
-                    f"{settings.okta_domain}/api/v1/users/{user_id}/lifecycle/suspend",
+                    f"{domain}/api/v1/users/{user_id}/lifecycle/suspend",
                     headers=self._headers(),
                 )
             if resp.status_code in (200, 204):
@@ -344,9 +365,10 @@ class OktaProvider(ActionProvider):
             user_id = await self._find_user_id(username)
             if not user_id:
                 return "failed"
+            domain = get_soar_secret("okta_domain", settings.okta_domain)
             async with httpx.AsyncClient(timeout=15.0) as client:
                 resp = await client.post(
-                    f"{settings.okta_domain}/api/v1/users/{user_id}/lifecycle/unsuspend",
+                    f"{domain}/api/v1/users/{user_id}/lifecycle/unsuspend",
                     headers=self._headers(),
                 )
             return "success" if resp.status_code in (200, 204) else "failed"
@@ -367,9 +389,10 @@ class OktaProvider(ActionProvider):
             user_id = await self._find_user_id(username)
             if not user_id:
                 return "failed"
+            domain = get_soar_secret("okta_domain", settings.okta_domain)
             async with httpx.AsyncClient(timeout=15.0) as client:
                 resp = await client.delete(
-                    f"{settings.okta_domain}/api/v1/users/{user_id}/sessions",
+                    f"{domain}/api/v1/users/{user_id}/sessions",
                     headers=self._headers(),
                 )
             logger.info(f"[SOAR] [Okta] Sessions revoked for {username}")
@@ -391,9 +414,10 @@ class OktaProvider(ActionProvider):
             user_id = await self._find_user_id(username)
             if not user_id:
                 return "failed"
+            domain = get_soar_secret("okta_domain", settings.okta_domain)
             async with httpx.AsyncClient(timeout=15.0) as client:
                 resp = await client.post(
-                    f"{settings.okta_domain}/api/v1/users/{user_id}/lifecycle/reset_factors",
+                    f"{domain}/api/v1/users/{user_id}/lifecycle/reset_factors",
                     headers=self._headers(),
                 )
             logger.info(f"[SOAR] [Okta] MFA reset for {username}")

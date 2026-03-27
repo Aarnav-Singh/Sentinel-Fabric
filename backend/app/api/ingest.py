@@ -26,6 +26,7 @@ router = APIRouter(prefix="/ingest", tags=["ingest"])
 # ── Real parsers for cloud log sources ────────────────────
 import re
 from datetime import datetime, timezone
+from app.services.ingestion.sentinel_connector import MicrosoftSentinelParser
 
 from app.schemas.canonical_event import (
     ActionType, OutcomeType, SeverityLevel, NetworkInfo, Entity, EntityType, EventMetadata,
@@ -296,3 +297,111 @@ async def ingest_gcp_audit(
     except Exception:
         logger.exception("gcp_audit_ingest_failed")
         raise HTTPException(status_code=500, detail="Pipeline processing failed")
+
+
+@router.post("/sentinel", status_code=202)
+async def ingest_sentinel(
+    log_entry: Dict[str, Any],
+    request: Request,
+    limiter=Depends(get_app_ratelimiter),
+) -> dict:
+    """Ingest Microsoft Sentinel alerts/incidents via webhook."""
+    await limiter.check_rate_limit(request, limit=50, window_seconds=60)
+    pipeline = get_app_pipeline()
+    try:
+        ocsf_data = MicrosoftSentinelParser.parse(log_entry)
+        if not ocsf_data:
+            raise ValueError("Failed to parse Sentinel alert")
+        
+        # Determine severity enum (1-5 mapping)
+        sev_id = ocsf_data.get("severity_id", 1)
+        sev_enum = SeverityLevel.INFO
+        for level in SeverityLevel:
+            if level.value == sev_id:
+                sev_enum = level
+                break
+
+        event = CanonicalEvent(
+            source_type="azure_sentinel",
+            event_category="security_finding",
+            event_type=str(ocsf_data.get("activity_name", "Alert")),
+            severity=sev_enum,
+            action=ActionType.ALERT,
+            outcome=OutcomeType.UNKNOWN,
+            message=str(ocsf_data.get("message", "Sentinel Alert")),
+            network=NetworkInfo(src_ip=ocsf_data.get("ip")) if "ip" in ocsf_data else None,
+            source_entity=Entity(
+                entity_type=EntityType.HOST if "hostname" in ocsf_data else EntityType.USER, 
+                identifier=ocsf_data.get("hostname") or ocsf_data.get("user") or "unknown"
+            ),
+            metadata=EventMetadata(
+                parser_name="microsoft_sentinel",
+                raw_log=json.dumps(log_entry)
+            ),
+        )
+        
+        # Apply PII masking before pipeline processing
+        masked_data = mask_event(event.model_dump())
+        masked_event = CanonicalEvent(**masked_data)
+        processed = await pipeline.process(masked_event)
+        
+        return {
+            "status": "accepted",
+            "event_id": processed.event_id,
+            "meta_score": processed.ml_scores.meta_score,
+        }
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception:
+        logger.exception("sentinel_ingest_failed")
+        raise HTTPException(status_code=500, detail="Pipeline processing failed")
+
+
+@router.post("/splunk-hec", status_code=202)
+async def ingest_splunk_hec(
+    req: Request,
+    limiter=Depends(get_app_ratelimiter),
+) -> dict:
+    """Ingest events from Splunk HTTP Event Collector (HEC)."""
+    await limiter.check_rate_limit(req, limit=100, window_seconds=60)
+    pipeline = get_app_pipeline()
+    
+    body = await req.body()
+    try:
+        # HEC accepts newline-delimited JSON or a JSON array
+        if body.strip().startswith(b"["):
+            events = json.loads(body)
+        else:
+            events = [json.loads(line) for line in body.splitlines() if line.strip()]
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid Splunk HEC payload format")
+        
+    processed_count = 0
+    for splunk_event in events:
+        try:
+            event_content = splunk_event.get("event", {})
+            msg = event_content if isinstance(event_content, str) else json.dumps(event_content)
+
+            canonical = CanonicalEvent(
+                source_type=splunk_event.get("sourcetype", "splunk_hec"),
+                event_category="log",
+                event_type="splunk_event",
+                severity=SeverityLevel.INFO,
+                action=ActionType.UNKNOWN,
+                outcome=OutcomeType.UNKNOWN,
+                message=msg,
+                source_entity=Entity(entity_type=EntityType.HOST, identifier=splunk_event.get("host", "unknown")),
+                metadata=EventMetadata(
+                    parser_name="splunk_hec",
+                    raw_log=json.dumps(splunk_event),
+                ),
+            )
+            # Masking
+            masked_data = mask_event(canonical.model_dump())
+            # Process
+            await pipeline.process(CanonicalEvent(**masked_data))
+            processed_count += 1
+        except Exception:
+            logger.exception("splunk_hec_event_failed")
+            
+    return {"text": "Success", "code": 0, "processed": processed_count}

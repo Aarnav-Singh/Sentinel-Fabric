@@ -7,8 +7,10 @@ import { Lock } from 'lucide-react';
 const fetcher = (url: string) => fetch(url).then(r => r.json());
 
 export default function VaultPage() {
-  const { data, isLoading } = useSWR('/api/proxy/api/v1/posture/score', fetcher, { refreshInterval: 60000 });
-  const composite = data?.composite ?? 0;
+  const { data, isLoading } = useSWR('/api/proxy/api/v1/vault/status', fetcher, { refreshInterval: 60000 });
+  const configured = data?.configured ?? false;
+  const statusText = configured ? `Connected to ${data?.url}` : 'Vault integration not configured';
+  const mountPoint = data?.mount_point ?? '';
 
   return (
     <div className="flex-1 p-6 overflow-auto custom-scrollbar">
@@ -24,14 +26,24 @@ export default function VaultPage() {
         {isLoading ? (
           <div className="animate-pulse bg-slate-800/60 h-32 rounded-xl" />
         ) : (
-          <div className="bg-brand-card/70 border border-brand-accent/20 p-6 rounded-xl flex items-center gap-6 shadow-[0_4px_20px_rgba(0,0,0,0.5)] relative overflow-hidden">
-            <div className="absolute inset-0 opacity-5 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at right, #00f2ff, transparent)' }}></div>
-            <div className="w-16 h-16 rounded-full bg-brand-dark/80 border border-brand-accent/50 flex items-center justify-center flex-shrink-0 shadow-[0_0_15px_rgba(0,242,255,0.3)] z-10">
-              <Lock className="w-8 h-8 text-emerald-400 drop-shadow-[0_0_5px_rgba(16,185,129,0.8)]" />
+          <div className={`bg-brand-card/70 border ${configured ? 'border-emerald-500/30' : 'border-amber-500/30'} p-6 rounded-xl flex items-center gap-6 shadow-[0_4px_20px_rgba(0,0,0,0.5)] relative overflow-hidden`}>
+            {configured && <div className="absolute inset-0 opacity-5 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at right, #10b981, transparent)' }}></div>}
+            <div className={`w-16 h-16 rounded-full bg-brand-dark/80 border ${configured ? 'border-emerald-500/50 shadow-[0_0_15px_rgba(16,185,129,0.3)]' : 'border-amber-500/50 shadow-[0_0_15px_rgba(245,158,11,0.3)]'} flex items-center justify-center flex-shrink-0 z-10`}>
+              <Lock className={`w-8 h-8 ${configured ? 'text-emerald-400 drop-shadow-[0_0_5px_rgba(16,185,129,0.8)]' : 'text-amber-400'}`} />
             </div>
-            <div className="z-10">
-              <h3 className="text-xl font-bold text-slate-200">Vault Integrity Score: <span className="text-brand-accent">{composite} / 100</span></h3>
-              <p className="text-slate-400 text-sm mt-1">Based on global multi-domain evaluation algorithms. Vault is locked and secure.</p>
+            <div className="z-10 flex-1">
+              <h3 className="text-xl font-bold text-slate-200">
+                Vault Status: <span className={configured ? 'text-emerald-400' : 'text-amber-400'}>
+                  {configured ? 'Secure & Connected' : 'Unconfigured'}
+                </span>
+              </h3>
+              <p className="text-slate-400 text-sm mt-1">{statusText}</p>
+              {configured && (
+                <div className="mt-4 flex gap-4 text-xs font-mono text-slate-500">
+                  <span className="bg-slate-800/50 px-2 py-1 rounded border border-slate-700">Mount: {mountPoint}</span>
+                  <span className="bg-slate-800/50 px-2 py-1 rounded border border-slate-700">Auto-Rotation: Enabled</span>
+                </div>
+              )}
             </div>
           </div>
         )}

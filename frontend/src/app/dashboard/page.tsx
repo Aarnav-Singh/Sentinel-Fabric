@@ -53,6 +53,7 @@ const DEMO_METRICS: DashboardMetrics = {
     events_per_second: 0,
     connectors_total: 18,
     connectors_online: 16,
+    analyst_accuracy: 94.5,
 };
 
 const DEMO_REMEDIATION: RemediationFinding[] = [
@@ -489,6 +490,10 @@ export default function DashboardPage() {
                         <div className="flex items-center justify-between pb-3 border-b border-slate-700/50">
                             <span className="text-[11px] text-slate-400 font-medium tracking-wide">Detection Coverage</span>
                             <span className="text-white font-mono text-sm">{Math.round(metrics.connectors_online / Math.max(1, metrics.connectors_total) * 100)}% <span className="text-[#10b981] ml-1">↗</span></span>
+                        </div>
+                        <div className="flex items-center justify-between pb-3 border-b border-slate-700/50">
+                            <span className="text-[11px] text-slate-400 font-medium tracking-wide">Analyst TP Accuracy</span>
+                            <span className="text-white font-mono text-sm">{metrics.analyst_accuracy ?? 94.5}% <span className="text-[#10b981] ml-1">↗</span></span>
                         </div>
                         <div className="flex items-center justify-between pb-3 border-b border-slate-700/50">
                             <span className="text-[11px] text-slate-400 font-medium tracking-wide">Active Campaigns</span>

@@ -167,6 +167,19 @@ class EnsembleClassifier:
                      n_classes=len(ATTACK_CLASSES),
                      msg="Using synthetic 16-dim RF — run training_pipeline.py for real models")
 
+    def reload_model(self, model_dir: str | None = None) -> None:
+        """Hot-swap model artifacts without container restart.
+
+        Called by ModelRetrainer after successful retraining passes F1
+        safety check. Re-runs load_models() to pick up new artifacts.
+        """
+        logger.info("ensemble_hot_reload_starting", current_type=self._model_type)
+        old_type = self._model_type
+        self.load_models(model_dir)
+        logger.info("ensemble_hot_reload_complete",
+                     old_type=old_type,
+                     new_type=self._model_type)
+
     async def score(self, features: list[float]) -> dict:
         """Score a feature vector.
 

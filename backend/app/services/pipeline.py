@@ -27,6 +27,8 @@ from app.engine.narrative import NarrativeEngine, LLMNarrativeEngine
 from app.engine.decision_engine import DecisionEngine
 from app.engine.compliance import ComplianceMapper
 from app.engine.entity_resolution import EntityResolver
+from app.services.enrichment.cve_enricher import CveEnricher
+from app.services.enrichment.shodan_enricher import ShodanEnricher
 from app.ml.ensemble import EnsembleClassifier
 from app.ml.vae import VAEAnomalyDetector
 from app.ml.hst import HSTAnomalyDetector
@@ -83,6 +85,8 @@ class PipelineService:
         self._feed_manager = feed_manager
         self._compliance = ComplianceMapper()
         self._entity_resolver = EntityResolver(redis=redis)
+        self._cve_enricher = CveEnricher(redis_store=redis)
+        self._shodan_enricher = ShodanEnricher(redis_store=redis)
 
         # Agentic RAG Orchestrator
         from app.engine.rag_retriever import RagRetriever
@@ -168,6 +172,18 @@ class PipelineService:
             await self._entity_resolver.enrich_event(event, event.metadata.tenant_id)
         except Exception as e:
             logger.debug("entity_resolution_skipped", error=str(e))
+
+        # Step 0.3: CVE/NVD enrichment (Phase 34B)
+        try:
+            event = await self._cve_enricher.enrich(event)
+        except Exception as e:
+            logger.debug("cve_enrichment_skipped", error=str(e))
+
+        # Step 0.4: Shodan Exposure enrichment
+        try:
+            event = await self._shodan_enricher.enrich(event)
+        except Exception as e:
+            logger.debug("shodan_enrichment_skipped", error=str(e))
 
         # Step 1: Build feature vector
         s_step = time.perf_counter()

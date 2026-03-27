@@ -147,6 +147,19 @@ async def action_finding(
         except Exception as exc:
             logger.error("meta_learner_tuning_failed", error=str(exc))
 
+    # Save to verdict buffer for model retraining (Phase 34C - Agent Lightning)
+    if ml_verdict != "unknown":
+        try:
+            import json as _json
+            await postgres.save_verdict_to_buffer(
+                tenant_id=claims.get("tenant_id", "default"),
+                finding_id=finding_id,
+                features_json=_json.dumps(scores_to_use),
+                label=ml_verdict,
+            )
+        except Exception as exc:
+            logger.warning("verdict_buffer_save_failed", error=str(exc))
+
     return {
         "finding_id": finding_id,
         "action": body.action,

@@ -10,7 +10,7 @@ from typing import Optional
 
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
-from sqlalchemy import String, Float, Boolean, DateTime, func, select, text, Index, Integer, JSON
+from sqlalchemy import String, Float, Boolean, DateTime, func, select, text, Index, Integer, JSON, Text
 from sqlalchemy.dialects.postgresql import TSVECTOR
 
 from app.config import settings
@@ -173,6 +173,33 @@ class MetaLearnerWeights(Base):
     weight_adversarial: Mapped[float] = mapped_column(Float, default=0.20)
     verdicts_processed: Mapped[int] = mapped_column(Integer, default=0)
     updated_at: Mapped[Optional[str]] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now())
+
+
+class VerdictBuffer(Base):
+    """Stores analyst verdicts with feature vectors for model retraining."""
+    __tablename__ = "verdict_buffer"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    tenant_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    finding_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    features_json: Mapped[str] = mapped_column(Text, nullable=False)
+    label: Mapped[str] = mapped_column(String(32), nullable=False)  # "true_positive" or "false_positive"
+    created_at: Mapped[Optional[str]] = mapped_column(DateTime, server_default=func.now())
+
+
+class ModelVersion(Base):
+    """Tracks model retraining history and F1 scores."""
+    __tablename__ = "model_versions"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    tenant_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    version: Mapped[str] = mapped_column(String(32), nullable=False)
+    xgb_f1: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    rf_f1: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    previous_f1: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    buffer_size: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    training_time_seconds: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    trained_at: Mapped[Optional[str]] = mapped_column(DateTime, server_default=func.now())
 
 
 # ── Repository ───────────────────────────────────────────
@@ -546,3 +573,65 @@ class PostgresRepository:
                 ))
             await session.commit()
         logger.info("meta_learner_weights_persisted", tenant_id=tenant_id, weights=weights)
+
+    # ── Verdict Buffer (Phase 34C) ────────────────────────
+
+    async def count_verdict_buffer(self, tenant_id: str) -> int:
+        """Count unprocessed verdicts in the buffer."""
+        async with self._session() as session:
+            result = await session.execute(
+                select(func.count(VerdictBuffer.id)).where(
+                    VerdictBuffer.tenant_id == tenant_id
+                )
+            )
+            return result.scalar() or 0
+
+    async def get_verdict_buffer(self, tenant_id: str, limit: int = 10000) -> list[dict]:
+        """Get verdict buffer records for retraining."""
+        async with self._session() as session:
+            result = await session.execute(
+                select(VerdictBuffer)
+                .where(VerdictBuffer.tenant_id == tenant_id)
+                .order_by(VerdictBuffer.created_at.asc())
+                .limit(limit)
+            )
+            rows = result.scalars().all()
+            return [
+                {
+                    "id": r.id,
+                    "finding_id": r.finding_id,
+                    "features_json": r.features_json,
+                    "label": r.label,
+                }
+                for r in rows
+            ]
+
+    async def save_verdict_to_buffer(
+        self, tenant_id: str, finding_id: str, features_json: str, label: str
+    ) -> None:
+        """Save a verdict with feature vector to the retraining buffer."""
+        import uuid
+        async with self._session() as session:
+            session.add(VerdictBuffer(
+                id=str(uuid.uuid4()),
+                tenant_id=tenant_id,
+                finding_id=finding_id,
+                features_json=features_json,
+                label=label,
+            ))
+            await session.commit()
+
+    async def save_model_version(self, record: dict) -> None:
+        """Record a model retraining version."""
+        async with self._session() as session:
+            session.add(ModelVersion(
+                tenant_id=record.get("tenant_id", "default"),
+                version=record.get("version", "unknown"),
+                xgb_f1=record.get("xgb_f1"),
+                rf_f1=record.get("rf_f1"),
+                previous_f1=record.get("previous_f1"),
+                buffer_size=record.get("buffer_size"),
+                training_time_seconds=record.get("training_time_seconds"),
+            ))
+            await session.commit()
+

@@ -15,6 +15,7 @@ interface Campaign {
   affected_assets?: number;
   meta_score?: number;
   created_at?: string;
+  mitre_tags?: string[];
 }
 
 function SkeletonStat() {
@@ -164,11 +165,20 @@ export default function CampaignsPage() {
                   return (
                     <div key={camp.id} className="bg-brand-dark/50 rounded-xl p-3 border border-brand-border/50 hover:bg-brand-surface transition-colors cursor-pointer" style={{ borderRightWidth: 4, borderRightColor: colorHex }}>
                       <div className="flex justify-between items-start mb-3">
-                        <div>
+                        <div className="flex-1">
                           <h4 className="text-sm font-bold text-white">{camp.id}</h4>
-                          <p className="text-[10px] text-slate-400 mt-0.5">Stage: {camp.stage ?? 'unknown'}</p>
+                          <p className="text-[10px] text-slate-400 mt-0.5 mb-1.5">Stage: {camp.stage ?? 'unknown'}</p>
+                          {(camp.mitre_tags && camp.mitre_tags.length > 0) && (
+                            <div className="flex flex-wrap gap-1">
+                              {camp.mitre_tags.map(tag => (
+                                <span key={tag} className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-brand-accent/10 border border-brand-accent/20 text-brand-accent" title="MITRE ATT&CK Technique">
+                                  {tag}
+                                </span>
+                              ))}
+                            </div>
+                          )}
                         </div>
-                        <span className="text-[10px] font-mono px-2 py-0.5 rounded border" style={{ color: colorHex, backgroundColor: `${colorHex}15`, borderColor: `${colorHex}30` }}>
+                        <span className="text-[10px] font-mono px-2 py-0.5 rounded border ml-2 shrink-0" style={{ color: colorHex, backgroundColor: `${colorHex}15`, borderColor: `${colorHex}30` }}>
                           {camp.active === false ? 'CLOSED' : (isCritical ? 'CRITICAL' : 'SCANNING')}
                         </span>
                       </div>

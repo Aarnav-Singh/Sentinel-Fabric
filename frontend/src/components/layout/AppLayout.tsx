@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, X, Settings, Zap, FileText, Search, Bell, Shield, Network, LayoutDashboard, Crosshair, Fingerprint, BookOpen, Activity } from "lucide-react";
+import { Menu, X, Settings, Zap, FileText, Search, Bell, Shield, Network, LayoutDashboard, Crosshair, Fingerprint, BookOpen, Activity, ShieldCheck, Target, Server, Lock } from "lucide-react";
 import useSWR from "swr";
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
@@ -15,7 +15,11 @@ const NAV_ITEMS = [
     { id: "findings", name: "Threat Findings", href: "/findings", icon: <Crosshair className="w-4 h-4" />, badge: null },
     { id: "posture", name: "Posture", href: "/posture", icon: <Shield className="w-4 h-4" />, badge: null },
     { id: "sigma-rules", name: "Sigma Rules", href: "/sigma-rules", icon: <BookOpen className="w-4 h-4" />, badge: null },
+    { id: "campaigns", name: "Campaigns", href: "/campaigns", icon: <Target className="w-4 h-4" />, badge: null },
     { id: "soar", name: "SOAR Actions", href: "/soar", icon: <Zap className="w-4 h-4" />, badge: null },
+    { id: "compliance", name: "Compliance", href: "/compliance", icon: <ShieldCheck className="w-4 h-4" />, badge: null },
+    { id: "assets", name: "Asset Registry", href: "/integrations", icon: <Server className="w-4 h-4" />, badge: null },
+    { id: "vault", name: "Secure Vault", href: "/vault", icon: <Lock className="w-4 h-4" />, badge: null },
     { id: "reporting", name: "Reporting", href: "/reporting", icon: <FileText className="w-4 h-4" />, badge: null },
     { id: "health", name: "System Health", href: "/health", icon: <Activity className="w-4 h-4" />, badge: null },
 ];

@@ -116,6 +116,12 @@ class CampaignEngine:
                 await self._redis.add_entity_to_campaign(tenant_id, campaign_id, dst_id)
                 await self._set_entity_campaign(tenant_id, dst_id, campaign_id)
                 
+            # Initial MITRE tags from the seed event
+            initial_tags = []
+            for pred in event.ml_scores.mitre_predictions:
+                if pred.technique_id and pred.technique_id not in initial_tags:
+                    initial_tags.append(pred.technique_id)
+
             # Store campaign metadata
             await self._redis.cache_set(
                 f"campaign_meta:{tenant_id}:{campaign_id}",
@@ -125,6 +131,7 @@ class CampaignEngine:
                     "severity": event.severity.value,
                     "stage": tactic,
                     "meta_score": event.ml_scores.meta_score,
+                    "mitre_tags": initial_tags,
                     "active": True,
                 }),
                 ttl=86400 * 7,  # 7 days
@@ -182,6 +189,12 @@ class CampaignEngine:
             if src_idx > tgt_idx:
                 tgt_meta["stage"] = src_stage
                 
+            # Merge mitre_tags
+            src_tags = src_meta.get("mitre_tags", [])
+            tgt_tags = tgt_meta.get("mitre_tags", [])
+            merged_tags = list(set(src_tags + tgt_tags))
+            tgt_meta["mitre_tags"] = merged_tags
+                
             await self._redis.cache_set(f"campaign_meta:{tenant_id}:{target_campaign}", json.dumps(tgt_meta), ttl=86400 * 7)
             
             # Mark source as inactive and merged
@@ -224,6 +237,16 @@ class CampaignEngine:
                     meta["stage"] = new_tactic
                     stage_updated = True
             
+            # Roll up all MITRE technique IDs
+            tags_updated = False
+            if "mitre_tags" not in meta:
+                meta["mitre_tags"] = []
+                
+            for pred in event.ml_scores.mitre_predictions:
+                if pred.technique_id and pred.technique_id not in meta["mitre_tags"]:
+                    meta["mitre_tags"].append(pred.technique_id)
+                    tags_updated = True
+            
             score_updated = False
             if event.ml_scores.meta_score > meta.get("meta_score", 0):
                 meta["meta_score"] = event.ml_scores.meta_score
@@ -237,7 +260,7 @@ class CampaignEngine:
                 meta["severity"] = "high"
                 score_updated = True
                 
-            if stage_updated or score_updated:
+            if stage_updated or score_updated or tags_updated:
                 await self._redis.cache_set(key, json.dumps(meta), ttl=86400 * 7)
                 if stage_updated:
                     logger.info("campaign_stage_progressed", campaign_id=campaign_id, new_stage=meta["stage"], old_stage=current_stage)

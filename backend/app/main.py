@@ -25,7 +25,7 @@ from app.middleware.request_id import RequestIDMiddleware
 from app.middleware.tenant_isolation import TenantIsolationMiddleware
 
 from app.api import ingest, health, campaigns, posture, simulation, agents, soar, collaboration, chatops
-from app.api import pipeline_status, events_feed, findings, reporting, settings as settings_api, sigma_rules
+from app.api import pipeline_status, events_feed, findings, reporting, settings as settings_api, sigma_rules, vault
 from app.api.auth import router as auth_router
 from app.services.hunting import start_hunter_scheduler
 from app.services.compliance_digest import run_compliance_digest_job
@@ -195,6 +195,10 @@ async def lifespan(app: FastAPI):
         if pg_ok:
             from app.services.compliance import start_compliance_scheduler
             start_compliance_scheduler()
+
+            # Agent Lightning model retraining scheduler (Phase 34C)
+            from app.services.model_retrainer import schedule_retraining
+            schedule_retraining(postgres=postgres, ensemble=get_app_pipeline()._ensemble)
         
         # Check Kafka port (9092) first
         if await _port_open("localhost", 9092):
@@ -312,6 +316,7 @@ def create_app() -> FastAPI:
     app.include_router(reporting.router, prefix="/api/v1")
     app.include_router(settings_api.router, prefix="/api/v1")
     app.include_router(soar.router, prefix="/api/v1")
+    app.include_router(vault.router, prefix="/api/v1")
     app.include_router(collaboration.router, prefix="/api/v1")
     app.include_router(chatops.router, prefix="/api/v1")
     

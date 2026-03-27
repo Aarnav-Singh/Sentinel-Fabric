@@ -1,12 +1,28 @@
 "use client";
 
 import React, { useState } from 'react';
-import { Target, ExternalLink, Database, Clock, ShieldAlert, Users, Server, UserPlus, Zap, Filter, Radio } from 'lucide-react';
+import { Target, ExternalLink, Database, Clock, ShieldAlert, Users, Server, UserPlus, Zap, Filter, Radio, Brain, Bug } from 'lucide-react';
 import useSWR from 'swr';
 
 const fetcher = (url: string) => fetch(url).then(r => r.json());
 
 // ─── Types ───────────────────────────────────────────────
+
+interface CveContext {
+  cve_id: string;
+  cvss_score?: number;
+  severity?: string;
+  description?: string;
+  patch_available?: boolean;
+}
+
+interface TriageResult {
+  severity: string;
+  confidence: number;
+  summary: string;
+  recommended_action: string;
+  tools_used: string[];
+}
 
 interface Finding {
   id: string;
@@ -19,6 +35,8 @@ interface Finding {
   ip?: string;
   domain?: string;
   linked_techniques?: string[];
+  cve_context?: CveContext[];
+  triage_result?: TriageResult;
 }
 
 interface FindingsResponse {
@@ -75,11 +93,27 @@ async function postAction(id: string, action: 'approve' | 'dismiss' | 'escalate'
   return res.json();
 }
 
+async function triggerAiTriage(id: string): Promise<TriageResult | null> {
+  try {
+    const res = await fetch('/api/proxy/api/v1/agents/triage', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ finding_id: id }),
+    });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
 export default function FindingsPage() {
   const [severityFilter, setSeverityFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [verdictPending, setVerdictPending] = useState<Record<string, string>>({});
   const [localStatuses, setLocalStatuses] = useState<Record<string, Finding['status']>>({});
+  const [triageResults, setTriageResults] = useState<Record<string, TriageResult>>({});
+  const [triagePending, setTriagePending] = useState<Record<string, boolean>>({});
 
   const { data, isLoading, mutate } = useSWR<FindingsResponse | Finding[]>(
     '/api/proxy/api/v1/findings',
@@ -276,7 +310,48 @@ export default function FindingsPage() {
                         <ExternalLink className="w-4 h-4 text-slate-500 group-hover:text-white transition-colors" />
                       </div>
                     </div>
-                    <p className="text-slate-400 text-xs mb-4">{finding.description}</p>
+                    <p className="text-slate-400 text-xs mb-3">{finding.description}</p>
+
+                    {/* CVE Enrichment Badges (Phase 34B) */}
+                    {finding.cve_context && finding.cve_context.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mb-3">
+                        {finding.cve_context.map((cve) => (
+                          <div key={cve.cve_id} className="flex items-center gap-1.5 px-2 py-1 bg-purple-500/10 border border-purple-500/30 rounded text-[10px]">
+                            <Bug className="w-3 h-3 text-purple-400" />
+                            <span className="font-mono font-bold text-purple-300">{cve.cve_id}</span>
+                            {cve.cvss_score && (
+                              <span className={`px-1.5 py-0.5 rounded font-bold ${
+                                cve.cvss_score >= 9 ? 'bg-red-500/20 text-red-400' : 
+                                cve.cvss_score >= 7 ? 'bg-orange-500/20 text-orange-400' : 
+                                'bg-yellow-500/20 text-yellow-400'
+                              }`}>CVSS {cve.cvss_score}</span>
+                            )}
+                            {cve.patch_available !== undefined && (
+                              <span className={`uppercase font-bold ${cve.patch_available ? 'text-emerald-400' : 'text-red-400'}`}>
+                                {cve.patch_available ? 'PATCHED' : 'UNPATCHED'}
+                              </span>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* AI Triage Result (Phase 34A) */}
+                    {(triageResults[finding.id] || finding.triage_result) && (
+                      <div className="mb-3 p-3 bg-cyan-500/5 border border-cyan-500/20 rounded-lg">
+                        <div className="flex items-center gap-2 mb-1">
+                          <Brain className="w-3.5 h-3.5 text-cyan-400" />
+                          <span className="text-[10px] uppercase font-bold tracking-widest text-cyan-400">AI TRIAGE</span>
+                          <span className="text-[10px] font-mono text-slate-500">
+                            {Math.round(((triageResults[finding.id] || finding.triage_result)?.confidence ?? 0) * 100)}% confidence
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-300">{(triageResults[finding.id] || finding.triage_result)?.summary}</p>
+                        <p className="text-[10px] text-cyan-400/80 mt-1 font-medium">
+                          → {(triageResults[finding.id] || finding.triage_result)?.recommended_action}
+                        </p>
+                      </div>
+                    )}
 
                     <div className="flex items-center justify-between flex-wrap gap-2">
                       <div className="flex items-center gap-4">
@@ -300,6 +375,22 @@ export default function FindingsPage() {
                       {/* Verdict buttons */}
                       {!isResolved && (
                         <div className="flex items-center gap-2">
+                          {/* AI Triage trigger */}
+                          {!triageResults[finding.id] && !finding.triage_result && (
+                            <button
+                              disabled={!!triagePending[finding.id]}
+                              onClick={async () => {
+                                setTriagePending(p => ({ ...p, [finding.id]: true }));
+                                const result = await triggerAiTriage(finding.id);
+                                if (result) setTriageResults(p => ({ ...p, [finding.id]: result }));
+                                setTriagePending(p => { const n = { ...p }; delete n[finding.id]; return n; });
+                              }}
+                              className="text-[10px] uppercase tracking-wider font-bold px-3 py-1.5 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 hover:bg-cyan-500/20 transition-all disabled:opacity-50 flex items-center gap-1.5"
+                            >
+                              <Brain className="w-3 h-3" />
+                              {triagePending[finding.id] ? 'Analyzing...' : 'AI Triage'}
+                            </button>
+                          )}
                           <button
                             disabled={isPending}
                             onClick={() => handleAction(finding.id, 'approve')}
