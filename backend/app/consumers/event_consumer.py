@@ -24,6 +24,8 @@ from app.connectors.windows_event import WindowsEventParser
 from app.connectors.generic_syslog import GenericSyslogParser
 from app.connectors.palo_alto import PaloAltoParser
 from app.connectors.crowdstrike import CrowdStrikeParser
+from app.connectors.ms_sentinel import MSSentinelParser
+from app.connectors.splunk_hec import SplunkHecParser
 from app.services.pipeline import PipelineService
 
 import structlog
@@ -39,6 +41,8 @@ PARSER_REGISTRY: dict[str, BaseParser] = {
     "sentinel.syslog": GenericSyslogParser(),
     "sentinel.palo_alto": PaloAltoParser(),
     "sentinel.crowdstrike": CrowdStrikeParser(),
+    "sentinel.ms_sentinel": MSSentinelParser(),
+    "sentinel.splunk_hec": SplunkHecParser(),
 }
 
 

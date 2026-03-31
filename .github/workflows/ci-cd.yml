@@ -188,9 +188,7 @@ jobs:
     needs: [deploy-staging, security-scan]
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    environment:
-      name: production
-      url: https://sentinel.example.com
+    environment: production
 
     steps:
       - uses: actions/checkout@v4

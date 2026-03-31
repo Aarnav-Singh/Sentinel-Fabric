@@ -90,6 +90,9 @@ async def run_triage(finding: dict[str, Any], tenant_id: str) -> dict[str, Any]:
     Returns:
         Dict with severity, reasoning, recommended_actions, and metadata.
     """
+    if getattr(settings, "llm_backend", "anthropic") == "llama_cpp":
+        return await _run_triage_llama_cpp(finding, tenant_id)
+
     client = anthropic.AsyncAnthropic(api_key=settings.anthropic_api_key)
     model = _select_model(finding)
 
@@ -177,6 +180,89 @@ async def run_triage(finding: dict[str, Any], tenant_id: str) -> dict[str, Any]:
 
     return _to_dict(result)
 
+
+async def _run_triage_llama_cpp(finding: dict[str, Any], tenant_id: str) -> dict[str, Any]:
+    """Run the Triage Agent loop using Llama.cpp with OpenAI-compatible endpoint."""
+    import httpx
+    
+    messages = [
+        {"role": "system", "content": SYSTEM_PROMPT.replace("Claude", "the system")},
+        {"role": "user", "content": f"Triage the following security finding. Gather context using your available tools before making a determination.\n\n```json\n{json.dumps(finding, indent=2, default=str)}\n```"}
+    ]
+    
+    result = TriageResult()
+    max_tool_rounds = 10
+    
+    # Map Anthropic schemas to OpenAI tool schemas
+    openai_tools = []
+    for t in TOOL_DEFINITIONS:
+        openai_tools.append({
+            "type": "function",
+            "function": {
+                "name": t["name"],
+                "description": t.get("description", ""),
+                "parameters": t.get("input_schema", {})
+            }
+        })
+
+    for round_num in range(max_tool_rounds):
+        try:
+            async with httpx.AsyncClient() as http_client:
+                resp = await http_client.post(
+                    f"{settings.llama_cpp_base_url.rstrip('/')}/chat/completions",
+                    json={
+                        "model": settings.llama_cpp_model,
+                        "messages": messages,
+                        "temperature": settings.llama_cpp_temperature,
+                        "max_tokens": settings.llama_cpp_max_tokens,
+                        "tools": openai_tools,
+                        "tool_choice": "auto"
+                    },
+                    timeout=60.0,
+                )
+                resp.raise_for_status()
+                data = resp.json()
+        except Exception as exc:
+            logger.error("llama_cpp_api_error", error=str(exc))
+            result.reasoning = f"Llama.cpp API unavailable: {exc}"
+            return _to_dict(result)
+
+        choice = data["choices"][0]
+        message = choice["message"]
+        messages.append(message)
+        
+        if message.get("tool_calls"):
+            for tc in message["tool_calls"]:
+                func = tc["function"]
+                name = func["name"]
+                args_str = func["arguments"]
+                
+                try:
+                    args = json.loads(args_str)
+                except Exception:
+                    args = {}
+                    
+                result.tool_calls_made.append(name)
+                logger.info("triage_tool_call", tool=name, finding_id=finding.get("id"))
+                
+                output = await dispatch_tool(name, args, tenant_id)
+                messages.append({
+                    "role": "tool",
+                    "tool_call_id": tc["id"],
+                    "content": output
+                })
+        else:
+            # End of turn
+            raw_text = message.get("content", "")
+            if raw_text:
+                result.raw_response = raw_text
+                _parse_final_response(raw_text, result)
+            break
+    else:
+        result.reasoning = "Triage agent exceeded maximum tool rounds."
+
+    logger.info("triage_complete", severity=result.severity, tools_used=len(result.tool_calls_made), model=settings.llama_cpp_model)
+    return _to_dict(result)
 
 # ───────────────────────── Helpers ───────────────────────────────────────────
 

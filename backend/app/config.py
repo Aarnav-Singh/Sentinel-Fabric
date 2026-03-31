@@ -62,6 +62,8 @@ class Settings(BaseSettings):
         "sentinel.windows",
         "sentinel.crowdstrike",
         "sentinel.syslog",
+        "sentinel.ms_sentinel",
+        "sentinel.splunk_hec",
     ]
     kafka_dlq_topic: str = "sentinel.dlq"
 
@@ -88,6 +90,7 @@ class Settings(BaseSettings):
 
     # ── Narrative ──────────────────────────────────────
     narrative_mode: str = "llm"  # "llm" or "template"
+    llm_backend: str = "anthropic"  # "anthropic" or "llama_cpp"
     anthropic_api_key: str = ""
     anthropic_model_triage: str = "claude-sonnet-4-6"    # routine findings
     anthropic_model_deep: str = "claude-opus-4-6"       # high-stakes findings

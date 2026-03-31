@@ -93,6 +93,16 @@ function Start-Infra {
         return $false
     }
     
+    if (-not (Test-Path (Join-Path $ROOT ".env"))) {
+        Write-Status "Generating root .env from template..."
+        Copy-Item (Join-Path $ROOT ".env.prod.example") (Join-Path $ROOT ".env")
+    }
+    
+    if (-not (Test-Path (Join-Path $BACKEND ".env"))) {
+        Write-Status "Generating backend .env from template..."
+        Copy-Item (Join-Path $BACKEND ".env.example") (Join-Path $BACKEND ".env")
+    }
+
     if (-not (Test-Path (Join-Path $INFRA "docker-compose.yml"))) {
         Write-Warn2 "docker-compose.yml not found in $INFRA. Backend will use in-memory fallbacks."
         return $false
@@ -106,10 +116,10 @@ function Start-Infra {
         if (Test-Path $dockerPath) {
             Write-Status "Attempting to start Docker Desktop..."
             Start-Process -FilePath $dockerPath
-            Write-Status "Waiting for Docker daemon to initialize (this may take up to 30s)..."
+            Write-Status "Waiting for Docker daemon to initialize (this may take up to 90s)..."
             
             $daemonReady = $false
-            for ($i = 0; $i -lt 30; $i++) {
+            for ($i = 0; $i -lt 90; $i++) {
                 Start-Sleep -Seconds 1
                 docker info 2>&1 | Out-Null
                 if ($LASTEXITCODE -eq 0) {
@@ -199,10 +209,9 @@ NEXT_PUBLIC_APP_URL=http://localhost:$FrontendPort
     Stop-Port $FrontendPort
     Start-Sleep -Seconds 1
 
-    $proc = Start-Process -FilePath "cmd.exe" `
+    Start-Process -FilePath "cmd.exe" `
         -ArgumentList @("/c", "cd /d `"$FRONTEND`" && npm run dev") `
-        -WindowStyle Hidden `
-        -PassThru
+        -WindowStyle Hidden
 
     $ready = $false
     for ($i = 0; $i -lt 20; $i++) {
@@ -262,10 +271,18 @@ switch ($Mode) {
     }
     "full" {
         Stop-All
+        Write-Status "Starting full stack via Docker Compose..."
         $dockerOk = Start-Infra
-        if ($dockerOk) { Start-Sleep -Seconds 5 }
-        Start-Backend
-        Start-Frontend
+        if ($dockerOk) { 
+            # Booting up API and Frontend exclusively via Docker to avoid local environment bugs
+            Push-Location $ROOT
+            docker compose -f docker-compose.prod.yml up -d --build 2>&1 | Out-Null
+            Pop-Location
+            Start-Sleep -Seconds 10 
+        } Else {
+            Write-Err2 "Docker failed to initialize. Full mode requires Docker to bypass local environment issues."
+            return
+        }
         Start-Simulation
     }
     "dev" {

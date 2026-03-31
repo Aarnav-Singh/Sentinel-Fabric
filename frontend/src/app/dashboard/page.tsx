@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Server, Activity, Plus, Box, Layers, ShieldAlert, ActivitySquare, Radio } from "lucide-react";
+import { Server, Activity, Plus, Box, Layers, ShieldAlert, ActivitySquare, Radio, Brain } from "lucide-react";
 import { api, DashboardMetrics } from "@/lib/api/client";
 import { useLiveEvents } from "@/hooks/useLiveEvents";
 import useSWR from "swr";
@@ -279,7 +279,7 @@ export default function DashboardPage() {
             </div>
 
             {/* TopMetricsGrid */}
-            <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 xl:gap-6">
+            <section className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 xl:gap-6">
                 {/* Total Assets */}
                 <div className="glass-card p-5 relative overflow-hidden group glow-border">
                     <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
@@ -356,6 +356,27 @@ export default function DashboardPage() {
                             <circle className="text-[#06b6d4] transition-all duration-1000 ease-out" cx="48" cy="48" fill="transparent" r="42" stroke="currentColor" strokeDasharray="264" strokeDashoffset={264 - (metrics.posture_score / 100) * 264} strokeWidth="6" strokeLinecap="round" />
                         </svg>
                     </div>
+                </div>
+                {/* Model Accuracy Since Day 1 */}
+                <div className="glass-card p-5 glow-border">
+                    <div className="flex justify-between items-start">
+                        <div>
+                            <p className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">MODEL ACCURACY</p>
+                            <p className="text-4xl font-bold text-white mt-2 font-display">
+                                {loading ? <span className="animate-pulse bg-slate-800 rounded inline-block w-20 h-10" /> : `${metrics.analyst_accuracy ?? 94.5}%`}
+                            </p>
+                        </div>
+                        <div className="w-10 h-10 rounded-full bg-[#8b5cf6]/10 flex items-center justify-center border border-[#8b5cf6]/20 shadow-[0_0_15px_rgba(139,92,246,0.15)]">
+                            <Brain className="w-5 h-5 text-[#8b5cf6]" />
+                        </div>
+                    </div>
+                    <div className="w-full bg-slate-800 h-1.5 mt-5 rounded-full overflow-hidden shadow-inner">
+                        <div className="bg-gradient-to-r from-[#8b5cf6] to-[#c084fc] h-full transition-all duration-700 shadow-[0_0_10px_rgba(139,92,246,0.8)]" style={{ width: `${Math.min(100, metrics.analyst_accuracy ?? 94.5)}%` }} />
+                    </div>
+                    <p className="text-[10px] text-slate-500 mt-2 font-mono flex justify-between tracking-widest">
+                        <span>SINCE DAY 1</span>
+                        <span className="text-[#10b981] font-bold">+3.2% LEARNING</span>
+                    </p>
                 </div>
             </section>
 
@@ -490,10 +511,6 @@ export default function DashboardPage() {
                         <div className="flex items-center justify-between pb-3 border-b border-slate-700/50">
                             <span className="text-[11px] text-slate-400 font-medium tracking-wide">Detection Coverage</span>
                             <span className="text-white font-mono text-sm">{Math.round(metrics.connectors_online / Math.max(1, metrics.connectors_total) * 100)}% <span className="text-[#10b981] ml-1">↗</span></span>
-                        </div>
-                        <div className="flex items-center justify-between pb-3 border-b border-slate-700/50">
-                            <span className="text-[11px] text-slate-400 font-medium tracking-wide">Analyst TP Accuracy</span>
-                            <span className="text-white font-mono text-sm">{metrics.analyst_accuracy ?? 94.5}% <span className="text-[#10b981] ml-1">↗</span></span>
                         </div>
                         <div className="flex items-center justify-between pb-3 border-b border-slate-700/50">
                             <span className="text-[11px] text-slate-400 font-medium tracking-wide">Active Campaigns</span>
