@@ -158,12 +158,57 @@ class ComplianceDigestGenerator:
             webhook_url = config.get("generic_webhook_url") or config.get("slack_webhook_url")
             
             if webhook_url:
-                payload = {"text": f"Compliance Digest Generated: {event_count} flagged events mapped to SOC2/HIPAA/ISO27001."}
+                payload = {"text": f"Compliance Digest Generated: {event_count} flagged events mapped to SOC2/HIPAA/ISO27001/GDPR/PCI-DSS/NIST-CSF."}
                 async with httpx.AsyncClient() as client:
                     await client.post(webhook_url, json=payload, timeout=5.0)
                     
         except Exception as e:
             logger.warning("digest_webhook_failed", error=str(e))
+
+    async def _dispatch_email(self, event_count: int) -> None:
+        """Send digest summary via email to configured recipients."""
+        try:
+            from app.services.email_service import email_service
+            from app.config import settings
+
+            if not email_service.is_configured:
+                return
+
+            # Read email recipients from alert config
+            from app.dependencies import get_app_redis
+            redis = get_app_redis()
+            raw = None
+            if hasattr(redis, "_redis") and redis._redis:
+                raw = await redis._redis.get(f"alert_config:{self.tenant_id}")
+            if not raw:
+                return
+
+            config = json.loads(raw)
+            recipients = config.get("digest_email_recipients", [])
+            if not recipients:
+                return
+
+            html = f"""
+            <div style="font-family: -apple-system, sans-serif; max-width: 600px; margin: auto;">
+                <div style="background: #0f172a; padding: 24px; border-radius: 12px;">
+                    <h2 style="color: #e2e8f0; margin: 0 0 12px;">📋 Compliance Digest</h2>
+                    <p style="color: #94a3b8; font-size: 14px; line-height: 1.6;">
+                        <strong style="color: #e2e8f0;">{event_count}</strong> events mapped to compliance frameworks
+                        (SOC 2, HIPAA, ISO 27001, GDPR, PCI-DSS v4.0, NIST CSF 2.0) in the latest digest cycle.
+                    </p>
+                    <p style="color: #475569; font-size: 12px; margin-top: 24px;">
+                        — Sentinel Fabric V2 Compliance Engine
+                    </p>
+                </div>
+            </div>
+            """
+            await email_service.send_digest(
+                to=recipients,
+                subject=f"Sentinel Fabric Compliance Digest — {event_count} events",
+                html_content=html,
+            )
+        except Exception as e:
+            logger.warning("digest_email_failed", error=str(e))
 
 
 async def run_compliance_digest_job() -> None:
@@ -171,5 +216,7 @@ async def run_compliance_digest_job() -> None:
     try:
         generator = ComplianceDigestGenerator(tenant_id="default")
         await generator.run_digest()
+        # Also dispatch email after the digest
+        await generator._dispatch_email(event_count=0)
     except Exception as e:
         logger.error("compliance_scheduler_wrapper_failed", error=str(e))

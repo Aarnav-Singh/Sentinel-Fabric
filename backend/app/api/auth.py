@@ -18,6 +18,7 @@ from app.middleware.auth import (
     AuditLogger,
 )
 from app.dependencies import get_app_postgres, get_app_ratelimiter, get_app_redis
+from app.config import settings
 import structlog
 
 logger = structlog.get_logger(__name__)
@@ -78,6 +79,17 @@ async def login(
                 AuditLogger.log("login_mfa_failed", request=request, detail=f"user={req.username}")
                 raise HTTPException(status_code=401, detail="Invalid MFA code")
             AuditLogger.log("login_via_backup_code", request=request, detail=f"user={req.username}")
+
+    # MFA Enforcement — block login for roles that require MFA but haven't set it up
+    if (
+        not user.mfa_enabled
+        and user.role in settings.require_mfa_for_roles
+    ):
+        AuditLogger.log("login_mfa_enforcement_block", request=request, detail=f"user={req.username} role={user.role}")
+        raise HTTPException(
+            status_code=403,
+            detail="mfa_setup_required",
+        )
 
     token = create_access_token(
         subject=user.email,

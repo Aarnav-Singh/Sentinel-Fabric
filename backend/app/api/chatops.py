@@ -21,18 +21,24 @@ router = APIRouter(prefix="/chatops", tags=["chatops"])
 
 
 def verify_slack_signature(request: Request, raw_body: bytes) -> bool:
-    """Verify Slack incoming webhook signature for security."""
+    """Verify Slack incoming webhook signature for security.
+
+    Fails closed: if the signing secret is not configured, the request is
+    rejected rather than silently bypassed.
+    """
     slack_signing_secret = getattr(settings, "slack_signing_secret", None)
     if not slack_signing_secret:
-        # If not configured, bypass for local dev, but warn
-        logger.warning("slack_signing_secret_missing_bypassing_auth")
-        return True
+        logger.error("slack_signing_secret_not_configured_rejecting_request")
+        return False
         
     slack_signature = request.headers.get("X-Slack-Signature", "")
     slack_request_timestamp = request.headers.get("X-Slack-Request-Timestamp", "0")
     
     # Check for replay attacks (5 minute tolerance)
-    if abs(time.time() - int(slack_request_timestamp)) > 60 * 5:
+    try:
+        if abs(time.time() - int(slack_request_timestamp)) > 60 * 5:
+            return False
+    except (ValueError, TypeError):
         return False
         
     sig_basestring = f"v0:{slack_request_timestamp}:{raw_body.decode('utf-8')}"
@@ -43,6 +49,39 @@ def verify_slack_signature(request: Request, raw_body: bytes) -> bool:
     ).hexdigest()
     
     return hmac.compare_digest(my_signature, slack_signature)
+
+
+def verify_teams_signature(request: Request, raw_body: bytes) -> bool:
+    """Verify Microsoft Teams webhook HMAC-SHA256 signature.
+
+    Microsoft sends an ``Authorization`` header containing
+    ``HMAC <base64-encoded-signature>``.  We recompute the HMAC using our
+    shared secret and compare.
+
+    Fails closed: rejects the request when the secret is missing.
+    """
+    teams_webhook_secret = getattr(settings, "teams_webhook_secret", None)
+    if not teams_webhook_secret:
+        logger.error("teams_webhook_secret_not_configured_rejecting_request")
+        return False
+
+    auth_header = request.headers.get("Authorization", "")
+    if not auth_header.startswith("HMAC "):
+        logger.warning("teams_signature_missing_or_malformed")
+        return False
+
+    provided_sig = auth_header[5:]  # strip 'HMAC ' prefix
+
+    import base64
+    expected = base64.b64encode(
+        hmac.new(
+            base64.b64decode(teams_webhook_secret),
+            raw_body,
+            hashlib.sha256,
+        ).digest()
+    ).decode()
+
+    return hmac.compare_digest(expected, provided_sig)
 
 
 async def _resume_soar_from_chatops(playbook_id: str, approval_id: str, decision: str, platform: str) -> dict:
@@ -128,9 +167,18 @@ async def slack_interactive_webhook(request: Request):
 
 @router.post("/webhook/teams")
 async def teams_interactive_webhook(request: Request):
-    """Receive Microsoft Teams actionable message responses."""
+    """Receive Microsoft Teams actionable message responses.
+
+    Validates the HMAC-SHA256 signature before processing.
+    """
+    raw_body = await request.body()
+
+    if not verify_teams_signature(request, raw_body):
+        raise HTTPException(status_code=401, detail="Invalid Teams webhook signature")
+
     try:
-        payload = await request.json()
+        import json
+        payload = json.loads(raw_body)
     except Exception:
         raise HTTPException(status_code=400, detail="Invalid JSON payload")
 
@@ -144,3 +192,4 @@ async def teams_interactive_webhook(request: Request):
         return await _resume_soar_from_chatops(playbook_id, approval_id, decision, "teams")
 
     return {"status": "ignored", "reason": "Missing SOAR context"}
+

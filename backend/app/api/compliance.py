@@ -52,10 +52,12 @@ class AuditTrailQuery(BaseModel):
 async def audit_trail(
     category: Optional[str] = Query(None),
     since_hours: Optional[int] = Query(None),
-    limit: int = Query(100, le=500),
+    q: Optional[str] = Query(None, description="Filter by action or user"),
+    limit: int = Query(25, ge=1, le=500),
+    offset: int = Query(0, ge=0),
     claims: dict = Depends(require_admin),
 ):
-    """Query the immutable compliance audit trail. Admin-only."""
+    """Query the immutable compliance audit trail with pagination. Admin-only."""
     service = _get_compliance_service()
     tenant_id = claims.get("tenant_id", "default")
 
@@ -64,12 +66,15 @@ async def audit_trail(
         from datetime import timedelta
         since = datetime.now(timezone.utc) - timedelta(hours=since_hours)
 
-    return await service.query_audit_trail(
+    result = await service.query_audit_trail(
         tenant_id=tenant_id,
         category=category,
         since=since,
         limit=limit,
+        offset=offset,
+        search_query=q,
     )
+    return result
 
 
 @router.post("/retention")

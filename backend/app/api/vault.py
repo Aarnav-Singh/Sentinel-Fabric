@@ -1,21 +1,19 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from app.services.vault_service import vault_service
+from app.middleware.auth import require_viewer
 
 router = APIRouter(prefix="/vault", tags=["Vault"])
 
 @router.get("/status")
-async def get_vault_status() -> dict:
-    """Return HashiCorp Vault integration status."""
+async def get_vault_status(claims: dict = Depends(require_viewer)) -> dict:
+    """Return HashiCorp Vault integration status.
+    
+    Requires at minimum ``viewer`` role — prevents leaking infrastructure
+    details to unauthenticated callers.
+    """
     configured = vault_service.is_configured()
     status = "connected" if configured else "unconfigured"
     
-    # Optional: check if token is valid by doing a lightweight test call
-    # if configured and vault_service._client:
-    #     try:
-    #         vault_service._client.is_authenticated()
-    #     except Exception:
-    #         status = "disconnected"
-            
     return {
         "configured": configured,
         "status": status,

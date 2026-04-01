@@ -181,3 +181,40 @@ spec:
       ports:
         - port: 5432
           protocol: TCP
+
+---
+# ── Backup CronJob: DNS + S3 egress ──────────────────
+# The backup CronJob pods need egress to S3 (port 443)
+# and DNS resolution.  Without this rule the default-deny
+# policy blocks all outbound traffic from backup pods.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ .Release.Name }}-backup-egress-policy
+spec:
+  podSelector:
+    matchLabels:
+      app: sentinel-fabric
+      component: backup
+  policyTypes:
+    - Egress
+  egress:
+    # DNS resolution
+    - to:
+        - namespaceSelector: {}
+      ports:
+        - port: 53
+          protocol: UDP
+        - port: 53
+          protocol: TCP
+    # S3 / object storage (HTTPS)
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except:
+              - 10.0.0.0/8
+              - 172.16.0.0/12
+              - 192.168.0.0/16
+      ports:
+        - port: 443
+          protocol: TCP

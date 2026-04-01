@@ -74,6 +74,26 @@ dev = [
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
+addopts = "--cov=app --cov-report=term-missing --cov-report=html:htmlcov --cov-fail-under=70"
+filterwarnings = [
+    "ignore::DeprecationWarning",
+]
+
+[tool.coverage.run]
+source = ["app"]
+omit = [
+    "app/consumers/*",
+    "app/services/model_retrainer.py",
+    "app/services/hunting.py",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "if __name__",
+    "pass",
+    "raise NotImplementedError",
+]
 
 [tool.setuptools.packages.find]
 include = ["app*"]

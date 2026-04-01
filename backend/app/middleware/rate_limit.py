@@ -72,7 +72,13 @@ class RateLimiter:
             )
 
 class RateLimitMiddleware(BaseHTTPMiddleware):
-    """Global middleware enforcing rate limits across all /api/ paths."""
+    """Global middleware enforcing rate limits across all /api/ paths.
+    
+    Adds standard rate-limit response headers:
+      - ``X-RateLimit-Limit``
+      - ``X-RateLimit-Remaining``
+      - ``X-RateLimit-Reset``
+    """
     
     async def dispatch(self, request: Request, call_next):
         if request.url.path.startswith("/api/"):
@@ -90,11 +96,32 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
                     identifier = f"ip:{request.client.host if request.client else 'unknown'}"
                 
                 # Global limit: 100 requests per sliding minute window per tenant/IP
-                await limiter.check_rate_limit(request, limit=100, window_seconds=60, identifier=identifier)
+                limit = 100
+                window_seconds = 60
+                await limiter.check_rate_limit(request, limit=limit, window_seconds=window_seconds, identifier=identifier)
+
+                response = await call_next(request)
+
+                # Add rate-limit headers
+                key = f"rate_limit:{request.url.path}:{identifier}"
+                try:
+                    remaining = max(0, limit - int(await limiter._redis._redis.zcard(key)))
+                except Exception:
+                    remaining = limit
+                response.headers["X-RateLimit-Limit"] = str(limit)
+                response.headers["X-RateLimit-Remaining"] = str(remaining)
+                response.headers["X-RateLimit-Reset"] = str(window_seconds)
+                return response
+
             except HTTPException as e:
-                return JSONResponse(status_code=e.status_code, content={"detail": e.detail})
+                resp = JSONResponse(status_code=e.status_code, content={"detail": e.detail})
+                resp.headers["X-RateLimit-Limit"] = "100"
+                resp.headers["X-RateLimit-Remaining"] = "0"
+                resp.headers["X-RateLimit-Reset"] = "60"
+                return resp
             except Exception as e:
                 logger.error("rate_limit_middleware_error", error=str(e))
                 # Proceed on unexpected errors if not explicitly denied by limiter
         
         return await call_next(request)
+

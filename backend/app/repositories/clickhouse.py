@@ -20,7 +20,7 @@ logger = structlog.get_logger(__name__)
 
 # ── Table DDL ────────────────────────────────────────────────────
 
-EVENTS_TABLE_DDL = """
+EVENTS_TABLE_DDL = f"""
 CREATE TABLE IF NOT EXISTS events (
     event_id         String,
     timestamp        DateTime64(3),
@@ -61,7 +61,7 @@ CREATE TABLE IF NOT EXISTS events (
 ) ENGINE = MergeTree()
 ORDER BY (tenant_id, timestamp, source_type)
 PARTITION BY toYYYYMM(timestamp)
-TTL timestamp + INTERVAL 90 DAY
+TTL timestamp + INTERVAL {settings.clickhouse_ttl_days} DAY
 """
 
 DISTRIBUTED_EVENTS_TABLE_DDL = """
@@ -545,3 +545,31 @@ class ClickHouseRepository:
             dict(zip(result.column_names, row))
             for row in result.result_rows
         ]
+
+    # ── Search (for omnibar) ──────────────────────────────
+
+    async def search_events(
+        self,
+        tenant_id: str,
+        query: str,
+        limit: int = 20,
+    ) -> list[dict]:
+        """Full-text search across events for the omnibar."""
+        return await self.search_similar_events(
+            tenant_id=tenant_id, query=query, limit=limit,
+        )
+
+    # ── TTL Management ────────────────────────────────────
+
+    async def update_ttl(self, days: int) -> None:
+        """ALTER the events table TTL. Idempotent — can be called on config changes."""
+        if not self._client:
+            return
+        try:
+            await asyncio.to_thread(
+                self._client.command,
+                f"ALTER TABLE events MODIFY TTL timestamp + INTERVAL {int(days)} DAY",
+            )
+            logger.info("clickhouse_ttl_updated", ttl_days=days)
+        except Exception as exc:
+            logger.error("clickhouse_ttl_update_failed", error=str(exc))

@@ -328,6 +328,14 @@ def create_app() -> FastAPI:
     from app.api.assets import router as assets_router
     app.include_router(assets_router, prefix="/api/v1")
 
+    # Admin API (user management)
+    from app.api.admin import router as admin_router
+    app.include_router(admin_router, prefix="/api/v1")
+
+    # Search API (omnibar search)
+    from app.api.search import router as search_router
+    app.include_router(search_router, prefix="/api/v1")
+
     # Tenant-scoped SSE stream
     @app.get("/api/v1/events/stream")
     async def sse_events(request: Request):

@@ -1,0 +1,33 @@
+# Sentinel Fabric V2 — PodDisruptionBudgets
+# Ensure minimum availability during rolling upgrades and node maintenance.
+
+# Backend: At least 1 pod must remain available during disruptions
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ .Release.Name }}-backend-pdb
+  labels:
+    app: sentinel-fabric
+    component: backend
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: sentinel-fabric
+      component: backend
+
+---
+# Frontend: At least 1 pod must remain available
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ .Release.Name }}-frontend-pdb
+  labels:
+    app: sentinel-fabric
+    component: frontend
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: sentinel-fabric
+      component: frontend

@@ -114,12 +114,19 @@ class EventConsumer:
                 await self._send_to_dlq(topic, raw_log, str(exc))
 
     async def _send_to_dlq(self, topic: str, raw_log: str, reason: str) -> None:
+        """Route failed messages to the dead letter queue.
+
+        PII is masked before storage to prevent sensitive data from
+        accumulating in the DLQ topic where retention may be long.
+        """
         if self._dlq_producer:
+            from app.services.pii_masking import mask_pii_in_string
+            masked_log = mask_pii_in_string(raw_log[:10000])
             await self._dlq_producer.send(
                 settings.kafka_dlq_topic,
                 value={
                     "original_topic": topic,
-                    "raw_log": raw_log[:10000],
+                    "raw_log": masked_log,
                     "error_reason": reason,
                 },
             )

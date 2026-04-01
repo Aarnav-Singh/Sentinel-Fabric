@@ -3,15 +3,19 @@
 POST /api/v1/ingest receives a CanonicalEvent (either from
 the Kafka consumer or direct API call), validates it, and
 hands it to the 15-step processing pipeline.
+
+All endpoints require a valid ``X-Ingest-API-Key`` header
+matching ``settings.ingest_api_key``.
 """
 from __future__ import annotations
 
 import json
 from typing import Dict, Any
 
-from fastapi import APIRouter, HTTPException, Request, Depends
+from fastapi import APIRouter, HTTPException, Request, Depends, Header
 from pydantic import BaseModel
 
+from app.config import settings
 from app.schemas.canonical_event import CanonicalEvent
 from app.dependencies import get_app_pipeline, get_app_ratelimiter
 from app.services.pii_masking import mask_event
@@ -21,6 +25,27 @@ import structlog
 logger = structlog.get_logger(__name__)
 
 router = APIRouter(prefix="/ingest", tags=["ingest"])
+
+
+# ── Ingest API Key Authentication ─────────────────────
+async def require_ingest_key(
+    x_ingest_api_key: str = Header(..., alias="X-Ingest-API-Key"),
+) -> None:
+    """Validate the ingest API key from the request header.
+
+    Rejects requests when:
+      - ``settings.ingest_api_key`` is not configured (fail-closed).
+      - The header value does not match the configured key.
+    """
+    if not settings.ingest_api_key:
+        logger.error("ingest_api_key_not_configured")
+        raise HTTPException(
+            status_code=503,
+            detail="Ingest API key not configured on the server.",
+        )
+    if x_ingest_api_key != settings.ingest_api_key:
+        logger.warning("ingest_auth_failed", provided_key_prefix=x_ingest_api_key[:4] + "***")
+        raise HTTPException(status_code=401, detail="Invalid ingest API key.")
 
 
 # ── Real parsers for cloud log sources ────────────────────
@@ -213,6 +238,7 @@ class RawLogRequest(BaseModel):
 async def ingest_event(
     event: CanonicalEvent,
     request: Request,
+    _key: None = Depends(require_ingest_key),
     limiter=Depends(get_app_ratelimiter),
 ) -> dict:
     """Accept, validate, and process a CanonicalEvent."""
@@ -238,6 +264,7 @@ async def ingest_event(
 async def ingest_syslog(
     req: RawLogRequest,
     request: Request,
+    _key: None = Depends(require_ingest_key),
     limiter=Depends(get_app_ratelimiter),
 ) -> dict:
     await limiter.check_rate_limit(request, limit=50, window_seconds=60)
@@ -261,6 +288,7 @@ async def ingest_syslog(
 async def ingest_aws_cloudtrail(
     record: Dict[str, Any],
     request: Request,
+    _key: None = Depends(require_ingest_key),
     limiter=Depends(get_app_ratelimiter),
 ) -> dict:
     await limiter.check_rate_limit(request, limit=50, window_seconds=60)
@@ -282,6 +310,7 @@ async def ingest_aws_cloudtrail(
 async def ingest_gcp_audit(
     log_entry: Dict[str, Any],
     request: Request,
+    _key: None = Depends(require_ingest_key),
     limiter=Depends(get_app_ratelimiter),
 ) -> dict:
     await limiter.check_rate_limit(request, limit=50, window_seconds=60)
@@ -303,6 +332,7 @@ async def ingest_gcp_audit(
 async def ingest_sentinel(
     log_entry: Dict[str, Any],
     request: Request,
+    _key: None = Depends(require_ingest_key),
     limiter=Depends(get_app_ratelimiter),
 ) -> dict:
     """Ingest Microsoft Sentinel alerts/incidents via webhook."""
@@ -360,6 +390,7 @@ async def ingest_sentinel(
 @router.post("/splunk-hec", status_code=202)
 async def ingest_splunk_hec(
     req: Request,
+    _key: None = Depends(require_ingest_key),
     limiter=Depends(get_app_ratelimiter),
 ) -> dict:
     """Ingest events from Splunk HTTP Event Collector (HEC)."""

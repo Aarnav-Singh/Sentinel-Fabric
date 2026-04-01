@@ -1,3 +1,5 @@
+import { withSentryConfig } from "@sentry/nextjs";
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
     output: "standalone",
@@ -18,4 +20,19 @@ const nextConfig = {
     },
 };
 
-export default nextConfig;
+export default withSentryConfig(nextConfig, {
+    // Suppress source map upload logs during builds
+    silent: true,
+
+    // Upload source maps for better error stack traces
+    widenClientFileUpload: true,
+
+    // Route browser requests to Sentry through a Next.js rewrite to avoid ad-blockers
+    tunnelRoute: "/monitoring",
+
+    // Automatically tree-shake Sentry logger statements to reduce bundle size  
+    disableLogger: true,
+
+    // Hide source maps from browser devtools in production
+    hideSourceMaps: true,
+});

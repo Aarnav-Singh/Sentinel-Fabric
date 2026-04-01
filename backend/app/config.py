@@ -130,7 +130,26 @@ class Settings(BaseSettings):
     # ── ChatOps / Notifications ──────────────────────────
     slack_bot_token: str = ""
     slack_webhook_url: str = ""
+    slack_signing_secret: str = ""
     teams_webhook_url: str = ""
+    teams_webhook_secret: str = ""
+
+    # ── Ingest API Authentication ────────────────────────
+    ingest_api_key: str = ""  # single platform-wide key; X-Ingest-API-Key header
+
+    # ── MFA Enforcement ──────────────────────────────────
+    require_mfa_for_roles: list[str] = ["admin"]  # roles that MUST have MFA enabled
+
+    # ── Email / SMTP ─────────────────────────────────────
+    smtp_host: str = ""
+    smtp_port: int = 587
+    smtp_user: str = ""
+    smtp_password: str = ""
+    smtp_from_address: str = "noreply@sentinelfabric.io"
+    smtp_use_tls: bool = True
+
+    # ── ClickHouse Data Retention ────────────────────────
+    clickhouse_ttl_days: int = 90
 
     # ── HashiCorp Vault ──────────────────────────────────
     vault_url: str = ""
