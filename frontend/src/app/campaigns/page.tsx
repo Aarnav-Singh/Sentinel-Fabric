@@ -24,7 +24,7 @@ function SkeletonStat() {
 
 export default function CampaignsPage() {
   const { data: campaigns, error, isLoading } = useSWR<Campaign[]>('/api/proxy/api/v1/campaigns', fetcher, { refreshInterval: 5000 });
-  const campaignList: Campaign[] = campaigns ?? [];
+  const campaignList: Campaign[] = Array.isArray(campaigns) ? campaigns : [];
 
   // KPI derivations from live data
   const activeThreats = campaignList.length;
