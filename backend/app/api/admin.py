@@ -46,6 +46,33 @@ class UserResponse(BaseModel):
 
 # ── Endpoints ─────────────────────────────────────────
 
+@router.get("/tenants")
+async def list_tenants(
+    request: Request,
+    claims: dict = Depends(require_admin),
+):
+    """List all tenants on the platform (admin-only).
+
+    Returns distinct tenant IDs derived from the user table plus
+    a count of users in each tenant.
+    """
+    AuditLogger.log("admin_list_tenants", request=request, claims=claims)
+    postgres = get_app_postgres()
+
+    # Pull all users and compute per-tenant stats
+    all_users = await postgres.list_users(tenant_id=None)  # None = all tenants
+    tenant_map: dict[str, dict] = {}
+    for u in all_users:
+        tid = getattr(u, "tenant_id", "default")
+        if tid not in tenant_map:
+            tenant_map[tid] = {"tenant_id": tid, "user_count": 0, "admin_count": 0}
+        tenant_map[tid]["user_count"] += 1
+        if u.role == "admin":
+            tenant_map[tid]["admin_count"] += 1
+
+    return list(tenant_map.values())
+
+
 @router.get("/users", response_model=list[UserResponse])
 async def list_users(
     request: Request,
