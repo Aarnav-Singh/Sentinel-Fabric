@@ -20,9 +20,9 @@ export interface Campaign {
 }
 
 function severityColor(s: string): string {
-    if (s === "critical") return "#ff3f5b";
-    if (s === "high") return "#ffaa00";
-    return "#00d4c8";
+    if (s === "critical") return "var(--sf-critical)";
+    if (s === "high") return "var(--sf-warning)";
+    return "var(--sf-accent)";
 }
 
 interface CampaignCardProps {
@@ -40,8 +40,8 @@ export function CampaignCard({ campaign, selected = false, onClick }: CampaignCa
             onClick={onClick}
             className="relative overflow-hidden rounded-lg cursor-pointer mb-2.5 transition-all duration-200 hover:-translate-y-[1px] hover:brightness-110"
             style={{
-                background: selected ? "#0e1e35" : "#0a1628",
-                border: `1px solid ${selected ? color : "#1a2e4a"}`,
+                background: selected ? "var(--sf-bg)" : "var(--sf-bg)",
+                border: `1px solid ${selected ? color : "var(--sf-bg)"}`,
                 borderLeft: `3px solid ${color}`,
                 boxShadow: selected ? `0 0 20px ${color}20` : "none",
             }}
@@ -50,7 +50,7 @@ export function CampaignCard({ campaign, selected = false, onClick }: CampaignCa
             {isCritical && (
                 <div
                     className="absolute top-0 right-0 bottom-0 w-0.5 animate-sf-blink"
-                    style={{ background: `linear-gradient(180deg, transparent, #ff3f5b, transparent)` }}
+                    style={{ background: `linear-gradient(180deg, transparent, var(--sf-critical), transparent)` }}
                 />
             )}
 
@@ -81,7 +81,7 @@ export function CampaignCard({ campaign, selected = false, onClick }: CampaignCa
                 {/* Tool chips + event count */}
                 <div className="flex gap-1.5 mt-2.5 flex-wrap items-center">
                     {campaign.tools.map((t) => (
-                        <Chip key={t} label={t} color="#7a9ab8" />
+                        <Chip key={t} label={t} color="var(--sf-bg)" />
                     ))}
                     <div className="ml-auto text-[10px] text-sf-text-muted">
                         {campaign.events.toLocaleString()} events · {campaign.firstSeen}
@@ -96,14 +96,14 @@ export function CampaignCard({ campaign, selected = false, onClick }: CampaignCa
                                 <div
                                     className="w-2.5 h-2.5 rounded-full transition-all"
                                     style={{
-                                        background: i <= campaign.currentStage ? (i === campaign.currentStage ? "#ff3f5b" : "#00d4c8") : "#1a2e4a",
-                                        border: `2px solid ${i <= campaign.currentStage ? (i === campaign.currentStage ? "#ff3f5b" : "#00d4c8") : "#3d5a78"}`,
-                                        boxShadow: i === campaign.currentStage ? "0 0 12px #ff3f5b" : i < campaign.currentStage ? "0 0 6px rgba(0,212,200,0.4)" : "none",
+                                        background: i <= campaign.currentStage ? (i === campaign.currentStage ? "var(--sf-critical)" : "var(--sf-accent)") : "var(--sf-bg)",
+                                        border: `2px solid ${i <= campaign.currentStage ? (i === campaign.currentStage ? "var(--sf-critical)" : "var(--sf-accent)") : "var(--sf-bg)"}`,
+                                        boxShadow: i === campaign.currentStage ? "0 0 12px var(--sf-critical)" : i < campaign.currentStage ? "0 0 6px rgba(0,212,200,0.4)" : "none",
                                     }}
                                 />
                                 <span
                                     className="text-[9px] text-center max-w-[64px] leading-tight font-space"
-                                    style={{ color: i <= campaign.currentStage ? (i === campaign.currentStage ? "#ff3f5b" : "#00d4c8") : "#3d5a78" }}
+                                    style={{ color: i <= campaign.currentStage ? (i === campaign.currentStage ? "var(--sf-critical)" : "var(--sf-accent)") : "var(--sf-bg)" }}
                                 >
                                     {s}
                                 </span>
@@ -111,7 +111,7 @@ export function CampaignCard({ campaign, selected = false, onClick }: CampaignCa
                             {i < campaign.stages.length - 1 && (
                                 <div
                                     className="h-px flex-1 mb-3.5"
-                                    style={{ background: i < campaign.currentStage ? "linear-gradient(90deg, #00d4c8, rgba(0,212,200,0.4))" : "#1a2e4a" }}
+                                    style={{ background: i < campaign.currentStage ? "linear-gradient(90deg, var(--sf-accent), rgba(0,212,200,0.4))" : "var(--sf-bg)" }}
                                 />
                             )}
                         </div>

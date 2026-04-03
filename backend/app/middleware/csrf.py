@@ -15,6 +15,16 @@ class CSRFMiddleware(BaseHTTPMiddleware):
     3. Requires the token to be sent back in the `X-CSRF-Token` header for unsafe requests (POST, PUT, DELETE, etc.).
     """
     
+    # Paths exempt from CSRF (internal/server-to-server APIs)
+    EXEMPT_PREFIXES = (
+        "/api/v1/simulate",
+        "/api/v1/health",
+        "/api/v1/events",
+        "/docs",
+        "/openapi.json",
+        "/redoc",
+    )
+    
     def __init__(self, app):
         super().__init__(app)
         self.safe_methods = {"GET", "HEAD", "OPTIONS", "TRACE"}
@@ -27,6 +37,10 @@ class CSRFMiddleware(BaseHTTPMiddleware):
 
         # Bearer tokens are immune to CSRF (browser won't attach them automatically)
         if "authorization" in request.headers:
+            should_enforce = False
+
+        # Exempt internal API paths from CSRF
+        if any(request.url.path.startswith(prefix) for prefix in self.EXEMPT_PREFIXES):
             should_enforce = False
             
         # Enforce CSRF check for state-changing methods

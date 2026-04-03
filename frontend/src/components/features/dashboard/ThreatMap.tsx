@@ -10,7 +10,7 @@ export function ThreatMap() {
     ];
 
     return (
-        <div className="absolute inset-0 overflow-hidden bg-brand-dark flex items-center justify-center">
+        <div className="absolute inset-0 overflow-hidden bg-sf-bg flex items-center justify-center">
             {/* Background World Map vector simulation */}
             <svg className="absolute w-full h-full opacity-[0.15]" viewBox="0 0 1000 500" fill="none" stroke="currentColor">
                 {/* Very stylized grid and boundaries */}
@@ -25,12 +25,12 @@ export function ThreatMap() {
             {blips.map(blip => (
                 <div key={blip.id} className="absolute" style={{ top: blip.top, left: blip.left }}>
                     <motion.div
-                        className="w-2.5 h-2.5 bg-brand-orange rounded-full shadow-[0_0_15px_rgba(249,115,22,1)]"
+                        className="w-2.5 h-2.5 bg-sf-warning rounded-full shadow-[0_0_15px_rgba(249,115,22,1)]"
                         animate={{ opacity: [1, 0.4, 1] }}
                         transition={{ duration: 2 + Math.random(), repeat: Infinity, ease: "easeInOut" }}
                     />
                     <motion.div
-                        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 rounded-full border border-brand-orange/40"
+                        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 rounded-full border border-sf-warning/40"
                         animate={{ scale: [0.2, 1.5], opacity: [1, 0] }}
                         transition={{ duration: 2 + Math.random(), repeat: Infinity, ease: "easeOut" }}
                     />

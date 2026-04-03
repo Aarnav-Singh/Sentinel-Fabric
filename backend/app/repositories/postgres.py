@@ -281,6 +281,40 @@ class PostgresRepository:
             session.add(user)
             await session.commit()
 
+    async def list_users(self, tenant_id: Optional[str]) -> list[UserRecord]:
+        async with self._session() as session:
+            if tenant_id:
+                result = await session.execute(
+                    select(UserRecord).where(UserRecord.tenant_id == tenant_id)
+                )
+            else:
+                result = await session.execute(select(UserRecord))
+            return list(result.scalars().all())
+
+    async def update_user_role(self, email: str, role: str) -> None:
+        async with self._session() as session:
+            result = await session.execute(select(UserRecord).where(UserRecord.email == email))
+            user = result.scalar_one_or_none()
+            if user:
+                user.role = role
+                await session.commit()
+
+    async def deactivate_user(self, email: str) -> None:
+        async with self._session() as session:
+            result = await session.execute(select(UserRecord).where(UserRecord.email == email))
+            user = result.scalar_one_or_none()
+            if user:
+                user.is_active = False
+                await session.commit()
+
+    async def activate_user(self, email: str) -> None:
+        async with self._session() as session:
+            result = await session.execute(select(UserRecord).where(UserRecord.email == email))
+            user = result.scalar_one_or_none()
+            if user:
+                user.is_active = True
+                await session.commit()
+
     async def update_user_mfa(self, email: str, secret: Optional[str], enabled: bool) -> None:
         async with self._session() as session:
             result = await session.execute(select(UserRecord).where(UserRecord.email == email))

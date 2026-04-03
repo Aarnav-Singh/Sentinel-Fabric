@@ -12,7 +12,7 @@ interface DomainScoreCardProps {
 
 export function DomainScoreCard({ domain, score, description, topRemediations = [], trend = "stable" }: DomainScoreCardProps) {
     const trendIcon = trend === "up" ? "↑" : trend === "down" ? "↓" : "→";
-    const trendColor = trend === "up" ? "#00e676" : trend === "down" ? "#ff3f5b" : "#7a9ab8";
+    const trendColor = trend === "up" ? "var(--sf-safe)" : trend === "down" ? "var(--sf-critical)" : "var(--sf-bg)";
 
     return (
         <div className="sf-card p-4 flex flex-col hover:-translate-y-1 transition-transform cursor-pointer">

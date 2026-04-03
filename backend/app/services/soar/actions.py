@@ -18,7 +18,6 @@ from typing import Dict, Any
 import httpx
 
 from app.config import settings
-from app.services.soar.notification_providers import SlackActionProvider, TeamsActionProvider
 from app.services.vault_service import vault_service
 
 logger = logging.getLogger(__name__)
@@ -29,6 +28,13 @@ def get_soar_secret(key: str, fallback: str) -> str:
     if val:
         return val
     return fallback
+
+
+# ---------------------------------------------------------------------------
+# Exceptions
+# ---------------------------------------------------------------------------
+class ActionExecutionError(Exception):
+    """Raised when a SOAR action fails."""
 
 
 # ---------------------------------------------------------------------------
@@ -623,18 +629,33 @@ class AWSSecurityProvider(ActionProvider):
 # Registry
 # ---------------------------------------------------------------------------
 class ActionRegistry:
-    providers: Dict[str, ActionProvider] = {
-        "paloalto": PaloAltoProvider(),
-        "crowdstrike": CrowdStrikeProvider(),
-        "okta": OktaProvider(),
-        "approval": ApprovalProvider(),
-        "servicenow": ServiceNowProvider(),
-        "aws": AWSSecurityProvider(),
-        "slack": SlackActionProvider(),
-        "teams": TeamsActionProvider(),
-    }
+    _providers: Dict[str, ActionProvider] | None = None
+
+    @classmethod
+    def _init_providers(cls) -> Dict[str, ActionProvider]:
+        # Lazy import to break circular dependency with notification_providers
+        from app.services.soar.notification_providers import SlackActionProvider, TeamsActionProvider
+        return {
+            "paloalto": PaloAltoProvider(),
+            "crowdstrike": CrowdStrikeProvider(),
+            "okta": OktaProvider(),
+            "approval": ApprovalProvider(),
+            "servicenow": ServiceNowProvider(),
+            "aws": AWSSecurityProvider(),
+            "slack": SlackActionProvider(),
+            "teams": TeamsActionProvider(),
+        }
+
+    @classmethod
+    @property
+    def providers(cls) -> Dict[str, ActionProvider]:
+        if cls._providers is None:
+            cls._providers = cls._init_providers()
+        return cls._providers
 
     @classmethod
     def get_provider(cls, name: str) -> ActionProvider | None:
-        return cls.providers.get(name)
+        if cls._providers is None:
+            cls._providers = cls._init_providers()
+        return cls._providers.get(name)
 

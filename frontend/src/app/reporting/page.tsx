@@ -20,7 +20,7 @@ function getToken() {
 
 async function apiFetch(path: string, opts: RequestInit = {}) {
     const token = getToken();
-    return fetch(`${API_BASE}/api/v1${path}`, {
+    return fetch(`/api/proxy/api/v1${path}`, {
         ...opts,
         headers: {
             ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -100,16 +100,16 @@ export default function ReportingPage() {
             <header className="mb-8 flex justify-between items-end">
                 <div>
                     <h1 className="text-3xl font-bold text-white tracking-tight flex items-center gap-3">
-                        <FileText className="w-8 h-8 text-brand-accent" />
+                        <FileText className="w-8 h-8 text-sf-accent" />
                         Reporting
                     </h1>
-                    <p className="text-slate-400 mt-2">Generate and export security compliance and incident reports.</p>
+                    <p className="text-sf-muted mt-2">Generate and export security compliance and incident reports.</p>
                 </div>
                 <div className="flex items-center gap-2">
                     <button
                         onClick={() => downloadReport("csv")}
                         disabled={!!generating}
-                        className="px-3 py-2 bg-brand-surface border border-brand-border text-slate-300 font-semibold rounded hover:bg-brand-surface/80 transition-colors flex items-center gap-2 text-xs disabled:opacity-40"
+                        className="px-3 py-2 bg-sf-surface border border-sf-border text-slate-300 font-semibold rounded hover:bg-sf-surface/80 transition-colors flex items-center gap-2 text-xs disabled:opacity-40"
                     >
                         {generating === "csv" ? <Loader2 className="w-3 h-3 animate-spin" /> : <FileText className="w-3 h-3" />}
                         CSV
@@ -117,7 +117,7 @@ export default function ReportingPage() {
                     <button
                         onClick={() => downloadReport("excel")}
                         disabled={!!generating}
-                        className="px-3 py-2 bg-brand-surface border border-brand-border text-slate-300 font-semibold rounded hover:bg-brand-surface/80 transition-colors flex items-center gap-2 text-xs disabled:opacity-40"
+                        className="px-3 py-2 bg-sf-surface border border-sf-border text-slate-300 font-semibold rounded hover:bg-sf-surface/80 transition-colors flex items-center gap-2 text-xs disabled:opacity-40"
                     >
                         {generating === "excel" ? <Loader2 className="w-3 h-3 animate-spin" /> : <FileSpreadsheet className="w-3 h-3" />}
                         Excel
@@ -125,7 +125,7 @@ export default function ReportingPage() {
                     <button
                         onClick={() => downloadReport("pdf")}
                         disabled={!!generating}
-                        className="px-3 py-2 bg-brand-surface border border-brand-border text-slate-300 font-semibold rounded hover:bg-brand-surface/80 transition-colors flex items-center gap-2 text-xs disabled:opacity-40"
+                        className="px-3 py-2 bg-sf-surface border border-sf-border text-slate-300 font-semibold rounded hover:bg-sf-surface/80 transition-colors flex items-center gap-2 text-xs disabled:opacity-40"
                     >
                         {generating === "pdf" ? <Loader2 className="w-3 h-3 animate-spin" /> : <FileType className="w-3 h-3" />}
                         PDF
@@ -133,7 +133,7 @@ export default function ReportingPage() {
                     <button
                         onClick={() => downloadReport("soc2")}
                         disabled={!!generating}
-                        className="px-4 py-2 bg-brand-accent text-brand-dark font-bold rounded hover:bg-brand-accent/90 transition-colors flex items-center gap-2 text-xs disabled:opacity-40"
+                        className="px-4 py-2 bg-sf-accent text-sf-bg font-bold rounded hover:bg-sf-accent/90 transition-colors flex items-center gap-2 text-xs disabled:opacity-40"
                     >
                         {generating === "soc2" ? <Loader2 className="w-3 h-3 animate-spin" /> : <Download className="w-3 h-3" />}
                         SOC 2 Report
@@ -141,12 +141,12 @@ export default function ReportingPage() {
                 </div>
             </header>
 
-            <div className="bg-brand-card border border-brand-border rounded-xl mb-6">
-                <div className="p-4 border-b border-brand-border flex gap-4">
+            <div className="bg-sf-surface border border-sf-border rounded-xl mb-6">
+                <div className="p-4 border-b border-sf-border flex gap-4">
                     <select
                         value={filter}
                         onChange={e => setFilter(e.target.value)}
-                        className="flex items-center gap-2 text-sm text-slate-400 bg-brand-surface px-3 py-1.5 rounded border border-brand-border focus:outline-none focus:border-brand-accent cursor-pointer"
+                        className="flex items-center gap-2 text-sm text-sf-muted bg-sf-surface px-3 py-1.5 rounded border border-sf-border focus:outline-none focus:border-sf-accent cursor-pointer"
                     >
                         <option value="all">All Types</option>
                         <option value="executive_pdf">Executive</option>
@@ -154,14 +154,14 @@ export default function ReportingPage() {
                         <option value="excel_extract">Excel</option>
                         <option value="scheduled_pdf">Compliance</option>
                     </select>
-                    <div className="flex items-center gap-2 text-sm text-slate-400 bg-brand-surface px-3 py-1.5 rounded border border-brand-border">
+                    <div className="flex items-center gap-2 text-sm text-sf-muted bg-sf-surface px-3 py-1.5 rounded border border-sf-border">
                         <Calendar className="w-4 h-4" />
                         {reports.length} reports generated
                     </div>
                 </div>
                 
                 <table className="w-full text-left text-sm">
-                    <thead className="bg-brand-surface/50 text-slate-400 uppercase text-[10px] tracking-wider">
+                    <thead className="bg-sf-surface/50 text-sf-muted uppercase text-[10px] tracking-wider">
                         <tr>
                             <th className="px-6 py-4 font-medium">Report Name</th>
                             <th className="px-6 py-4 font-medium">Type</th>
@@ -170,21 +170,21 @@ export default function ReportingPage() {
                             <th className="px-6 py-4 font-medium">Date</th>
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-brand-border text-slate-300">
+                    <tbody className="divide-y divide-sf-border text-slate-300">
                         {loading ? (
-                            <tr><td colSpan={5} className="px-6 py-12 text-center text-slate-500">
+                            <tr><td colSpan={5} className="px-6 py-12 text-center text-sf-muted">
                                 <Loader2 className="w-5 h-5 animate-spin inline mr-2" /> Loading reports...
                             </td></tr>
                         ) : filtered.length === 0 ? (
-                            <tr><td colSpan={5} className="px-6 py-12 text-center text-slate-500">
+                            <tr><td colSpan={5} className="px-6 py-12 text-center text-sf-muted">
                                 No reports generated yet. Use the buttons above to create one.
                             </td></tr>
                         ) : filtered.map((report) => {
-                            const typeInfo = TYPE_LABELS[report.report_type] || { label: report.report_type, color: "text-slate-400 bg-slate-400/10" };
+                            const typeInfo = TYPE_LABELS[report.report_type] || { label: report.report_type, color: "text-sf-muted bg-slate-400/10" };
                             return (
-                                <tr key={report.id} className="hover:bg-brand-surface/30 transition-colors">
+                                <tr key={report.id} className="hover:bg-sf-surface/30 transition-colors">
                                     <td className="px-6 py-4 text-white font-medium flex items-center gap-3">
-                                        <FileText className="w-4 h-4 text-slate-500" />
+                                        <FileText className="w-4 h-4 text-sf-muted" />
                                         {report.report_name}
                                     </td>
                                     <td className="px-6 py-4">
@@ -193,10 +193,10 @@ export default function ReportingPage() {
                                         </span>
                                     </td>
                                     <td className="px-6 py-4 text-xs">{report.generated_by}</td>
-                                    <td className="px-6 py-4 font-mono text-xs text-slate-500">
+                                    <td className="px-6 py-4 font-mono text-xs text-sf-muted">
                                         {formatBytes(report.file_size_bytes)}
                                     </td>
-                                    <td className="px-6 py-4 font-mono text-xs text-slate-500">
+                                    <td className="px-6 py-4 font-mono text-xs text-sf-muted">
                                         {new Date(report.created_at).toLocaleDateString()}
                                     </td>
                                 </tr>

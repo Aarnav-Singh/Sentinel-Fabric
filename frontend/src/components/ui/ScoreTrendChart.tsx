@@ -13,7 +13,7 @@ interface ScoreTrendChartProps {
     height?: number;
 }
 
-export function ScoreTrendChart({ data, color = "#00d4c8", height = 200 }: ScoreTrendChartProps) {
+export function ScoreTrendChart({ data, color = "var(--sf-accent)", height = 200 }: ScoreTrendChartProps) {
     return (
         <ResponsiveContainer width="100%" height={height}>
             <AreaChart data={data} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
@@ -23,27 +23,27 @@ export function ScoreTrendChart({ data, color = "#00d4c8", height = 200 }: Score
                         <stop offset="95%" stopColor={color} stopOpacity={0} />
                     </linearGradient>
                 </defs>
-                <CartesianGrid stroke="#1a2e4a" strokeDasharray="3 3" vertical={false} />
+                <CartesianGrid stroke="var(--sf-border)" strokeDasharray="3 3" vertical={false} />
                 <XAxis
                     dataKey="date"
-                    tick={{ fontSize: 9, fill: "#3d5a78", fontFamily: "'Space Mono', monospace" }}
-                    axisLine={{ stroke: "#1a2e4a" }}
+                    tick={{ fontSize: 9, fill: "var(--sf-muted)", fontFamily: "var(--font-jetbrains-mono)" }}
+                    axisLine={{ stroke: "var(--sf-surface-raised)" }}
                     tickLine={false}
                 />
                 <YAxis
                     domain={[0, 100]}
-                    tick={{ fontSize: 9, fill: "#3d5a78", fontFamily: "'Space Mono', monospace" }}
+                    tick={{ fontSize: 9, fill: "var(--sf-muted)", fontFamily: "var(--font-jetbrains-mono)" }}
                     axisLine={false}
                     tickLine={false}
                 />
                 <Tooltip
                     contentStyle={{
-                        background: "#0a1628",
-                        border: "1px solid #1a2e4a",
+                        background: "var(--sf-surface)",
+                        border: "1px solid var(--sf-border-active)",
                         borderRadius: 6,
                         fontSize: 11,
-                        fontFamily: "'Space Mono', monospace",
-                        color: "#e8f4f8",
+                        fontFamily: "var(--font-jetbrains-mono)",
+                        color: "var(--sf-text)",
                     }}
                 />
                 <Area
@@ -53,7 +53,7 @@ export function ScoreTrendChart({ data, color = "#00d4c8", height = 200 }: Score
                     strokeWidth={2}
                     fill="url(#scoreFill)"
                     dot={false}
-                    activeDot={{ r: 4, fill: color, stroke: "#050d1a", strokeWidth: 2 }}
+                    activeDot={{ r: 4, fill: color, stroke: "var(--sf-surface)", strokeWidth: 2 }}
                 />
             </AreaChart>
         </ResponsiveContainer>

@@ -75,7 +75,7 @@ interface HistoryResponse {
 // ─── Sub-components ──────────────────────────────────────
 
 function ScoreGauge({ score }: { score: number }) {
-  const color = score > 80 ? '#10b981' : score > 60 ? '#fbbf24' : '#f43f5e';
+  const color = score > 80 ? 'var(--sf-safe)' : score > 60 ? 'var(--sf-warning)' : 'var(--sf-critical)';
   const shadow = score > 80 ? 'rgba(16,185,129,0.5)' : score > 60 ? 'rgba(251,191,36,0.5)' : 'rgba(244,63,94,0.5)';
   const circumference = 2 * Math.PI * 40;
   const offset = circumference * (1 - score / 100);
@@ -109,7 +109,7 @@ function ScoreGauge({ score }: { score: number }) {
 function TrendIcon({ trend }: { trend: 'up' | 'down' | 'stable' }) {
   if (trend === 'up') return <TrendingUp className="w-3.5 h-3.5 text-emerald-400" />;
   if (trend === 'down') return <TrendingDown className="w-3.5 h-3.5 text-red-400" />;
-  return <Minus className="w-3.5 h-3.5 text-slate-400" />;
+  return <Minus className="w-3.5 h-3.5 text-sf-muted" />;
 }
 
 function SeverityBadge({ severity }: { severity: RemediationFinding['severity'] }) {
@@ -117,7 +117,7 @@ function SeverityBadge({ severity }: { severity: RemediationFinding['severity'] 
     critical: 'bg-red-500/15 text-red-400 border-red-500/30',
     high: 'bg-orange-500/15 text-orange-400 border-orange-500/30',
     medium: 'bg-yellow-500/15 text-yellow-400 border-yellow-500/30',
-    low: 'bg-slate-500/15 text-slate-400 border-slate-500/30',
+    low: 'bg-slate-500/15 text-sf-muted border-slate-500/30',
   };
   return (
     <span className={`px-2 py-0.5 rounded border text-[10px] font-bold uppercase ${map[severity] ?? map.low}`}>
@@ -132,7 +132,7 @@ function EffortTag({ effort }: { effort: RemediationFinding['effort'] }) {
     medium: 'text-yellow-400',
     high: 'text-red-400',
   };
-  return <span className={`text-[10px] font-mono ${map[effort] ?? 'text-slate-400'}`}>{effort} effort</span>;
+  return <span className={`text-[10px] font-mono ${map[effort] ?? 'text-sf-muted'}`}>{effort} effort</span>;
 }
 
 function CoverageDot({ coverage }: { coverage: MitreTechnique['coverage'] }) {
@@ -168,20 +168,20 @@ function Sparkline({ data }: { data: HistoryPoint[] }) {
     <svg className="w-full h-full" viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none">
       <defs>
         <linearGradient id="sparkGrad" x1="0" x2="0" y1="0" y2="1">
-          <stop offset="0%" stopColor="#00f2ff" stopOpacity="0.35" />
-          <stop offset="100%" stopColor="#00f2ff" stopOpacity="0" />
+          <stop offset="0%" stopColor="var(--sf-accent)" stopOpacity="0.35" />
+          <stop offset="100%" stopColor="var(--sf-accent)" stopOpacity="0" />
         </linearGradient>
       </defs>
       <polygon points={areaPoints} fill="url(#sparkGrad)" />
-      <polyline points={points} fill="none" stroke="#00f2ff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+      <polyline points={points} fill="none" stroke="var(--sf-accent)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
       {/* Current score dot */}
       <circle
         cx={w - pad}
         cy={h - pad - ((scores[scores.length - 1] - min) / range) * (h - pad * 2)}
         r="4"
-        fill="#00f2ff"
+        fill="var(--sf-accent)"
         className="animate-ping"
-        style={{ filter: 'drop-shadow(0 0 5px #00f2ff)' }}
+        style={{ filter: 'drop-shadow(0 0 5px var(--sf-accent))' }}
       />
     </svg>
   );
@@ -190,7 +190,7 @@ function Sparkline({ data }: { data: HistoryPoint[] }) {
 // ─── Skeleton ────────────────────────────────────────────
 
 function SkeletonBlock({ className }: { className?: string }) {
-  return <div className={`animate-pulse bg-slate-800/60 rounded ${className}`} />;
+  return <div className={`animate-pulse bg-sf-surface/60 rounded ${className}`} />;
 }
 
 // ─── Sort state for remediation ──────────────────────────
@@ -259,7 +259,7 @@ export default function PosturePage() {
               <h2 className="text-2xl font-bold text-white drop-shadow-[0_0_10px_rgba(0,242,255,0.6)]">
                 Network Posture
               </h2>
-              <p className="text-slate-400 text-sm">Real-time integrity mesh</p>
+              <p className="text-sf-muted text-sm">Real-time integrity mesh</p>
             </div>
             <div className="text-right flex items-center gap-4">
               {scoreLoading ? (
@@ -276,7 +276,7 @@ export default function PosturePage() {
           </div>
 
           {/* 30-day Sparkline */}
-          <div className="bg-brand-card/70 backdrop-blur-md rounded-2xl p-4 min-h-[180px] relative overflow-hidden border border-brand-accent/20 shadow-[0_4px_30px_rgba(0,0,0,0.5),inset_0_0_10px_rgba(0,242,255,0.05)]">
+          <div className="bg-sf-surface/70 backdrop-blur-md rounded-2xl p-4 min-h-[180px] relative overflow-hidden border border-sf-accent/20 shadow-[0_4px_30px_rgba(0,0,0,0.5),inset_0_0_10px_rgba(0,242,255,0.05)]">
             <div className="absolute inset-0 opacity-10 bg-[linear-gradient(rgba(0,242,255,0.2)_1px,transparent_1px),linear-gradient(90deg,rgba(0,242,255,0.2)_1px,transparent_1px)] bg-[size:20px_20px]" />
             <div className="relative z-10 w-full h-36">
               {historyLoading
@@ -286,7 +286,7 @@ export default function PosturePage() {
             </div>
             <div className="flex justify-between mt-2">
               {historyPoints.length > 0 && [0, Math.floor(historyPoints.length / 4), Math.floor(historyPoints.length / 2), Math.floor(3 * historyPoints.length / 4), historyPoints.length - 1].map(i => (
-                <span key={i} className="text-[10px] text-slate-500 font-bold uppercase tracking-tighter">
+                <span key={i} className="text-[10px] text-sf-muted font-bold uppercase tracking-tighter">
                   {historyPoints[i]?.date?.slice(5) ?? ''}
                 </span>
               ))}
@@ -296,7 +296,7 @@ export default function PosturePage() {
 
         {/* ── Domain Cards ── */}
         <section className="space-y-4">
-          <h3 className="text-xs font-black uppercase tracking-[0.2em] text-brand-accent/80">Security Domains</h3>
+          <h3 className="text-xs font-black uppercase tracking-[0.2em] text-sf-accent/80">Security Domains</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
             {domainsLoading
               ? Array.from({ length: 5 }).map((_, i) => (
@@ -304,12 +304,12 @@ export default function PosturePage() {
                 ))
               : domains.map((domain) => {
                   const domainScore = domain.score ?? 0;
-                  const ringColor = domainScore > 80 ? '#10b981' : domainScore > 60 ? '#fbbf24' : '#f43f5e';
+                  const ringColor = domainScore > 80 ? 'var(--sf-safe)' : domainScore > 60 ? 'var(--sf-warning)' : 'var(--sf-critical)';
                   const dashOffset = 100 - domainScore;
                   return (
-                    <div key={domain.id} className="bg-brand-card/70 backdrop-blur-md border border-brand-accent/20 shadow-[0_0_15px_rgba(0,242,255,0.08)] rounded-xl p-4 flex flex-col gap-3 hover:-translate-y-1 transition-transform">
+                    <div key={domain.id} className="bg-sf-surface/70 backdrop-blur-md border border-sf-accent/20 shadow-[0_0_15px_rgba(0,242,255,0.08)] rounded-xl p-4 flex flex-col gap-3 hover:-translate-y-1 transition-transform">
                       <div className="flex items-center justify-between">
-                        <span className="text-[10px] font-bold uppercase text-slate-400 tracking-wider">{domain.name}</span>
+                        <span className="text-[10px] font-bold uppercase text-sf-muted tracking-wider">{domain.name}</span>
                         <TrendIcon trend={domain.trend} />
                       </div>
                       {/* Score ring */}
@@ -330,7 +330,7 @@ export default function PosturePage() {
                         </div>
                       </div>
                       {/* Score bar */}
-                      <div className="h-1.5 bg-brand-accent/10 rounded-full overflow-hidden">
+                      <div className="h-1.5 bg-sf-accent/10 rounded-full overflow-hidden">
                         <div
                           className="h-full rounded-full transition-all duration-1000"
                           style={{ width: `${domainScore}%`, backgroundColor: ringColor }}
@@ -338,7 +338,7 @@ export default function PosturePage() {
                       </div>
                       {/* Top finding */}
                       {domain.top_findings?.[0] && (
-                        <p className="text-[9px] text-slate-500 leading-tight line-clamp-2">{domain.top_findings[0]}</p>
+                        <p className="text-[9px] text-sf-muted leading-tight line-clamp-2">{domain.top_findings[0]}</p>
                       )}
                     </div>
                   );
@@ -350,39 +350,39 @@ export default function PosturePage() {
         {/* ── MITRE ATT&CK Coverage Heatmap ── */}
         <section className="space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-xs font-black uppercase tracking-[0.2em] text-brand-accent/80">MITRE ATT&amp;CK Coverage</h3>
+            <h3 className="text-xs font-black uppercase tracking-[0.2em] text-sf-accent/80">MITRE ATT&amp;CK Coverage</h3>
             <div className="flex items-center gap-4 text-[10px] font-mono">
               <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-emerald-500 inline-block" /> Covered</span>
               <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-yellow-400 inline-block" /> Partial</span>
               <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-red-500 inline-block" /> Blind</span>
             </div>
           </div>
-          <div className="bg-brand-card/70 backdrop-blur-md rounded-xl border border-brand-accent/20 p-5 overflow-x-auto">
+          <div className="bg-sf-surface/70 backdrop-blur-md rounded-xl border border-sf-accent/20 p-5 overflow-x-auto">
             {coverageLoading ? (
               <SkeletonBlock className="w-full h-40 rounded" />
             ) : tactics.length === 0 ? (
-              <p className="text-slate-500 text-sm text-center py-8">Coverage data unavailable — connect data sources to populate.</p>
+              <p className="text-sf-muted text-sm text-center py-8">Coverage data unavailable — connect data sources to populate.</p>
             ) : (
               <div className="space-y-4 min-w-[600px]">
                 {tactics.map((tactic) => (
                   <div key={tactic.tactic}>
-                    <p className="text-[10px] font-bold uppercase text-slate-400 mb-2 tracking-wider">{tactic.tactic}</p>
+                    <p className="text-[10px] font-bold uppercase text-sf-muted mb-2 tracking-wider">{tactic.tactic}</p>
                     <div className="flex flex-wrap gap-2">
                       {tactic.techniques.map((tech) => (
                         <div
                           key={tech.id}
-                          className="flex items-center gap-1.5 bg-brand-dark/60 border border-brand-accent/10 rounded px-2 py-1 hover:border-brand-accent/40 transition-colors cursor-default group relative"
+                          className="flex items-center gap-1.5 bg-sf-bg/60 border border-sf-accent/10 rounded px-2 py-1 hover:border-sf-accent/40 transition-colors cursor-default group relative"
                           title={tech.fix ?? tech.name}
                         >
                           <CoverageDot coverage={tech.coverage} />
                           <span className="text-[9px] font-mono text-slate-300">{tech.id}</span>
                           {tech.campaign_linked && (
-                            <span className="text-[8px] text-brand-accent">&#x2605;</span>
+                            <span className="text-[8px] text-sf-accent">&#x2605;</span>
                           )}
                           {/* Tooltip */}
-                          <div className="absolute bottom-full left-0 mb-1 hidden group-hover:block z-20 bg-brand-dark border border-brand-accent/30 rounded px-2 py-1.5 text-[9px] text-slate-200 whitespace-nowrap shadow-xl">
+                          <div className="absolute bottom-full left-0 mb-1 hidden group-hover:block z-20 bg-sf-bg border border-sf-accent/30 rounded px-2 py-1.5 text-[9px] text-slate-200 whitespace-nowrap shadow-xl">
                             <p className="font-bold">{tech.name}</p>
-                            {tech.tools && <p className="text-slate-400">{tech.tools.join(', ')}</p>}
+                            {tech.tools && <p className="text-sf-muted">{tech.tools.join(', ')}</p>}
                           </div>
                         </div>
                       ))}
@@ -396,11 +396,11 @@ export default function PosturePage() {
 
         {/* ── Remediation Queue ── */}
         <section className="space-y-4">
-          <h3 className="text-xs font-black uppercase tracking-[0.2em] text-brand-accent/80">Remediation Queue</h3>
-          <div className="bg-brand-card/70 backdrop-blur-md rounded-xl border border-brand-accent/20 overflow-x-auto">
+          <h3 className="text-xs font-black uppercase tracking-[0.2em] text-sf-accent/80">Remediation Queue</h3>
+          <div className="bg-sf-surface/70 backdrop-blur-md rounded-xl border border-sf-accent/20 overflow-x-auto">
             <table className="w-full text-left text-[11px] min-w-[600px]">
               <thead>
-                <tr className="text-slate-500 border-b border-brand-accent/10 bg-brand-surface/20">
+                <tr className="text-sf-muted border-b border-sf-accent/10 bg-sf-surface/20">
                   <th className="px-4 py-3 font-semibold uppercase tracking-wider cursor-pointer hover:text-slate-300" onClick={() => handleSort('priority')}>
                     # <SortIcon k="priority" />
                   </th>
@@ -415,7 +415,7 @@ export default function PosturePage() {
                   <th className="px-4 py-3 font-semibold uppercase tracking-wider">Status</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-brand-accent/5">
+              <tbody className="divide-y divide-sf-accent/5">
                 {remediationLoading
                   ? Array.from({ length: 4 }).map((_, i) => (
                       <tr key={i}>
@@ -425,18 +425,18 @@ export default function PosturePage() {
                       </tr>
                     ))
                   : sortedFindings.map((f) => (
-                      <tr key={f.id} className="hover:bg-brand-accent/5 transition-colors">
-                        <td className="px-4 py-3 font-mono text-slate-500">{f.priority}</td>
+                      <tr key={f.id} className="hover:bg-sf-accent/5 transition-colors">
+                        <td className="px-4 py-3 font-mono text-sf-muted">{f.priority}</td>
                         <td className="px-4 py-3">
                           <p className="text-white font-medium">{f.title}</p>
-                          <p className="text-slate-500 text-[10px] mt-0.5 line-clamp-1">{f.description}</p>
+                          <p className="text-sf-muted text-[10px] mt-0.5 line-clamp-1">{f.description}</p>
                         </td>
                         <td className="px-4 py-3"><SeverityBadge severity={f.severity} /></td>
                         <td className="px-4 py-3"><EffortTag effort={f.effort} /></td>
                         <td className="px-4 py-3">
                           <div className="flex flex-wrap gap-1">
                             {f.linked_campaigns.slice(0, 2).map(c => (
-                              <span key={c} className="text-[9px] bg-brand-accent/10 text-brand-accent border border-brand-accent/20 px-1.5 py-0.5 rounded font-mono">{c}</span>
+                              <span key={c} className="text-[9px] bg-sf-accent/10 text-sf-accent border border-sf-accent/20 px-1.5 py-0.5 rounded font-mono">{c}</span>
                             ))}
                             {f.linked_techniques.slice(0, 1).map(t => (
                               <span key={t} className="text-[9px] bg-slate-700/60 text-slate-300 border border-slate-600/40 px-1.5 py-0.5 rounded font-mono">{t}</span>
@@ -458,7 +458,7 @@ export default function PosturePage() {
               </tbody>
             </table>
             {!remediationLoading && sortedFindings.length === 0 && (
-              <p className="text-slate-500 text-sm text-center py-8">No remediation items — posture is clean.</p>
+              <p className="text-sf-muted text-sm text-center py-8">No remediation items — posture is clean.</p>
             )}
           </div>
         </section>

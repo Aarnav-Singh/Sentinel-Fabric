@@ -20,7 +20,7 @@ function getToken() {
 
 async function apiFetch(path: string, opts: RequestInit = {}) {
     const token = getToken();
-    const res = await fetch(`${API_BASE}${path}`, {
+    const res = await fetch(`/api/proxy${path}`, {
         ...opts,
         headers: {
             "Content-Type": "application/json",
@@ -65,7 +65,7 @@ export default function ProfilePage() {
     const roleColors: Record<string, string> = {
         admin: "text-red-400 bg-red-400/10 border-red-400/30",
         analyst: "text-cyan-400 bg-cyan-400/10 border-cyan-400/30",
-        viewer: "text-slate-400 bg-slate-400/10 border-slate-400/30",
+        viewer: "text-sf-muted bg-slate-400/10 border-slate-400/30",
     };
 
     const startMfaSetup = async () => {
@@ -104,17 +104,17 @@ export default function ProfilePage() {
             <div className="max-w-2xl mx-auto space-y-8">
                 <header>
                     <h1 className="text-2xl font-bold text-white tracking-tight flex items-center gap-3">
-                        <User className="w-6 h-6 text-brand-accent" />
+                        <User className="w-6 h-6 text-sf-accent" />
                         Analyst Profile
                     </h1>
-                    <p className="text-slate-400 text-sm mt-1">Account details and preferences</p>
+                    <p className="text-sf-muted text-sm mt-1">Account details and preferences</p>
                 </header>
 
                 {/* Identity Card */}
-                <div className="bg-brand-card border border-brand-border rounded-xl p-6 space-y-5">
+                <div className="bg-sf-surface border border-sf-border rounded-xl p-6 space-y-5">
                     <div className="flex items-center gap-4">
-                        <div className="w-16 h-16 rounded-full bg-gradient-to-br from-brand-accent/30 to-brand-accent/10 border border-brand-accent/40 flex items-center justify-center">
-                            <span className="text-2xl font-bold text-brand-accent">{name.charAt(0).toUpperCase()}</span>
+                        <div className="w-16 h-16 rounded-full bg-gradient-to-br from-sf-accent/30 to-sf-accent/10 border border-sf-accent/40 flex items-center justify-center">
+                            <span className="text-2xl font-bold text-sf-accent">{name.charAt(0).toUpperCase()}</span>
                         </div>
                         <div>
                             <h2 className="text-lg font-bold text-white">{name}</h2>
@@ -124,25 +124,25 @@ export default function ProfilePage() {
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t border-brand-border">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t border-sf-border">
                         <div className="flex items-center gap-3">
-                            <Mail className="w-4 h-4 text-slate-500" />
+                            <Mail className="w-4 h-4 text-sf-muted" />
                             <div>
-                                <p className="text-[10px] text-slate-500 uppercase tracking-wider font-bold">Email</p>
+                                <p className="text-[10px] text-sf-muted uppercase tracking-wider font-bold">Email</p>
                                 <p className="text-sm text-white font-mono">{email}</p>
                             </div>
                         </div>
                         <div className="flex items-center gap-3">
-                            <Building2 className="w-4 h-4 text-slate-500" />
+                            <Building2 className="w-4 h-4 text-sf-muted" />
                             <div>
-                                <p className="text-[10px] text-slate-500 uppercase tracking-wider font-bold">Tenant</p>
+                                <p className="text-[10px] text-sf-muted uppercase tracking-wider font-bold">Tenant</p>
                                 <p className="text-sm text-white font-mono">{tenant}</p>
                             </div>
                         </div>
                         <div className="flex items-center gap-3">
-                            <Shield className="w-4 h-4 text-slate-500" />
+                            <Shield className="w-4 h-4 text-sf-muted" />
                             <div>
-                                <p className="text-[10px] text-slate-500 uppercase tracking-wider font-bold">Role</p>
+                                <p className="text-[10px] text-sf-muted uppercase tracking-wider font-bold">Role</p>
                                 <p className="text-sm text-white capitalize">{role}</p>
                             </div>
                         </div>
@@ -150,8 +150,8 @@ export default function ProfilePage() {
                 </div>
 
                 {/* MFA Management */}
-                <div className="bg-brand-card border border-brand-border rounded-xl p-6">
-                    <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-brand-accent/80 mb-4 flex items-center gap-2">
+                <div className="bg-sf-surface border border-sf-border rounded-xl p-6">
+                    <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-sf-accent/80 mb-4 flex items-center gap-2">
                         <Key className="w-3.5 h-3.5" />
                         Multi-Factor Authentication
                     </h3>
@@ -168,7 +168,7 @@ export default function ProfilePage() {
                                 <p className="text-sm text-white font-medium">
                                     {mfaEnabled ? "MFA is enabled" : "MFA is not enabled"}
                                 </p>
-                                <p className="text-[10px] text-slate-500">
+                                <p className="text-[10px] text-sf-muted">
                                     {mfaEnabled
                                         ? "Your account is protected with two-factor authentication."
                                         : "Enable TOTP-based two-factor authentication for added security."}
@@ -177,7 +177,7 @@ export default function ProfilePage() {
                             {!mfaEnabled && (
                                 <button
                                     onClick={startMfaSetup}
-                                    className="px-4 py-2 bg-brand-accent text-brand-dark font-bold rounded text-xs hover:bg-brand-accent/90"
+                                    className="px-4 py-2 bg-sf-accent text-sf-bg font-bold rounded text-xs hover:bg-sf-accent/90"
                                 >
                                     Enable MFA
                                 </button>
@@ -204,8 +204,8 @@ export default function ProfilePage() {
                                 />
                             </div>
                             <div className="text-center">
-                                <p className="text-[10px] text-slate-500 mb-1">Or enter this secret manually:</p>
-                                <code className="text-xs text-brand-accent font-mono bg-brand-surface px-3 py-1 rounded border border-brand-border">
+                                <p className="text-[10px] text-sf-muted mb-1">Or enter this secret manually:</p>
+                                <code className="text-xs text-sf-accent font-mono bg-sf-surface px-3 py-1 rounded border border-sf-border">
                                     {mfaSecret}
                                 </code>
                             </div>
@@ -215,12 +215,12 @@ export default function ProfilePage() {
                                     value={mfaCode}
                                     onChange={e => setMfaCode(e.target.value)}
                                     maxLength={6}
-                                    className="flex-1 px-3 py-2 bg-brand-surface border border-brand-border rounded text-white text-sm text-center tracking-[0.3em] focus:outline-none focus:border-brand-accent"
+                                    className="flex-1 px-3 py-2 bg-sf-surface border border-sf-border rounded text-white text-sm text-center tracking-[0.3em] focus:outline-none focus:border-sf-accent"
                                 />
                                 <button
                                     onClick={verifyMfa}
                                     disabled={mfaCode.length < 6}
-                                    className="px-4 py-2 bg-brand-accent text-brand-dark font-bold rounded text-xs hover:bg-brand-accent/90 disabled:opacity-40"
+                                    className="px-4 py-2 bg-sf-accent text-sf-bg font-bold rounded text-xs hover:bg-sf-accent/90 disabled:opacity-40"
                                 >
                                     Verify
                                 </button>
@@ -234,10 +234,10 @@ export default function ProfilePage() {
                                 <CheckCircle2 className="w-5 h-5" />
                                 <p className="font-bold text-sm">MFA enabled successfully!</p>
                             </div>
-                            <p className="text-xs text-slate-400">
+                            <p className="text-xs text-sf-muted">
                                 Save these backup codes in a safe place. Each code can only be used once.
                             </p>
-                            <div className="bg-brand-surface border border-brand-border rounded-lg p-4">
+                            <div className="bg-sf-surface border border-sf-border rounded-lg p-4">
                                 <div className="grid grid-cols-2 gap-2">
                                     {backupCodes.map((code, i) => (
                                         <code key={i} className="text-xs text-slate-300 font-mono">{code}</code>
@@ -246,7 +246,7 @@ export default function ProfilePage() {
                             </div>
                             <button
                                 onClick={copyBackupCodes}
-                                className="px-3 py-1.5 text-xs text-slate-400 hover:text-white flex items-center gap-1.5 bg-brand-surface border border-brand-border rounded"
+                                className="px-3 py-1.5 text-xs text-sf-muted hover:text-white flex items-center gap-1.5 bg-sf-surface border border-sf-border rounded"
                             >
                                 {copied ? <CheckCircle2 className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
                                 {copied ? "Copied!" : "Copy All"}
@@ -256,19 +256,19 @@ export default function ProfilePage() {
                 </div>
 
                 {/* Preferences */}
-                <div className="bg-brand-card border border-brand-border rounded-xl p-6">
-                    <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-brand-accent/80 mb-4">Preferences</h3>
+                <div className="bg-sf-surface border border-sf-border rounded-xl p-6">
+                    <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-sf-accent/80 mb-4">Preferences</h3>
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                            {darkMode ? <Moon className="w-4 h-4 text-slate-400" /> : <Sun className="w-4 h-4 text-yellow-400" />}
+                            {darkMode ? <Moon className="w-4 h-4 text-sf-muted" /> : <Sun className="w-4 h-4 text-yellow-400" />}
                             <div>
                                 <p className="text-sm text-white font-medium">Dark Mode</p>
-                                <p className="text-[10px] text-slate-500">Toggle interface theme</p>
+                                <p className="text-[10px] text-sf-muted">Toggle interface theme</p>
                             </div>
                         </div>
                         <button
                             onClick={() => setDarkMode(!darkMode)}
-                            className={`w-10 h-5 rounded-full transition-colors relative ${darkMode ? 'bg-brand-accent' : 'bg-slate-600'}`}
+                            className={`w-10 h-5 rounded-full transition-colors relative ${darkMode ? 'bg-sf-accent' : 'bg-slate-600'}`}
                         >
                             <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${darkMode ? 'left-5' : 'left-0.5'}`} />
                         </button>

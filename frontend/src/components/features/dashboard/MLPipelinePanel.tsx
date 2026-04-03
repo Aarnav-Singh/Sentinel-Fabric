@@ -3,11 +3,11 @@
 import { StreamBar } from "@/components/ui/StreamBar";
 
 const STREAMS = [
-    { id: 1, abbr: "SUP", desc: "Known attack patterns", color: "#00d4c8" },
-    { id: 2, abbr: "VAE", desc: "Anomaly from normal", color: "#b57aff" },
-    { id: 3, abbr: "ONL", desc: "Per-tenant baseline", color: "#ffaa00" },
-    { id: 4, abbr: "SEQ", desc: "Multi-step patterns", color: "#00e676" },
-    { id: 5, abbr: "EVA", desc: "Anti-detection signals", color: "#ff3f5b" },
+    { id: 1, abbr: "SUP", desc: "Known attack patterns", color: "var(--sf-accent)" },
+    { id: 2, abbr: "VAE", desc: "Anomaly from normal", color: "var(--sf-accent-2)" },
+    { id: 3, abbr: "ONL", desc: "Per-tenant baseline", color: "var(--sf-warning)" },
+    { id: 4, abbr: "SEQ", desc: "Multi-step patterns", color: "var(--sf-safe)" },
+    { id: 5, abbr: "EVA", desc: "Anti-detection signals", color: "var(--sf-critical)" },
 ];
 
 interface MLPipelinePanelProps {
@@ -16,7 +16,7 @@ interface MLPipelinePanelProps {
 }
 
 export function MLPipelinePanel({ scores, metaScore }: MLPipelinePanelProps) {
-    const metaColor = metaScore > 0.8 ? "#ff3f5b" : metaScore > 0.6 ? "#ffaa00" : "#00d4c8";
+    const metaColor = metaScore > 0.8 ? "var(--sf-critical)" : metaScore > 0.6 ? "var(--sf-warning)" : "var(--sf-accent)";
 
     return (
         <div className="border-b border-sf-border" style={{ padding: "16px 16px 14px" }}>
@@ -59,7 +59,7 @@ export function MLPipelinePanel({ scores, metaScore }: MLPipelinePanelProps) {
                         className="h-full rounded-sm transition-all duration-500 ease-out"
                         style={{
                             width: `${metaScore * 100}%`,
-                            background: `linear-gradient(90deg, #00d4c8, ${metaColor})`,
+                            background: `linear-gradient(90deg, var(--sf-accent), ${metaColor})`,
                             boxShadow: "0 0 10px rgba(0,212,200,0.5)",
                         }}
                     />

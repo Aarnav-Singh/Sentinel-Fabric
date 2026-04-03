@@ -15,9 +15,9 @@ interface LiveEventStreamProps {
 }
 
 function scoreColor(score: number): string {
-    if (score > 0.8) return "#ff3f5b";
-    if (score > 0.6) return "#ffaa00";
-    return "#00d4c8";
+    if (score > 0.8) return "var(--sf-critical)";
+    if (score > 0.6) return "var(--sf-warning)";
+    return "var(--sf-accent)";
 }
 
 export function LiveEventStream({ events }: LiveEventStreamProps) {
@@ -43,7 +43,7 @@ export function LiveEventStream({ events }: LiveEventStreamProps) {
                     >
                         <div className="flex items-center gap-1.5 mb-0.5">
                             <span className="text-[9px] text-sf-text-muted font-space">{ev.time}</span>
-                            <Chip label={ev.tool} color="#7a9ab8" />
+                            <Chip label={ev.tool} color="var(--sf-bg)" />
                             <div className="ml-auto">
                                 <span className="text-[10px] font-space" style={{ color: scoreColor(ev.score) }}>
                                     {Math.round(ev.score * 100)}

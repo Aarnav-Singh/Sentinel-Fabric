@@ -18,7 +18,7 @@ export function ConnectedSources({ tools = DEFAULT_TOOLS }: ConnectedSourcesProp
                         key={tool}
                         className="text-[9px] font-space rounded-sm px-1.5 py-0.5"
                         style={{
-                            color: "#00e676",
+                            color: "var(--sf-safe)",
                             background: "rgba(0,230,118,0.08)",
                             border: "1px solid rgba(0,230,118,0.2)",
                         }}

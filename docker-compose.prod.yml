@@ -180,9 +180,11 @@ services:
       - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
       - CLICKHOUSE_HOST=clickhouse-node1
       - REDIS_HOST=redis-master
+      - REDIS_URL=redis://redis-master:6379/0
       - QDRANT_HOST=qdrant
       # Use PgBouncer port 6432 instead of direct Postgres
       - POSTGRES_DSN=postgresql+asyncpg://sentinel:${POSTGRES_PASSWORD}@pgbouncer:5432/sentinel_fabric
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
     networks:
       - sf_network
 
@@ -202,7 +204,12 @@ services:
       - "8000:8000"
     environment:
       - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+      - CLICKHOUSE_HOST=clickhouse-node1
+      - REDIS_HOST=redis-master
+      - REDIS_URL=redis://redis-master:6379/0
+      - QDRANT_HOST=qdrant
       - POSTGRES_DSN=postgresql+asyncpg://sentinel:${POSTGRES_PASSWORD}@pgbouncer:5432/sentinel_fabric
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
       # The API pushes to Kafka, does not run the pipeline directly
     networks:
       - sf_network
@@ -215,6 +222,9 @@ services:
       context: ./frontend
     ports:
       - "3000:3000"
+    environment:
+      - BACKEND_API_URL=http://api:8000
+      - BACKEND_API_KEY=${JWT_SECRET_KEY}
     networks:
       - sf_network
 
@@ -231,6 +241,8 @@ services:
     environment:
       - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
       - EDGE_REGION=eu-west
+      - REDIS_URL=redis://redis-master:6379/0
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
     networks:
       - sf_network
     depends_on:
@@ -246,6 +258,8 @@ services:
     environment:
       - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
       - EDGE_REGION=us-east
+      - REDIS_URL=redis://redis-master:6379/0
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
     networks:
       - sf_network
     depends_on:

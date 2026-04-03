@@ -53,7 +53,7 @@ export function ActivityFeed() {
 
     const getIcon = (type: string) => {
         switch (type) {
-            case 'critical': return <AlertCircle className="w-4 h-4 text-brand-orange" />;
+            case 'critical': return <AlertCircle className="w-4 h-4 text-sf-warning" />;
             case 'high': return <Target className="w-4 h-4 text-orange-400" />;
             case 'success': return <ShieldCheck className="w-4 h-4 text-green-500" />;
             default: return <Activity className="w-4 h-4 text-text-muted" />;
@@ -76,7 +76,7 @@ export function ActivityFeed() {
                             <div className="flex gap-3 items-center mt-1.5">
                                 <span className="text-xs text-text-muted font-mono">{timeAgo(evt.timestamp)}</span>
                                 {evt.meta_score > 0.5 && (
-                                    <span className="text-[9px] font-bold uppercase tracking-wider text-brand-orange bg-brand-orange/10 px-1.5 py-0.5 rounded">
+                                    <span className="text-[9px] font-bold uppercase tracking-wider text-sf-warning bg-sf-warning/10 px-1.5 py-0.5 rounded">
                                         {(evt.meta_score * 100).toFixed(0)}%
                                     </span>
                                 )}

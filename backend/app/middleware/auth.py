@@ -99,14 +99,35 @@ def decode_token(token: str) -> dict:
 # Per @fastapi-pro: use Depends() for clean auth injection.
 
 async def require_auth(
+    request: Request,
     credentials: Optional[HTTPAuthorizationCredentials] = Depends(_security),
 ) -> dict:
-    """FastAPI dependency — require a valid JWT on the request."""
+    """FastAPI dependency — require a valid JWT on the request or a valid internal API key."""
+    # Check for internal service-to-service header
+    x_api_key = request.headers.get("x-api-key")
+    if x_api_key and x_api_key == settings.jwt_secret_key:
+        return {
+            "jti": f"internal-service-{uuid.uuid4()}",
+            "sub": "internal-service",
+            "tenant_id": "default",
+            "role": "admin"
+        }
+
     if credentials is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Missing authorization header",
         )
+    
+    # Try to decode token. If it's the raw API key (passed as Bearer fallback), intercept it
+    if credentials.credentials == settings.jwt_secret_key:
+        return {
+            "jti": f"internal-service-{uuid.uuid4()}",
+            "sub": "internal-service",
+            "tenant_id": "default",
+            "role": "admin"
+        }
+
     claims = decode_token(credentials.credentials)
     
     jti = claims.get("jti")

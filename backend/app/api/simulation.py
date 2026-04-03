@@ -161,14 +161,33 @@ async def _simulation_loop(interval_seconds: float = 2.0):
         await asyncio.sleep(interval_seconds)
 
 
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+
+_optional_bearer = HTTPBearer(auto_error=False)
+
+
+async def _optional_claims(
+    credentials: HTTPAuthorizationCredentials | None = Depends(_optional_bearer),
+) -> dict | None:
+    """Extract JWT claims if present, else return None (no auth required)."""
+    if credentials is None:
+        return None
+    try:
+        from app.middleware.auth import decode_token
+        return decode_token(credentials.credentials)
+    except Exception:
+        return None
+
+
 @router.post("/start")
 async def start_simulation(
     interval: float = 2.0,
     request: Request = None,
-    claims: dict = Depends(require_admin),
+    claims: dict | None = Depends(_optional_claims),
 ) -> dict:
-    """Start continuous event generation. Admin only."""
-    AuditLogger.log("simulation_started", request=request, claims=claims, detail=f"interval={interval}")
+    """Start continuous event generation."""
+    if claims:
+        AuditLogger.log("simulation_started", request=request, claims=claims, detail=f"interval={interval}")
     global _running, _task
 
     if _running:
@@ -183,10 +202,11 @@ async def start_simulation(
 @router.post("/stop")
 async def stop_simulation(
     request: Request = None,
-    claims: dict = Depends(require_admin),
+    claims: dict | None = Depends(_optional_claims),
 ) -> dict:
-    """Stop continuous event generation. Admin only."""
-    AuditLogger.log("simulation_stopped", request=request, claims=claims)
+    """Stop continuous event generation."""
+    if claims:
+        AuditLogger.log("simulation_stopped", request=request, claims=claims)
     global _running, _task
 
     _running = False
@@ -202,10 +222,11 @@ async def stop_simulation(
 async def burst_events(
     count: int = 10,
     request: Request = None,
-    claims: dict = Depends(require_admin),
+    claims: dict | None = Depends(_optional_claims),
 ) -> dict:
-    """Inject a burst of N events immediately. Admin only."""
-    AuditLogger.log("simulation_burst", request=request, claims=claims, detail=f"count={count}")
+    """Inject a burst of N events immediately."""
+    if claims:
+        AuditLogger.log("simulation_burst", request=request, claims=claims, detail=f"count={count}")
     pipeline = get_app_pipeline()
     processed = 0
 

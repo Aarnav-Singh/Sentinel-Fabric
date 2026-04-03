@@ -13,15 +13,13 @@ interface User {
     mfa_enabled: boolean;
 }
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-
 function getToken() {
     return typeof window !== "undefined" ? localStorage.getItem("sf_token") : null;
 }
 
 async function apiFetch(path: string, opts: RequestInit = {}) {
     const token = getToken();
-    const res = await fetch(`${API_BASE}/api/v1${path}`, {
+    const res = await fetch(`/api/proxy/api/v1${path}`, {
         ...opts,
         headers: {
             "Content-Type": "application/json",
@@ -39,7 +37,7 @@ async function apiFetch(path: string, opts: RequestInit = {}) {
 const ROLE_BADGE: Record<string, string> = {
     admin: "text-red-400 bg-red-400/10 border-red-400/30",
     analyst: "text-cyan-400 bg-cyan-400/10 border-cyan-400/30",
-    viewer: "text-slate-400 bg-slate-400/10 border-slate-400/30",
+    viewer: "text-sf-muted bg-slate-400/10 border-slate-400/30",
 };
 
 export default function AdminPage() {
@@ -106,14 +104,14 @@ export default function AdminPage() {
             <header className="mb-8 flex justify-between items-end">
                 <div>
                     <h1 className="text-3xl font-bold text-white tracking-tight flex items-center gap-3">
-                        <Users className="w-8 h-8 text-brand-accent" />
+                        <Users className="w-8 h-8 text-sf-accent" />
                         User Management
                     </h1>
-                    <p className="text-slate-400 mt-2">Manage platform users, roles, and access controls.</p>
+                    <p className="text-sf-muted mt-2">Manage platform users, roles, and access controls.</p>
                 </div>
                 <button
                     onClick={() => setShowCreate(true)}
-                    className="px-4 py-2 bg-brand-accent text-brand-dark font-bold rounded hover:bg-brand-accent/90 transition-colors flex items-center gap-2 text-sm"
+                    className="px-4 py-2 bg-sf-accent text-sf-bg font-bold rounded hover:bg-sf-accent/90 transition-colors flex items-center gap-2 text-sm"
                 >
                     <Plus className="w-4 h-4" /> Create User
                 </button>
@@ -129,27 +127,27 @@ export default function AdminPage() {
             {/* Create User Modal */}
             {showCreate && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-                    <div className="bg-brand-card border border-brand-border rounded-xl p-6 w-full max-w-md space-y-4">
+                    <div className="bg-sf-surface border border-sf-border rounded-xl p-6 w-full max-w-md space-y-4">
                         <h2 className="text-lg font-bold text-white">Create New User</h2>
                         <input
                             placeholder="Email" value={form.email}
                             onChange={e => setForm({ ...form, email: e.target.value })}
-                            className="w-full px-3 py-2 bg-brand-surface border border-brand-border rounded text-white text-sm focus:outline-none focus:border-brand-accent"
+                            className="w-full px-3 py-2 bg-sf-surface border border-sf-border rounded text-white text-sm focus:outline-none focus:border-sf-accent"
                         />
                         <input
                             placeholder="Display Name" value={form.display_name}
                             onChange={e => setForm({ ...form, display_name: e.target.value })}
-                            className="w-full px-3 py-2 bg-brand-surface border border-brand-border rounded text-white text-sm focus:outline-none focus:border-brand-accent"
+                            className="w-full px-3 py-2 bg-sf-surface border border-sf-border rounded text-white text-sm focus:outline-none focus:border-sf-accent"
                         />
                         <input
                             type="password" placeholder="Password" value={form.password}
                             onChange={e => setForm({ ...form, password: e.target.value })}
-                            className="w-full px-3 py-2 bg-brand-surface border border-brand-border rounded text-white text-sm focus:outline-none focus:border-brand-accent"
+                            className="w-full px-3 py-2 bg-sf-surface border border-sf-border rounded text-white text-sm focus:outline-none focus:border-sf-accent"
                         />
                         <select
                             value={form.role}
                             onChange={e => setForm({ ...form, role: e.target.value })}
-                            className="w-full px-3 py-2 bg-brand-surface border border-brand-border rounded text-white text-sm focus:outline-none focus:border-brand-accent"
+                            className="w-full px-3 py-2 bg-sf-surface border border-sf-border rounded text-white text-sm focus:outline-none focus:border-sf-accent"
                         >
                             <option value="viewer">Viewer</option>
                             <option value="analyst">Analyst</option>
@@ -158,13 +156,13 @@ export default function AdminPage() {
                         <div className="flex gap-3 pt-2">
                             <button
                                 onClick={createUser}
-                                className="flex-1 px-4 py-2 bg-brand-accent text-brand-dark font-bold rounded text-sm hover:bg-brand-accent/90"
+                                className="flex-1 px-4 py-2 bg-sf-accent text-sf-bg font-bold rounded text-sm hover:bg-sf-accent/90"
                             >
                                 Create
                             </button>
                             <button
                                 onClick={() => setShowCreate(false)}
-                                className="flex-1 px-4 py-2 bg-brand-surface border border-brand-border text-slate-300 rounded text-sm hover:bg-brand-surface/80"
+                                className="flex-1 px-4 py-2 bg-sf-surface border border-sf-border text-slate-300 rounded text-sm hover:bg-sf-surface/80"
                             >
                                 Cancel
                             </button>
@@ -175,19 +173,19 @@ export default function AdminPage() {
 
             {/* Search */}
             <div className="mb-4 relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-sf-muted" />
                 <input
                     placeholder="Search users..."
                     value={search}
                     onChange={e => setSearch(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 bg-brand-surface border border-brand-border rounded text-white text-sm focus:outline-none focus:border-brand-accent"
+                    className="w-full pl-10 pr-4 py-2 bg-sf-surface border border-sf-border rounded text-white text-sm focus:outline-none focus:border-sf-accent"
                 />
             </div>
 
             {/* Users Table */}
-            <div className="bg-brand-card border border-brand-border rounded-xl overflow-hidden">
+            <div className="bg-sf-surface border border-sf-border rounded-xl overflow-hidden">
                 <table className="w-full text-left text-sm">
-                    <thead className="bg-brand-surface/50 text-slate-400 uppercase text-[10px] tracking-wider">
+                    <thead className="bg-sf-surface/50 text-sf-muted uppercase text-[10px] tracking-wider">
                         <tr>
                             <th className="px-6 py-4 font-medium">User</th>
                             <th className="px-6 py-4 font-medium">Role</th>
@@ -196,23 +194,23 @@ export default function AdminPage() {
                             <th className="px-6 py-4 font-medium">Actions</th>
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-brand-border text-slate-300">
+                    <tbody className="divide-y divide-sf-border text-slate-300">
                         {loading ? (
-                            <tr><td colSpan={5} className="px-6 py-12 text-center text-slate-500">Loading users...</td></tr>
+                            <tr><td colSpan={5} className="px-6 py-12 text-center text-sf-muted">Loading users...</td></tr>
                         ) : filtered.length === 0 ? (
-                            <tr><td colSpan={5} className="px-6 py-12 text-center text-slate-500">No users found.</td></tr>
+                            <tr><td colSpan={5} className="px-6 py-12 text-center text-sf-muted">No users found.</td></tr>
                         ) : filtered.map(user => (
-                            <tr key={user.id} className="hover:bg-brand-surface/30 transition-colors">
+                            <tr key={user.id} className="hover:bg-sf-surface/30 transition-colors">
                                 <td className="px-6 py-4">
                                     <div className="flex items-center gap-3">
-                                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-brand-accent/30 to-brand-accent/10 border border-brand-accent/30 flex items-center justify-center">
-                                            <span className="text-xs font-bold text-brand-accent">
+                                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-sf-accent/30 to-sf-accent/10 border border-sf-accent/30 flex items-center justify-center">
+                                            <span className="text-xs font-bold text-sf-accent">
                                                 {(user.display_name || user.email).charAt(0).toUpperCase()}
                                             </span>
                                         </div>
                                         <div>
                                             <p className="text-white font-medium">{user.display_name || user.email}</p>
-                                            <p className="text-[10px] text-slate-500 font-mono">{user.email}</p>
+                                            <p className="text-[10px] text-sf-muted font-mono">{user.email}</p>
                                         </div>
                                     </div>
                                 </td>
@@ -228,7 +226,7 @@ export default function AdminPage() {
                                     </select>
                                 </td>
                                 <td className="px-6 py-4">
-                                    <span className={`text-[10px] font-bold uppercase ${user.mfa_enabled ? "text-emerald-400" : "text-slate-500"}`}>
+                                    <span className={`text-[10px] font-bold uppercase ${user.mfa_enabled ? "text-emerald-400" : "text-sf-muted"}`}>
                                         {user.mfa_enabled ? "✓ Enabled" : "Disabled"}
                                     </span>
                                 </td>

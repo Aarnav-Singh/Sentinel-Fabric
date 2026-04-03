@@ -30,10 +30,10 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-brand-dark flex flex-col justify-center items-center p-4 relative overflow-hidden font-sans">
+    <div className="min-h-screen bg-sf-bg flex flex-col justify-center items-center p-4 relative overflow-hidden font-sans">
       {/* Background Ambience */}
-      <div className="absolute inset-0 z-0 opacity-20 pointer-events-none mix-blend-screen bg-brand-navy" />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-brand-accent/5 via-transparent to-brand-dark" />
+      <div className="absolute inset-0 z-0 opacity-20 pointer-events-none mix-blend-screen bg-sf-bg" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-sf-accent/5 via-transparent to-sf-bg" />
 
       {/* Login Card */}
       <motion.div
@@ -42,13 +42,13 @@ export default function LoginPage() {
         transition={{ duration: 0.6, ease: "easeOut" }}
         className="relative z-10 w-full max-w-md bg-surface-card border border-surface-border rounded-2xl shadow-2xl overflow-hidden backdrop-blur-xl"
       >
-        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-brand-accent to-transparent opacity-50" />
+        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-sf-accent to-transparent opacity-50" />
 
         <div className="p-8">
           <div className="flex flex-col items-center mb-8">
-            <div className="w-16 h-16 bg-brand-surface border border-brand-border rounded-2xl flex items-center justify-center mb-4 relative group">
-              <div className="absolute inset-0 bg-brand-accent/20 blur-xl rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity" />
-              <Shield className="w-8 h-8 text-brand-accent relative z-10" />
+            <div className="w-16 h-16 bg-sf-surface border border-sf-border rounded-2xl flex items-center justify-center mb-4 relative group">
+              <div className="absolute inset-0 bg-sf-accent/20 blur-xl rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity" />
+              <Shield className="w-8 h-8 text-sf-accent relative z-10" />
             </div>
             <h1 className="font-display font-bold text-2xl text-text-primary tracking-wide">SENTINEL FABRIC</h1>
             <p className="text-text-secondary text-sm mt-1 font-mono tracking-wider">SECURE COMMAND CENTER</p>
@@ -65,7 +65,7 @@ export default function LoginPage() {
                   placeholder="admin"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  className="w-full bg-brand-dark border border-brand-border rounded-lg py-2.5 pl-10 pr-4 text-sm text-text-primary focus:border-brand-accent focus:ring-1 focus:ring-brand-accent outline-none transition-all placeholder:text-text-muted/50"
+                  className="w-full bg-sf-bg border border-sf-border rounded-lg py-2.5 pl-10 pr-4 text-sm text-text-primary focus:border-sf-accent focus:ring-1 focus:ring-sf-accent outline-none transition-all placeholder:text-text-muted/50"
                   disabled={isLoading}
                 />
               </div>
@@ -81,7 +81,7 @@ export default function LoginPage() {
                   placeholder="••••••••••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full bg-brand-dark border border-brand-border rounded-lg py-2.5 pl-10 pr-4 text-sm text-text-primary focus:border-brand-accent focus:ring-1 focus:ring-brand-accent outline-none transition-all placeholder:text-text-muted/50 tracking-widest"
+                  className="w-full bg-sf-bg border border-sf-border rounded-lg py-2.5 pl-10 pr-4 text-sm text-text-primary focus:border-sf-accent focus:ring-1 focus:ring-sf-accent outline-none transition-all placeholder:text-text-muted/50 tracking-widest"
                   disabled={isLoading}
                 />
               </div>
@@ -96,7 +96,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full mt-2 flex items-center justify-center gap-2 bg-brand-accent/10 border border-brand-accent/50 hover:bg-brand-accent/20 hover:border-brand-accent text-brand-accent px-4 py-3 rounded-lg font-bold transition-all shadow-[0_0_15px_rgba(0,242,255,0.15)] hover:shadow-[0_0_20px_rgba(0,242,255,0.3)] disabled:opacity-70 disabled:cursor-not-allowed group"
+              className="w-full mt-2 flex items-center justify-center gap-2 bg-sf-accent/10 border border-sf-accent/50 hover:bg-sf-accent/20 hover:border-sf-accent text-sf-accent px-4 py-3 rounded-lg font-bold transition-all shadow-[0_0_15px_rgba(0,242,255,0.15)] hover:shadow-[0_0_20px_rgba(0,242,255,0.3)] disabled:opacity-70 disabled:cursor-not-allowed group"
             >
               {isLoading ? (
                 <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
@@ -109,10 +109,10 @@ export default function LoginPage() {
           </form>
         </div>
 
-        <div className="px-8 py-4 bg-brand-surface border-t border-brand-border flex items-center justify-between">
+        <div className="px-8 py-4 bg-sf-surface border-t border-sf-border flex items-center justify-between">
           <span className="text-xs text-text-muted font-mono">NODE: US-EAST-1</span>
           <div className="flex items-center gap-2">
-            <span className="w-1.5 h-1.5 rounded-full bg-brand-success animate-pulse shadow-[0_0_5px_rgba(16,185,129,1)]" />
+            <span className="w-1.5 h-1.5 rounded-full bg-sf-safe animate-pulse shadow-[0_0_5px_rgba(16,185,129,1)]" />
             <span className="text-[10px] font-bold uppercase tracking-widest text-text-secondary">System Online</span>
           </div>
         </div>

@@ -54,28 +54,28 @@ function timeAgo(iso?: string): string {
 }
 
 const SEVERITY_MAP = {
-  critical: { label: 'CRITICAL', border: '#ef4444', text: 'text-[#ef4444]', bg: 'bg-[#ef4444]/10 border-[#ef4444]/30' },
-  high: { label: 'HIGH', border: '#f59e0b', text: 'text-[#f59e0b]', bg: 'bg-[#f59e0b]/10 border-[#f59e0b]/30' },
-  medium: { label: 'MEDIUM', border: '#8b5cf6', text: 'text-[#8b5cf6]', bg: 'bg-[#8b5cf6]/10 border-[#8b5cf6]/30' },
-  low: { label: 'LOW', border: '#64748b', text: 'text-slate-400', bg: 'bg-slate-500/10 border-slate-500/30' },
+  critical: { label: 'CRITICAL', border: 'var(--sf-critical)', text: 'text-sf-critical', bg: 'bg-sf-critical/10 border-sf-critical/30' },
+  high: { label: 'HIGH', border: 'var(--sf-warning)', text: 'text-sf-warning', bg: 'bg-sf-warning/10 border-sf-warning/30' },
+  medium: { label: 'MEDIUM', border: 'var(--sf-accent-2)', text: 'text-sf-accent-2', bg: 'bg-sf-accent-2/10 border-sf-accent-2/30' },
+  low: { label: 'LOW', border: 'var(--sf-muted)', text: 'text-sf-muted', bg: 'bg-sf-surface border-sf-border' },
 };
 
 const STATUS_MAP = {
-  open: 'text-[#f59e0b]',
-  new: 'text-[#06b6d4]',
-  approved: 'text-[#10b981]',
-  dismissed: 'text-slate-500 line-through',
-  escalated: 'text-[#ef4444]',
+  open: 'text-sf-warning',
+  new: 'text-sf-accent',
+  approved: 'text-sf-safe',
+  dismissed: 'text-sf-muted line-through',
+  escalated: 'text-sf-critical',
 };
 
 function SkeletonCard() {
   return (
-    <div className="glass-card rounded-xl p-4 border border-slate-700/50 animate-pulse space-y-3">
-      <div className="h-4 bg-slate-800 rounded w-3/4" />
-      <div className="h-3 bg-slate-800/80 rounded w-full" />
+    <div className="py-4 border-b border-white/5 animate-pulse space-y-3">
+      <div className="h-4 bg-sf-surface rounded w-3/4" />
+      <div className="h-3 bg-sf-surface/80 rounded w-full" />
       <div className="flex gap-4">
-        <div className="h-3 bg-slate-800/80 rounded w-24" />
-        <div className="h-3 bg-slate-800/80 rounded w-16" />
+        <div className="h-3 bg-sf-surface/80 rounded w-24" />
+        <div className="h-3 bg-sf-surface/80 rounded w-16" />
       </div>
     </div>
   );
@@ -172,80 +172,65 @@ export default function FindingsPage() {
         <div className="flex-1 space-y-6">
           <header className="flex justify-between items-end mb-2">
             <div>
-              <h1 className="text-2xl font-bold text-white tracking-tight flex items-center gap-3">
-                  <Target className="w-6 h-6 text-[#ef4444] animate-pulse" />
+              <h1 className="text-2xl font-bold text-sf-text tracking-tight flex items-center gap-3">
+                  <Target className="w-6 h-6 text-sf-critical motion-safe:animate-pulse" />
                   Threat Vectors
               </h1>
-              <p className="text-sm text-slate-400 mt-1">Review and triage incoming security events</p>
+              <p className="text-sm text-sf-muted mt-1">Review and triage incoming security events</p>
             </div>
-            <span className="text-[#06b6d4] text-[10px] uppercase font-bold tracking-widest bg-[#06b6d4]/10 px-3 py-1.5 rounded-full border border-[#06b6d4]/30 animate-pulse hidden md:inline-flex items-center gap-2 shadow-[0_0_15px_rgba(6,182,212,0.2)]">
-              <span className="flex size-1.5 bg-[#06b6d4] rounded-full" />
+            <span className="text-sf-accent-2 text-[10px] uppercase font-bold tracking-widest bg-sf-accent-2/10 px-3 py-1.5 rounded-full border border-sf-accent-2/30 motion-safe:animate-pulse hidden md:inline-flex items-center gap-2 shadow-[0_0_15px_var(--sf-accent-2)]">
+              <span className="flex size-1.5 bg-sf-accent-2 rounded-full" />
               LIVE_FEED.SYS
             </span>
           </header>
 
-          {/* Hologram Card for Global Status */}
-          <div className="glass-panel p-6 border border-[#ef4444]/30 shadow-[0_8px_32px_0_rgba(239,68,68,0.15)] relative overflow-hidden group">
-            <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(239,68,68,0.05)_0%,rgba(239,68,68,0)_100%)] pointer-events-none" />
-            <div className="absolute inset-0 opacity-20 pointer-events-none scan-line" />
-
+          {/* Hologram Section for Global Status (Borderless) */}
+          <div className="py-6 border-b border-sf-accent/20 relative group">
             <div className="flex justify-between items-start mb-6 relative z-10">
               <div>
-                <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">Global Status</p>
-                <p className="text-3xl font-display font-bold text-white mt-1">
+                <p className="text-sf-muted text-[10px] font-medium uppercase tracking-widest">Global Status</p>
+                <p className="text-4xl font-display font-light text-sf-text mt-1">
                   {criticalCount > 0 ? 'Elevated Risk' : 'Nominal'}
                 </p>
               </div>
               {criticalCount > 0 && (
-                <div className="bg-[#ef4444]/20 text-[#ef4444] px-3 py-1 rounded text-xs font-bold border border-[#ef4444]/40 animate-pulse shadow-[0_0_10px_#ef4444]">
-                  {criticalCount} CRITICAL
+                <div className="text-sf-critical text-2xl font-display font-light motion-safe:animate-pulse">
+                  {criticalCount} <span className="text-[10px] uppercase font-bold tracking-widest text-sf-muted ml-1">CRITICAL</span>
                 </div>
               )}
             </div>
 
             {/* Abstract 3D Radar/Target View */}
-            <div className="relative h-48 w-full flex items-center justify-center">
-              <div className="absolute inset-0 opacity-30 flex items-center justify-center">
-                <svg className="w-48 h-48 animate-[spin_20s_linear_infinite]" viewBox="0 0 100 100">
-                  <circle cx="50" cy="50" r="45" fill="none" stroke="#ef4444" strokeWidth="0.5" />
-                  <circle cx="50" cy="50" r="30" fill="none" stroke="#ef4444" strokeWidth="0.5" />
-                  <circle cx="50" cy="50" r="15" fill="none" stroke="#ef4444" strokeWidth="0.5" />
-                  <line x1="50" y1="5" x2="50" y2="95" stroke="#ef4444" strokeWidth="0.5" />
-                  <line x1="5" y1="50" x2="95" y2="50" stroke="#ef4444" strokeWidth="0.5" />
-                </svg>
-              </div>
-
-              <svg className="relative z-10 w-40 h-40 animate-[pulse_4s_ease-in-out_infinite]" fill="none" viewBox="0 0 100 100">
-                <polygon points="50,10 85,30 85,70 50,90 15,70 15,30" fill="rgba(239, 68, 68, 0.1)" stroke="#ef4444" strokeWidth="1" />
-                <path d="M50 10 L50 90 M15 30 L85 70 M15 70 L85 30" stroke="#ef4444" strokeDasharray="2 2" strokeWidth="0.5" />
-                <circle cx="50" cy="30" r="3" fill="#ef4444" className="shadow-[0_0_10px_#ef4444] animate-ping" />
-                {criticalCount > 0 && <circle cx="35" cy="65" r="4" fill="#ef4444" className="shadow-[0_0_15px_#ef4444]" />}
-              </svg>
-
-              <div className="absolute bottom-0 left-4 right-4 flex justify-between">
-                <div className="text-[10px] font-mono font-bold text-[#ef4444]">NODE_ALPHA: ACTIVE</div>
-                <div className="text-[10px] font-mono font-bold text-[#ef4444]">FINDINGS: {findings.length}</div>
-              </div>
+             <div className="relative h-20 w-full flex items-center mb-2">
+                 <svg className="w-full h-full text-sf-accent/30 stroke-current text-opacity-10" fill="none">
+                    <line x1="0" y1="50%" x2="100%" y2="50%" strokeWidth="1" strokeDasharray="4 4" />
+                    <line x1="20%" y1="0" x2="20%" y2="100%" strokeWidth="1" strokeDasharray="4 4" />
+                    <circle cx="20%" cy="50%" r="4" fill="var(--sf-accent)" className="animate-pulse shadow-[0_0_10px_var(--sf-accent)]" />
+                 </svg>
+                 <div className="absolute left-8 bottom-0 flex gap-6">
+                    <div className="text-[10px] font-mono font-medium text-sf-accent">NODE_ALPHA: ACTIVE</div>
+                    <div className="text-[10px] font-mono font-medium text-sf-accent">FINDINGS: {findings.length}</div>
+                 </div>
             </div>
           </div>
 
           {/* Filters + Triage */}
-          <section className="space-y-4 pt-6 mt-6 border-t border-slate-700/50">
+          <section className="space-y-4 pt-6 mt-6 border-t border-sf-border">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
               <div>
-                <h3 className="text-white text-lg font-bold">Findings Triage</h3>
+                <h3 className="text-sf-text text-lg font-bold">Findings Triage</h3>
               </div>
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-[10px] bg-[#06b6d4]/10 text-[#06b6d4] px-2 py-1 rounded border border-[#06b6d4]/30 font-bold tracking-widest">
+                <span className="text-[10px] bg-sf-accent-2/10 text-sf-accent-2 px-2 py-1 rounded border border-sf-accent-2/30 font-bold tracking-widest">
                   NEW ({newCount})
                 </span>
                 {/* Severity filter */}
-                <div className="flex items-center gap-1.5 bg-slate-900 border border-slate-700 shadow-inner rounded-lg px-3 py-1.5">
-                  <Filter className="w-3.5 h-3.5 text-slate-400" />
+                <div className="flex items-center gap-1.5 bg-sf-surface border border-sf-border shadow-inner rounded-lg px-3 py-1.5">
+                  <Filter className="w-3.5 h-3.5 text-sf-muted" />
                   <select
                     value={severityFilter}
                     onChange={e => setSeverityFilter(e.target.value)}
-                    className="bg-transparent text-[11px] font-bold uppercase tracking-wider text-slate-300 outline-none cursor-pointer"
+                    className="bg-transparent text-[11px] font-bold uppercase tracking-wider text-sf-text outline-none cursor-pointer"
                   >
                     <option value="all">All Severities</option>
                     <option value="critical">Critical</option>
@@ -255,11 +240,11 @@ export default function FindingsPage() {
                   </select>
                 </div>
                 {/* Status filter */}
-                <div className="flex items-center gap-1.5 bg-slate-900 border border-slate-700 shadow-inner rounded-lg px-3 py-1.5">
+                <div className="flex items-center gap-1.5 bg-sf-surface border border-sf-border shadow-inner rounded-lg px-3 py-1.5">
                   <select
                     value={statusFilter}
                     onChange={e => setStatusFilter(e.target.value)}
-                    className="bg-transparent text-[11px] font-bold uppercase tracking-wider text-slate-300 outline-none cursor-pointer"
+                    className="bg-transparent text-[11px] font-bold uppercase tracking-wider text-sf-text outline-none cursor-pointer"
                   >
                     <option value="all">All Statuses</option>
                     <option value="open">Open</option>
@@ -281,10 +266,10 @@ export default function FindingsPage() {
               )}
 
               {!isLoading && filtered.length === 0 && (
-                <div className="glass-card rounded-xl p-8 text-center border border-slate-700/50">
-                  <Target className="w-10 h-10 text-slate-600 mx-auto mb-3" />
-                  <p className="text-slate-400 text-sm font-medium">No findings detected</p>
-                  <p className="text-slate-500 text-xs mt-1">All threat vectors nominal</p>
+                <div className="py-8 text-center">
+                  <Target className="w-10 h-10 text-sf-muted mx-auto mb-3" />
+                  <p className="text-sf-muted text-sm font-medium">No findings detected</p>
+                  <p className="text-sf-muted text-[10px] mt-1 uppercase tracking-widest">All threat vectors nominal</p>
                 </div>
               )}
 
@@ -298,36 +283,35 @@ export default function FindingsPage() {
                 return (
                   <div
                     key={finding.id}
-                    className={`glass-card p-5 relative overflow-hidden group border border-slate-700/50 hover:border-slate-600 transition-all cursor-pointer shadow-lg ${isResolved ? 'opacity-60 grayscale-[0.3]' : ''}`}
-                    style={{ borderLeftWidth: 4, borderLeftColor: sev.border }}
+                    className={`py-4 border-b border-white/5 relative group hover:bg-white/5 transition-all cursor-pointer ${isResolved ? 'opacity-60 grayscale-[0.3]' : ''}`}
                   >
                     <div className="flex justify-between items-start mb-2">
-                      <h4 className="text-white font-bold text-sm pr-2">{finding.title}</h4>
+                      <h4 className="text-sf-text font-bold text-sm pr-2">{finding.title}</h4>
                       <div className="flex items-center gap-2 shrink-0">
                         <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border ${sev.bg} ${sev.text}`}>
                           {sev.label}
                         </span>
-                        <ExternalLink className="w-4 h-4 text-slate-500 group-hover:text-white transition-colors" />
+                        <ExternalLink className="w-4 h-4 text-sf-muted group-hover:text-sf-text transition-colors" />
                       </div>
                     </div>
-                    <p className="text-slate-400 text-xs mb-3">{finding.description}</p>
+                    <p className="text-sf-muted text-xs mb-3">{finding.description}</p>
 
                     {/* CVE Enrichment Badges (Phase 34B) */}
                     {finding.cve_context && finding.cve_context.length > 0 && (
                       <div className="flex flex-wrap gap-2 mb-3">
                         {finding.cve_context.map((cve) => (
-                          <div key={cve.cve_id} className="flex items-center gap-1.5 px-2 py-1 bg-purple-500/10 border border-purple-500/30 rounded text-[10px]">
-                            <Bug className="w-3 h-3 text-purple-400" />
-                            <span className="font-mono font-bold text-purple-300">{cve.cve_id}</span>
+                          <div key={cve.cve_id} className="flex items-center gap-1.5 px-2 py-1 bg-sf-accent-2/10 border border-sf-accent-2/30 rounded text-[10px]">
+                            <Bug className="w-3 h-3 text-sf-accent-2" />
+                            <span className="font-mono font-bold text-sf-accent-2">{cve.cve_id}</span>
                             {cve.cvss_score && (
                               <span className={`px-1.5 py-0.5 rounded font-bold ${
-                                cve.cvss_score >= 9 ? 'bg-red-500/20 text-red-400' : 
-                                cve.cvss_score >= 7 ? 'bg-orange-500/20 text-orange-400' : 
-                                'bg-yellow-500/20 text-yellow-400'
+                                cve.cvss_score >= 9 ? 'bg-sf-critical/20 text-sf-critical' : 
+                                cve.cvss_score >= 7 ? 'bg-sf-warning/20 text-sf-warning' : 
+                                'bg-sf-accent/20 text-sf-accent'
                               }`}>CVSS {cve.cvss_score}</span>
                             )}
                             {cve.patch_available !== undefined && (
-                              <span className={`uppercase font-bold ${cve.patch_available ? 'text-emerald-400' : 'text-red-400'}`}>
+                              <span className={`uppercase font-bold ${cve.patch_available ? 'text-sf-safe' : 'text-sf-critical'}`}>
                                 {cve.patch_available ? 'PATCHED' : 'UNPATCHED'}
                               </span>
                             )}
@@ -338,16 +322,16 @@ export default function FindingsPage() {
 
                     {/* AI Triage Result (Phase 34A) */}
                     {(triageResults[finding.id] || finding.triage_result) && (
-                      <div className="mb-3 p-3 bg-cyan-500/5 border border-cyan-500/20 rounded-lg">
+                      <div className="mb-3 p-3 bg-sf-surface border-l-2 border-l-sf-accent border-y border-r border-sf-border rounded-r-lg">
                         <div className="flex items-center gap-2 mb-1">
-                          <Brain className="w-3.5 h-3.5 text-cyan-400" />
-                          <span className="text-[10px] uppercase font-bold tracking-widest text-cyan-400">AI TRIAGE</span>
-                          <span className="text-[10px] font-mono text-slate-500">
+                          <Brain className="w-3.5 h-3.5 text-sf-accent" />
+                          <span className="text-[10px] uppercase font-bold tracking-widest text-sf-accent font-mono z-10">AI TRIAGE</span>
+                          <span className="text-[10px] font-mono text-sf-muted">
                             {Math.round(((triageResults[finding.id] || finding.triage_result)?.confidence ?? 0) * 100)}% confidence
                           </span>
                         </div>
-                        <p className="text-xs text-slate-300">{(triageResults[finding.id] || finding.triage_result)?.summary}</p>
-                        <p className="text-[10px] text-cyan-400/80 mt-1 font-medium">
+                        <p className="text-xs text-sf-text font-mono">{(triageResults[finding.id] || finding.triage_result)?.summary}</p>
+                        <p className="text-[10px] text-sf-accent/80 mt-1 font-mono font-medium">
                           → {(triageResults[finding.id] || finding.triage_result)?.recommended_action}
                         </p>
                       </div>
@@ -356,18 +340,18 @@ export default function FindingsPage() {
                     <div className="flex items-center justify-between flex-wrap gap-2">
                       <div className="flex items-center gap-4">
                         {finding.ip && (
-                          <div className="flex items-center gap-1.5 px-2 py-1 bg-slate-900/50 rounded border border-slate-800">
-                            <Icon className="w-3.5 h-3.5 text-slate-400" />
-                            <span className="text-[10px] text-slate-300 font-mono font-bold">{finding.ip}</span>
+                          <div className="flex items-center gap-1.5 px-2 py-1 bg-sf-surface rounded border border-sf-border">
+                            <Icon className="w-3.5 h-3.5 text-sf-muted" />
+                            <span className="text-[10px] text-sf-text font-mono font-bold">{finding.ip}</span>
                           </div>
                         )}
                         {finding.created_at && (
                           <div className="flex items-center gap-1.5">
-                            <Clock className="w-3.5 h-3.5 text-slate-500" />
-                            <span className="text-[10px] text-slate-400 font-mono">{timeAgo(finding.created_at).toUpperCase()}</span>
+                            <Clock className="w-3.5 h-3.5 text-sf-muted" />
+                            <span className="text-[10px] text-sf-muted font-mono">{timeAgo(finding.created_at).toUpperCase()}</span>
                           </div>
                         )}
-                        <span className={`text-[10px] font-bold uppercase tracking-widest ${STATUS_MAP[currentStatus] ?? 'text-slate-400'}`}>
+                        <span className={`text-[10px] font-bold uppercase tracking-widest ${STATUS_MAP[currentStatus] ?? 'text-sf-muted'}`}>
                           {currentStatus}
                         </span>
                       </div>
@@ -385,7 +369,7 @@ export default function FindingsPage() {
                                 if (result) setTriageResults(p => ({ ...p, [finding.id]: result }));
                                 setTriagePending(p => { const n = { ...p }; delete n[finding.id]; return n; });
                               }}
-                              className="text-[10px] uppercase tracking-wider font-bold px-3 py-1.5 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 hover:bg-cyan-500/20 transition-all disabled:opacity-50 flex items-center gap-1.5"
+                              className="text-[10px] uppercase tracking-wider font-bold px-3 py-1.5 rounded bg-sf-accent/10 text-sf-accent border border-sf-accent/30 hover:bg-sf-accent/20 transition-all disabled:opacity-50 flex items-center gap-1.5"
                             >
                               <Brain className="w-3 h-3" />
                               {triagePending[finding.id] ? 'Analyzing...' : 'AI Triage'}
@@ -394,21 +378,21 @@ export default function FindingsPage() {
                           <button
                             disabled={isPending}
                             onClick={() => handleAction(finding.id, 'approve')}
-                            className="text-[10px] uppercase tracking-wider font-bold px-3 py-1.5 rounded bg-[#10b981]/10 text-[#10b981] border border-[#10b981]/30 hover:bg-[#10b981]/20 transition-all disabled:opacity-50"
+                            className="text-[10px] uppercase tracking-wider font-bold px-3 py-1.5 rounded bg-sf-safe/10 text-sf-safe border border-sf-safe/30 hover:bg-sf-safe/20 transition-all disabled:opacity-50"
                           >
                             {verdictPending[finding.id] === 'approve' ? '...' : 'Approve'}
                           </button>
                           <button
                             disabled={isPending}
                             onClick={() => handleAction(finding.id, 'dismiss')}
-                            className="text-[10px] uppercase tracking-wider font-bold px-3 py-1.5 rounded bg-slate-500/10 text-slate-400 border border-slate-500/30 hover:bg-slate-500/20 transition-all disabled:opacity-50"
+                            className="text-[10px] uppercase tracking-wider font-bold px-3 py-1.5 rounded bg-sf-muted/10 text-sf-muted border border-sf-muted/30 hover:bg-sf-surface transition-all disabled:opacity-50"
                           >
                             {verdictPending[finding.id] === 'dismiss' ? '...' : 'Dismiss'}
                           </button>
                           <button
                             disabled={isPending}
                             onClick={() => handleAction(finding.id, 'escalate')}
-                            className="text-[10px] uppercase tracking-wider font-bold px-3 py-1.5 rounded bg-[#ef4444]/10 text-[#ef4444] border border-[#ef4444]/30 hover:bg-[#ef4444]/20 transition-all shadow-[0_0_10px_rgba(239,68,68,0.2)] disabled:opacity-50"
+                            className="text-[10px] uppercase tracking-wider font-bold px-3 py-1.5 rounded bg-sf-critical/10 text-sf-critical border border-sf-critical/30 hover:bg-sf-critical/20 transition-all shadow-[0_0_10px_var(--sf-critical)] disabled:opacity-50"
                           >
                             {verdictPending[finding.id] === 'escalate' ? '...' : 'Escalate'}
                           </button>
@@ -427,64 +411,57 @@ export default function FindingsPage() {
           </section>
         </div>
 
-        {/* Right Column: Node Analysis */}
         <div className="lg:w-1/3 flex flex-col pt-[60px]">
-          <div className="glass-panel p-6 border border-slate-700/50 sticky top-6 relative overflow-hidden">
-            <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(6,182,212,0.03)_0%,rgba(6,182,212,0)_100%)] pointer-events-none" />
+          <div className="sticky top-6 relative overflow-hidden pl-8 border-l border-white/5">
 
             <div className="flex items-center gap-4 mb-6 relative z-10">
-              <div className="w-12 h-12 rounded-lg bg-[#06b6d4]/10 flex items-center justify-center border border-[#06b6d4]/30 shadow-[0_0_15px_rgba(6,182,212,0.2)]">
-                <Radio className="w-6 h-6 text-[#06b6d4]" />
+              <div className="w-12 h-12 rounded-lg bg-sf-accent/10 flex items-center justify-center border border-sf-accent/30 shadow-[0_0_15px_var(--sf-accent)]">
+                <Radio className="w-6 h-6 text-sf-accent" />
               </div>
               <div>
-                <h4 className="text-white font-bold text-lg">Node Analysis</h4>
-                <p className="text-[10px] text-slate-400 font-mono uppercase tracking-widest mt-1">
+                <h4 className="text-sf-text font-bold text-lg">Node Analysis</h4>
+                <p className="text-[10px] text-sf-muted font-mono uppercase tracking-widest mt-1">
                   {findings.length} FINDINGS TOTAL
                 </p>
               </div>
             </div>
 
             {/* 3D Wireframe Server Visualization */}
-            <div className="w-full h-56 bg-slate-900 rounded-xl border border-slate-700/50 relative overflow-hidden flex items-center justify-center mb-6 group shadow-inner">
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-[#06b6d4]/10 via-transparent to-transparent" />
+            <div className="w-full h-56 relative overflow-hidden flex items-center justify-center mb-6 group">
+              <div className="absolute inset-0 bg-gradient-radial from-sf-accent-2/5 via-transparent to-transparent" />
 
               <div className="relative w-32 h-32 flex flex-col items-center justify-center -mt-4 transition-transform duration-700 group-hover:scale-110">
-                <div className="w-24 h-24 border-2 border-[#06b6d4]/40 rotate-45 flex items-center justify-center relative shadow-[inset_0_0_20px_rgba(6,182,212,0.2)]">
-                  <div className="w-16 h-16 border border-[#06b6d4]/60 absolute animate-pulse" />
-                  <div className="w-full h-0.5 bg-[#06b6d4]/20 absolute top-1/2 -translate-y-1/2" />
-                  <div className="w-0.5 h-full bg-[#06b6d4]/20 absolute left-1/2 -translate-x-1/2" />
-                  <Server className="w-10 h-10 text-[#06b6d4] -rotate-45 relative z-10 drop-shadow-[0_0_10px_rgba(6,182,212,0.8)]" />
+                <div className="w-24 h-24 border border-sf-accent-2/40 rotate-45 flex items-center justify-center relative shadow-[inset_0_0_20px_rgba(6,182,212,0.1)]">
+                  <div className="w-16 h-16 border border-sf-accent-2/60 
+                                  absolute motion-safe:animate-pulse" />
+                  <div className="w-full h-[1px] bg-sf-accent-2/20 absolute top-1/2 -translate-y-1/2" />
+                  <div className="w-[1px] h-full bg-sf-accent-2/20 absolute left-1/2 -translate-x-1/2" />
+                  <Server className="w-8 h-8 text-sf-accent-2 -rotate-45 relative z-10 drop-shadow-[0_0_10px_var(--sf-accent-2)]" />
                 </div>
-                <div className="absolute -bottom-8 text-[10px] font-mono font-bold text-[#06b6d4] animate-pulse">WIRE_FRAME: RENDERED</div>
+                <div className="absolute -bottom-8 text-[10px] font-mono font-medium text-sf-accent-2 motion-safe:animate-pulse">WIRE_FRAME: RENDERED</div>
               </div>
-
-              {/* Corner brackets */}
-              <div className="absolute w-6 h-6 border-l-2 border-t-2 border-[#06b6d4]/40 top-3 left-3 rounded-tl" />
-              <div className="absolute w-6 h-6 border-r-2 border-t-2 border-[#06b6d4]/40 top-3 right-3 rounded-tr" />
-              <div className="absolute w-6 h-6 border-l-2 border-b-2 border-[#06b6d4]/40 bottom-3 left-3 rounded-bl" />
-              <div className="absolute w-6 h-6 border-r-2 border-b-2 border-[#06b6d4]/40 bottom-3 right-3 rounded-br" />
             </div>
 
             {/* Summary stats */}
-            <div className="mb-6 grid grid-cols-2 gap-3 relative z-10">
+            <div className="mb-6 grid grid-cols-2 gap-x-8 gap-y-4 relative z-10">
               {(['critical', 'high', 'medium', 'low'] as const).map(s => {
                 const cnt = findings.filter(f => f.severity === s).length;
                 const sev = SEVERITY_MAP[s];
                 return (
-                  <div key={s} className="rounded-xl p-3 bg-slate-900 border border-slate-700/50 flex flex-col items-center justify-center shadow-inner">
-                    <p className={`text-2xl font-display font-bold ${sev.text}`}>{cnt}</p>
-                    <p className="text-[9px] uppercase font-bold tracking-widest text-slate-500 mt-1">{s}</p>
+                  <div key={s} className="flex flex-col border-b border-white/5 pb-2">
+                    <p className={`text-2xl font-display font-light ${sev.text}`}>{cnt}</p>
+                    <p className="text-[9px] uppercase font-medium tracking-widest text-sf-muted mt-0.5">{s}</p>
                   </div>
                 );
               })}
             </div>
 
             <div className="flex flex-col gap-3 relative z-10">
-              <button className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl bg-slate-800 border border-slate-600 font-bold text-xs uppercase tracking-wider hover:bg-slate-700 transition-colors text-white">
-                <UserPlus className="w-4 h-4 text-slate-400" />
+              <button className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl bg-sf-surface-raised border border-sf-border font-bold text-xs uppercase tracking-wider hover:bg-sf-surface transition-colors text-sf-text">
+                <UserPlus className="w-4 h-4 text-sf-muted" />
                 Assign Incident
               </button>
-              <button className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl bg-[#06b6d4] text-slate-950 font-bold text-xs uppercase tracking-wider shadow-[0_0_20px_rgba(6,182,212,0.4)] hover:shadow-[0_0_30px_rgba(6,182,212,0.7)] hover:bg-[#0891b2] transition-all">
+              <button className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl bg-sf-accent text-sf-bg font-bold text-xs uppercase tracking-wider shadow-[0_0_20px_var(--sf-accent)] hover:shadow-[0_0_30px_var(--sf-accent)] hover:bg-sf-accent-2 transition-all">
                 <Zap className="w-4 h-4" />
                 Start Mitigation
               </button>

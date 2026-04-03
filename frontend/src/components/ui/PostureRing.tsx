@@ -9,9 +9,9 @@ interface PostureRingProps {
 }
 
 function scoreColor(score: number): string {
-    if (score >= 75) return "#00e676";
-    if (score >= 50) return "#ffaa00";
-    return "#ff3f5b";
+    if (score >= 75) return "var(--sf-safe)";
+    if (score >= 50) return "var(--sf-warning)";
+    return "var(--sf-critical)";
 }
 
 export function PostureRing({ score, size = 120, strokeWidth = 8, showLabel = true, className = "" }: PostureRingProps) {
@@ -29,7 +29,7 @@ export function PostureRing({ score, size = 120, strokeWidth = 8, showLabel = tr
                     cy={size / 2}
                     r={radius}
                     fill="none"
-                    stroke="#1a2e4a"
+                    stroke="var(--sf-surface-raised)"
                     strokeWidth={strokeWidth}
                 />
                 {/* Progress arc */}
@@ -44,15 +44,15 @@ export function PostureRing({ score, size = 120, strokeWidth = 8, showLabel = tr
                     strokeDashoffset={circumference - progress}
                     strokeLinecap="round"
                     className="transition-all duration-1000 ease-out"
-                    style={{ filter: `drop-shadow(0 0 6px ${color}80)` }}
+                    style={{ filter: score < 50 ? `drop-shadow(0 0 10px rgba(255, 45, 85, 0.5))` : "none" }}
                 />
             </svg>
             {showLabel && (
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span className="text-2xl font-condensed font-bold" style={{ color }}>
+                    <span className="text-2xl font-mono font-bold" style={{ color }}>
                         {Math.round(score)}
                     </span>
-                    <span className="text-[9px] text-sf-text-muted font-space tracking-wider uppercase">
+                    <span className="text-[9px] text-sf-muted font-mono tracking-wider uppercase">
                         posture
                     </span>
                 </div>

@@ -115,25 +115,25 @@ export default function SigmaRulesPage() {
     };
 
     return (
-        <div className="flex-1 flex flex-col min-h-0 bg-brand-dark">
-            <header className="shrink-0 px-6 py-5 border-b border-brand-border bg-brand-surface/30">
+        <div className="flex-1 flex flex-col min-h-0 bg-sf-bg">
+            <header className="shrink-0 px-6 py-5 border-b border-sf-border bg-sf-surface/30">
                 <h1 className="text-xl font-medium tracking-wide text-white flex items-center gap-3">
-                    <FileCode2 className="w-5 h-5 text-brand-accent" />
+                    <FileCode2 className="w-5 h-5 text-sf-accent" />
                     Sigma Rule Management
                 </h1>
-                <p className="text-sm text-slate-400 mt-1">
+                <p className="text-sm text-sf-muted mt-1">
                     Create and manage custom Sigma detection rules for the anomaly detection pipeline.
                 </p>
             </header>
 
             <div className="flex-1 flex min-h-0">
                 {/* Left Sidebar - Rule List */}
-                <div className="w-1/3 border-r border-brand-border flex flex-col bg-brand-surface/10">
-                    <div className="p-4 border-b border-brand-border flex justify-between items-center">
+                <div className="w-1/3 border-r border-sf-border flex flex-col bg-sf-surface/10">
+                    <div className="p-4 border-b border-sf-border flex justify-between items-center">
                         <h2 className="text-sm font-medium text-slate-300">Custom Rules</h2>
                         <button 
                             onClick={handleNewRule}
-                            className="p-1.5 hover:bg-brand-card rounded text-brand-accent hover:text-brand-accent/80 transition-colors"
+                            className="p-1.5 hover:bg-sf-surface rounded text-sf-accent hover:text-sf-accent/80 transition-colors"
                             title="New Rule"
                         >
                             <Plus className="w-5 h-5" />
@@ -142,13 +142,13 @@ export default function SigmaRulesPage() {
                     
                     <div className="flex-1 overflow-y-auto p-4 space-y-2">
                         {isLoading ? (
-                            <div className="text-sm text-slate-500 text-center py-4">Loading rules...</div>
+                            <div className="text-sm text-sf-muted text-center py-4">Loading rules...</div>
                         ) : error ? (
                             <div className="text-sm text-red-400 text-center py-4">Failed to load rules</div>
                         ) : !Array.isArray(rules) ? (
                             <div className="text-sm text-red-400 text-center py-4 text-wrap break-words">{(rules as any)?.detail || (rules as any)?.error || "Invalid response from server"}</div>
                         ) : rules.length === 0 ? (
-                            <div className="text-sm text-slate-500 text-center py-8">
+                            <div className="text-sm text-sf-muted text-center py-8">
                                 No custom rules found.<br/>Click + to create one.
                             </div>
                         ) : (
@@ -158,14 +158,14 @@ export default function SigmaRulesPage() {
                                     onClick={() => handleSelectRule(rule)}
                                     className={`w-full text-left p-3 rounded border transition-colors ${
                                         selectedRule?.id === rule.id 
-                                        ? "bg-brand-card border-brand-accent text-white" 
-                                        : "bg-brand-surface border-brand-border text-slate-400 hover:border-slate-600"
+                                        ? "bg-sf-surface border-sf-accent text-white" 
+                                        : "bg-sf-surface border-sf-border text-sf-muted hover:border-slate-600"
                                     }`}
                                 >
                                     <div className="text-sm font-medium truncate">{rule.name}</div>
-                                    <div className="text-xs mt-1 text-slate-500 flex justify-between">
+                                    <div className="text-xs mt-1 text-sf-muted flex justify-between">
                                         <span>{rule.id}</span>
-                                        <span className="text-brand-accent/70">{rule.mitre?.tactic || "tactic"}</span>
+                                        <span className="text-sf-accent/70">{rule.mitre?.tactic || "tactic"}</span>
                                     </div>
                                 </button>
                             ))
@@ -174,14 +174,14 @@ export default function SigmaRulesPage() {
                 </div>
 
                 {/* Right Area - Rule Editor */}
-                <div className="flex-1 overflow-y-auto bg-brand-dark">
+                <div className="flex-1 overflow-y-auto bg-sf-bg">
                     {selectedRule && formData ? (
                         <div className="p-6 max-w-3xl">
                             <div className="flex justify-between items-center mb-6">
                                 <h2 className="text-lg font-medium text-white flex items-center gap-2">
                                     {isEditing ? "Editing Rule" : "Rule Details"}
                                     {!isEditing && (
-                                        <button onClick={() => setIsEditing(true)} className="ml-2 text-slate-400 hover:text-white">
+                                        <button onClick={() => setIsEditing(true)} className="ml-2 text-sf-muted hover:text-white">
                                             <Edit2 className="w-4 h-4" />
                                         </button>
                                     )}
@@ -190,7 +190,7 @@ export default function SigmaRulesPage() {
                                     {isEditing && (
                                         <button 
                                             onClick={handleSave}
-                                            className="px-3 py-1.5 bg-brand-accent text-brand-dark rounded text-sm font-medium hover:bg-brand-accent/90 flex items-center gap-2"
+                                            className="px-3 py-1.5 bg-sf-accent text-sf-bg rounded text-sm font-medium hover:bg-sf-accent/90 flex items-center gap-2"
                                         >
                                             <Save className="w-4 h-4" /> Save Rule
                                         </button>
@@ -198,7 +198,7 @@ export default function SigmaRulesPage() {
                                     {!isEditing && (
                                         <button 
                                             onClick={() => handleDelete(selectedRule.id)}
-                                            className="p-1.5 text-slate-400 hover:text-red-400 rounded transition-colors"
+                                            className="p-1.5 text-sf-muted hover:text-red-400 rounded transition-colors"
                                             title="Delete Rule"
                                         >
                                             <Trash2 className="w-5 h-5" />
@@ -209,7 +209,7 @@ export default function SigmaRulesPage() {
 
                             {submitStatus && (
                                 <div className={`p-3 rounded mb-6 text-sm flex items-center gap-2 ${
-                                    submitStatus.type === "success" ? "bg-brand-success/10 text-brand-success border border-brand-success/20" : "bg-red-500/10 text-red-400 border border-red-500/20"
+                                    submitStatus.type === "success" ? "bg-sf-safe/10 text-sf-safe border border-sf-safe/20" : "bg-red-500/10 text-red-400 border border-red-500/20"
                                 }`}>
                                     <AlertCircle className="w-4 h-4" />
                                     {submitStatus.message}
@@ -220,61 +220,60 @@ export default function SigmaRulesPage() {
                                 {/* Basic Info */}
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
-                                        <label className="block text-xs uppercase tracking-wider text-slate-500 mb-2">Rule ID</label>
+                                        <label className="block text-xs uppercase tracking-wider text-sf-muted mb-2">Rule ID</label>
                                         <input 
                                             type="text" 
                                             value={formData.id}
                                             onChange={(e) => setFormData({...formData, id: e.target.value})}
                                             disabled={!isEditing}
-                                            className="w-full bg-brand-surface border border-brand-border rounded px-3 py-2 text-sm text-white focus:border-brand-accent focus:outline-none disabled:opacity-50"
+                                            className="w-full bg-sf-surface border border-sf-border rounded px-3 py-2 text-sm text-white focus:border-sf-accent focus:outline-none disabled:opacity-50"
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-xs uppercase tracking-wider text-slate-500 mb-2">Rule Name</label>
+                                        <label className="block text-xs uppercase tracking-wider text-sf-muted mb-2">Rule Name</label>
                                         <input 
                                             type="text" 
                                             value={formData.name}
                                             onChange={(e) => setFormData({...formData, name: e.target.value})}
                                             disabled={!isEditing}
-                                            className="w-full bg-brand-surface border border-brand-border rounded px-3 py-2 text-sm text-white focus:border-brand-accent focus:outline-none disabled:opacity-50"
+                                            className="w-full bg-sf-surface border border-sf-border rounded px-3 py-2 text-sm text-white focus:border-sf-accent focus:outline-none disabled:opacity-50"
                                         />
                                     </div>
                                 </div>
 
-                                {/* Mitre Mapping */}
                                 <div>
-                                    <label className="block text-xs uppercase tracking-wider text-slate-500 mb-2">MITRE ATT&CK Mapping</label>
+                                    <label className="block text-xs uppercase tracking-wider text-sf-muted mb-2">MITRE ATT&CK Mapping</label>
                                     <div className="grid grid-cols-3 gap-4">
                                         <input 
                                             type="text" 
                                             placeholder="Tactic (e.g. execution)"
-                                            value={formData.mitre.tactic}
-                                            onChange={(e) => setFormData({...formData, mitre: {...formData.mitre, tactic: e.target.value}})}
+                                            value={formData.mitre?.tactic || ""}
+                                            onChange={(e) => setFormData({...formData, mitre: {...(formData.mitre || {}), tactic: e.target.value}} as SigmaRule)}
                                             disabled={!isEditing}
-                                            className="w-full bg-brand-surface border border-brand-border rounded px-3 py-2 text-sm text-white focus:border-brand-accent focus:outline-none disabled:opacity-50"
+                                            className="w-full bg-sf-surface border border-sf-border rounded px-3 py-2 text-sm text-white focus:border-sf-accent focus:outline-none disabled:opacity-50"
                                         />
                                         <input 
                                             type="text" 
                                             placeholder="Technique ID (e.g. T1059)"
-                                            value={formData.mitre.technique_id}
-                                            onChange={(e) => setFormData({...formData, mitre: {...formData.mitre, technique_id: e.target.value}})}
+                                            value={formData.mitre?.technique_id || ""}
+                                            onChange={(e) => setFormData({...formData, mitre: {...(formData.mitre || {}), technique_id: e.target.value}} as SigmaRule)}
                                             disabled={!isEditing}
-                                            className="w-full bg-brand-surface border border-brand-border rounded px-3 py-2 text-sm text-white focus:border-brand-accent focus:outline-none disabled:opacity-50"
+                                            className="w-full bg-sf-surface border border-sf-border rounded px-3 py-2 text-sm text-white focus:border-sf-accent focus:outline-none disabled:opacity-50"
                                         />
                                         <input 
                                             type="text" 
                                             placeholder="Technique Name"
-                                            value={formData.mitre.technique_name}
-                                            onChange={(e) => setFormData({...formData, mitre: {...formData.mitre, technique_name: e.target.value}})}
+                                            value={formData.mitre?.technique_name || ""}
+                                            onChange={(e) => setFormData({...formData, mitre: {...(formData.mitre || {}), technique_name: e.target.value}} as SigmaRule)}
                                             disabled={!isEditing}
-                                            className="w-full bg-brand-surface border border-brand-border rounded px-3 py-2 text-sm text-white focus:border-brand-accent focus:outline-none disabled:opacity-50"
+                                            className="w-full bg-sf-surface border border-sf-border rounded px-3 py-2 text-sm text-white focus:border-sf-accent focus:outline-none disabled:opacity-50"
                                         />
                                     </div>
                                 </div>
 
                                 {/* Conditions */}
                                 <div>
-                                    <label className="block text-xs uppercase tracking-wider text-slate-500 mb-2 flex justify-between">
+                                    <label className="block text-xs uppercase tracking-wider text-sf-muted mb-2 flex justify-between">
                                         <span>Conditions (JSON Format)</span>
                                     </label>
                                     <textarea 
@@ -282,15 +281,15 @@ export default function SigmaRulesPage() {
                                         onChange={(e) => setConditionsText(e.target.value)}
                                         disabled={!isEditing}
                                         rows={6}
-                                        className="w-full bg-[#1e1e1e] font-mono text-sm border border-brand-border rounded p-3 text-slate-300 focus:border-brand-accent focus:outline-none disabled:opacity-75"
+                                        className="w-full bg-sf-surface font-mono text-sm border border-sf-border rounded p-3 text-slate-300 focus:border-sf-accent focus:outline-none disabled:opacity-75"
                                         placeholder='{ "message": "suspicious.*pattern" }'
                                     />
-                                    <p className="mt-1 text-xs text-slate-500">Edit conditions as a raw JSON object string.</p>
+                                    <p className="mt-1 text-xs text-sf-muted">Edit conditions as a raw JSON object string.</p>
                                 </div>
                                 
                                 {/* Confidence */}
                                 <div>
-                                    <label className="block text-xs uppercase tracking-wider text-slate-500 mb-2">Confidence Score (0.0 - 1.0)</label>
+                                    <label className="block text-xs uppercase tracking-wider text-sf-muted mb-2">Confidence Score (0.0 - 1.0)</label>
                                     <input 
                                         type="number" 
                                         step="0.05"
@@ -299,13 +298,13 @@ export default function SigmaRulesPage() {
                                         value={formData.confidence}
                                         onChange={(e) => setFormData({...formData, confidence: parseFloat(e.target.value)})}
                                         disabled={!isEditing}
-                                        className="w-1/3 bg-brand-surface border border-brand-border rounded px-3 py-2 text-sm text-white focus:border-brand-accent focus:outline-none disabled:opacity-50"
+                                        className="w-1/3 bg-sf-surface border border-sf-border rounded px-3 py-2 text-sm text-white focus:border-sf-accent focus:outline-none disabled:opacity-50"
                                     />
                                 </div>
                             </div>
                         </div>
                     ) : (
-                        <div className="h-full flex items-center justify-center text-slate-500">
+                        <div className="h-full flex items-center justify-center text-sf-muted">
                             Select a rule from the left to view or edit details.
                         </div>
                     )}

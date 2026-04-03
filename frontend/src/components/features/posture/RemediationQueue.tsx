@@ -21,10 +21,10 @@ interface RemediationQueueProps {
 }
 
 const severityColors: Record<string, string> = {
-    critical: "#ff3f5b",
-    high: "#ffaa00",
-    medium: "#00d4c8",
-    low: "#7a9ab8",
+    critical: "var(--sf-critical)",
+    high: "var(--sf-warning)",
+    medium: "var(--sf-accent)",
+    low: "var(--sf-bg)",
 };
 
 const effortLabels: Record<string, string> = {
@@ -51,7 +51,7 @@ export function RemediationQueue({ findings, onAcknowledge, onDismiss }: Remedia
                             <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2 mb-1">
                                     <Chip label={f.severity.toUpperCase()} color={severityColors[f.severity]} variant="filled" />
-                                    <Chip label={f.domain} color="#7a9ab8" />
+                                    <Chip label={f.domain} color="var(--sf-bg)" />
                                     <span className="text-[9px] font-space text-sf-text-muted">{effortLabels[f.effort]}</span>
                                 </div>
                                 <div className="text-[12px] font-semibold text-sf-text-primary leading-tight">{f.title}</div>
@@ -63,10 +63,10 @@ export function RemediationQueue({ findings, onAcknowledge, onDismiss }: Remedia
 
                         <div className="flex items-center gap-2 flex-wrap">
                             {f.linkedTechniques.map((t) => (
-                                <Chip key={t} label={t} color="#b57aff" />
+                                <Chip key={t} label={t} color="var(--sf-accent-2)" />
                             ))}
                             {f.linkedCampaigns.map((c) => (
-                                <Chip key={c} label={c} color="#00d4c8" />
+                                <Chip key={c} label={c} color="var(--sf-accent)" />
                             ))}
                             <div className="flex-1" />
                             {f.status === "open" && (
@@ -82,7 +82,7 @@ export function RemediationQueue({ findings, onAcknowledge, onDismiss }: Remedia
                                         className="text-[10px] font-bold px-3 py-1 rounded cursor-pointer transition-all"
                                         style={{
                                             background: "rgba(0,212,200,0.15)",
-                                            color: "#00d4c8",
+                                            color: "var(--sf-accent)",
                                             border: "1px solid rgba(0,212,200,0.3)",
                                         }}
                                     >

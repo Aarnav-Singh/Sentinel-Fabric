@@ -59,6 +59,12 @@ dependencies = [
     # ── Observability ──
     "structlog>=24.1.0",
     "prometheus-client>=0.20.0",
+
+    # ── Vault ──
+    "hvac>=2.1.0",
+
+    # ── Reporting (Export) ──
+    "openpyxl>=3.1.0",
 ]
 
 [project.optional-dependencies]

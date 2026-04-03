@@ -80,6 +80,14 @@ function Stop-All {
         Pop-Location
     }
 
+    # Also stop the production compose stack if running
+    $prodCompose = Join-Path $ROOT "docker-compose.prod.yml"
+    if (Test-Path $prodCompose) {
+        Push-Location $ROOT
+        docker compose -f docker-compose.prod.yml down 2>$null
+        Pop-Location
+    }
+
     Start-Sleep -Seconds 2
     Write-Ok "All components stopped."
 }
@@ -166,30 +174,49 @@ function Start-Backend {
     }
 
     Stop-Port $BackendPort
-    Start-Sleep -Seconds 1
+    Start-Sleep -Seconds 2
 
+    # Redirect stderr to a log file so we can diagnose hidden-window crashes
+    $logFile = Join-Path $ROOT "backend_startup.log"
     $proc = Start-Process -FilePath $venvPython `
         -ArgumentList @("-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "$BackendPort") `
         -WorkingDirectory $BACKEND `
         -WindowStyle Hidden `
+        -RedirectStandardError $logFile `
         -PassThru
 
-    # Grace period: let lifespan() finish connecting to Docker infra
-    Start-Sleep -Seconds 5
+    # Grace period: ML model loading takes 8-12s on cold start
+    Write-Status "Waiting for backend to load ML models..."
+    Start-Sleep -Seconds 8
+
     $ready = $false
     for ($i = 0; $i -lt 60; $i++) {
+        # Check if process is still alive
+        if ($proc.HasExited) {
+            Write-Err2 "Backend process exited prematurely (exit code: $($proc.ExitCode))."
+            if (Test-Path $logFile) {
+                Write-Err2 "Last 5 lines of backend_startup.log:"
+                Get-Content $logFile -Tail 5 | ForEach-Object { Write-Err2 "  $_" }
+            }
+            return
+        }
         Start-Sleep -Seconds 1
         try {
-            Invoke-WebRequest -Uri "http://localhost:${BackendPort}/api/v1/health" -UseBasicParsing -Method GET -TimeoutSec 2 -ErrorAction Stop | Out-Null
+            Invoke-WebRequest -Uri "http://localhost:${BackendPort}/api/v1/health" -UseBasicParsing -Method GET -TimeoutSec 3 -ErrorAction Stop | Out-Null
             $ready = $true
             break
         }
         catch {}
-    } if ($ready) {
+    }
+
+    if ($ready) {
         Write-Ok "Backend ready at http://localhost:$BackendPort (PID: $($proc.Id))"
     }
     else {
-        Write-Warn2 "Backend started but health check timed out."
+        Write-Warn2 "Backend started but health check timed out after 60s."
+        if (Test-Path $logFile) {
+            Write-Warn2 "Check backend_startup.log for details."
+        }
     }
 }
 
@@ -241,12 +268,25 @@ function Start-Simulation {
 
     Write-Status "Starting event simulation (1 event every ${SimInterval}s)..."
 
-    try {
-        $r = Invoke-RestMethod -Uri "http://localhost:${BackendPort}/api/v1/simulate/burst?count=10" -Method POST -TimeoutSec 15
-        Write-Ok "Seeded $($r.events_processed) initial events"
+    # Retry burst up to 3 times (backend may still be warming up)
+    $burstOk = $false
+    for ($attempt = 1; $attempt -le 3; $attempt++) {
+        try {
+            $r = Invoke-RestMethod -Uri "http://localhost:${BackendPort}/api/v1/simulate/burst?count=10" -Method POST -TimeoutSec 15
+            Write-Ok "Seeded $($r.events_processed) initial events"
+            $burstOk = $true
+            break
+        }
+        catch {
+            if ($attempt -lt 3) {
+                Write-Status "Burst attempt $attempt failed, retrying in 5s..."
+                Start-Sleep -Seconds 5
+            }
+        }
     }
-    catch {
-        Write-Warn2 "Initial burst failed."
+
+    if (-not $burstOk) {
+        Write-Warn2 "Initial burst failed after 3 attempts. Backend may not be ready."
         return
     }
 
@@ -271,18 +311,52 @@ switch ($Mode) {
     }
     "full" {
         Stop-All
-        Write-Status "Starting full stack via Docker Compose..."
-        $dockerOk = Start-Infra
-        if ($dockerOk) { 
-            # Booting up API and Frontend exclusively via Docker to avoid local environment bugs
-            Push-Location $ROOT
-            docker compose -f docker-compose.prod.yml up -d --build 2>&1 | Out-Null
-            Pop-Location
-            Start-Sleep -Seconds 10 
-        } Else {
-            Write-Err2 "Docker failed to initialize. Full mode requires Docker to bypass local environment issues."
+        Write-Status "Starting full production stack via Docker Compose..."
+
+        # Verify Docker is available
+        if (-not (Get-Command docker -ErrorAction SilentlyContinue)) {
+            Write-Err2 "Docker not found. Full mode requires Docker."
             return
         }
+        docker info 2>&1 | Out-Null
+        if ($LASTEXITCODE -ne 0) {
+            Write-Status "Docker daemon not running. Attempting to start Docker Desktop..."
+            $dockerPath = "C:\Program Files\Docker\Docker\Docker Desktop.exe"
+            if (Test-Path $dockerPath) {
+                Start-Process -FilePath $dockerPath
+                for ($i = 0; $i -lt 90; $i++) {
+                    Start-Sleep -Seconds 1
+                    docker info 2>&1 | Out-Null
+                    if ($LASTEXITCODE -eq 0) { break }
+                }
+            }
+            docker info 2>&1 | Out-Null
+            if ($LASTEXITCODE -ne 0) {
+                Write-Err2 "Docker daemon failed to start. Cannot run full mode."
+                return
+            }
+            Write-Ok "Docker daemon is now running."
+        }
+
+        # Use ONLY docker-compose.prod.yml — it contains everything (infra + app)
+        Write-Status "Building and starting production containers (this may take several minutes on first run)..."
+        Push-Location $ROOT
+        docker compose -f docker-compose.prod.yml up -d --build
+        $code = $LASTEXITCODE
+        Pop-Location
+
+        if ($code -eq 0) {
+            Write-Ok "Production stack started successfully."
+        } else {
+            Write-Warn2 "Some containers may have failed. Check 'docker ps -a' for details."
+        }
+
+        # Docker API is on port 8000, not 8001
+        $BackendPort = 8000
+
+        # Wait for containers to fully initialize
+        Write-Status "Waiting for containers to initialize..."
+        Start-Sleep -Seconds 15
         Start-Simulation
     }
     "dev" {

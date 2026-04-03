@@ -15,9 +15,9 @@ export function RecommendedAction({ campaign, onApprove, onModify, onDismiss }: 
         <div
             className="rounded-lg mt-2 animate-sf-fadeIn"
             style={{
-                background: "#0a1628",
-                border: "1px solid #1e3a5f",
-                borderTop: "2px solid #00d4c8",
+                background: "var(--sf-bg)",
+                border: "1px solid var(--sf-bg)",
+                borderTop: "2px solid var(--sf-accent)",
                 padding: "16px 20px",
             }}
         >
@@ -25,7 +25,7 @@ export function RecommendedAction({ campaign, onApprove, onModify, onDismiss }: 
             <div className="flex items-center gap-2.5 mb-3">
                 <div
                     className="w-2 h-2 rounded-full"
-                    style={{ background: "#00d4c8", boxShadow: "0 0 8px #00d4c8" }}
+                    style={{ background: "var(--sf-accent)", boxShadow: "0 0 8px var(--sf-accent)" }}
                 />
                 <span className="text-[11px] font-space text-sf-teal tracking-widest">
                     AI RECOMMENDED ACTION · {campaign.id}
@@ -36,7 +36,7 @@ export function RecommendedAction({ campaign, onApprove, onModify, onDismiss }: 
             <div
                 className="text-xs font-space leading-relaxed rounded-md mb-3.5 p-3"
                 style={{
-                    color: "#e8f4f8",
+                    color: "var(--sf-bg)",
                     background: "rgba(0,212,200,0.05)",
                     border: "1px solid rgba(0,212,200,0.2)",
                 }}
@@ -48,7 +48,7 @@ export function RecommendedAction({ campaign, onApprove, onModify, onDismiss }: 
             <div className="flex gap-2 items-center">
                 <div className="flex gap-1.5">
                     {campaign.mitre.map((t) => (
-                        <Chip key={t} label={t} color="#b57aff" />
+                        <Chip key={t} label={t} color="var(--sf-accent-2)" />
                     ))}
                 </div>
                 <div className="flex-1" />
@@ -61,7 +61,7 @@ export function RecommendedAction({ campaign, onApprove, onModify, onDismiss }: 
                 <button
                     onClick={onModify}
                     className="px-3.5 py-1.5 text-xs bg-transparent border rounded-[5px] cursor-pointer hover:bg-sf-amber/10 transition-colors"
-                    style={{ borderColor: "rgba(255,170,0,0.4)", color: "#ffaa00" }}
+                    style={{ borderColor: "rgba(255,170,0,0.4)", color: "var(--sf-warning)" }}
                 >
                     Modify
                 </button>
@@ -69,8 +69,8 @@ export function RecommendedAction({ campaign, onApprove, onModify, onDismiss }: 
                     onClick={onApprove}
                     className="px-5 py-1.5 text-xs font-bold border-none rounded-[5px] cursor-pointer transition-all"
                     style={{
-                        background: "linear-gradient(135deg, #00d4c8, #00a89e)",
-                        color: "#050d1a",
+                        background: "linear-gradient(135deg, var(--sf-accent), var(--sf-safe))",
+                        color: "var(--sf-bg)",
                         boxShadow: "0 0 16px rgba(0,212,200,0.4)",
                     }}
                 >

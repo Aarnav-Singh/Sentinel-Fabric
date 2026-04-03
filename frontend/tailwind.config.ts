@@ -10,57 +10,34 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        brand: {
-          navy: "#0F1E2E",
-          navyHover: "#162C43",
-          orange: "#F97316",
-          orangeHover: "#FB923C",
-          dark: "#0a0f18",       // Stitch: dark background
-          surface: "#0d1421",    // Stitch: surface background
-          card: "#111927",       // Stitch: card background
-          border: "#1f2937",     // Stitch: border color
-          accent: "#00f2ff",     // Stitch: Glowing Cyan
-          critical: "#f43f5e",   // Stitch: critical red
-          high: "#fb923c",       // Stitch: high warning orange
-          medium: "#fbbf24",     // Stitch: medium warning amber
-          success: "#10b981",    // Stitch: success green
-        },
-        surface: {
-          elevated: "rgba(15, 30, 46, 0.4)",
-          panel: "#121A24",
-          card: "#18222E",
-          border: "rgba(255, 255, 255, 0.08)",
-        },
-        text: {
-          primary: "#F8FAFC",
-          secondary: "#94A3B8",
-          muted: "#475569",
-        },
-        // ── Sentinel Fabric Cyber-Ops Palette ──
         sf: {
-          bg: "#0a0f18",            // Updated to match brand.dark
-          surface: "#0d1421",       // Updated to match brand.surface
-          "surface-alt": "#111927", // Updated to match brand.card
-          border: "#1f2937",        // Updated to match brand.border
-          "border-bright": "#374151",
-          teal: "#00f2ff",          // Updated to match Glowing Cyan
-          "teal-dim": "#00a8b3",
-          red: "#f43f5e",
-          "red-dim": "#be123c",
-          amber: "#fbbf24",
-          green: "#10b981",
-          purple: "#b57aff",
-          "text-primary": "#f8fafc",
-          "text-secondary": "#94a3b8",
-          "text-muted": "#475569",
+          bg: "#101317",
+          surface: "#15191e",
+          "surface-raised": "#1b2026",
+          card: "#121519",
+          accent: "#14b8a6",
+          "accent-2": "#06b6d4",
+          critical: "#ef4444",
+          warning: "#f97316",
+          safe: "#10b981",
+          data: "#2dd4bf",
+          muted: "#94a3b8",
+          text: "#f8fafc",
         },
       },
+      borderColor: {
+        sf: "var(--sf-border)",
+        "sf-active": "var(--sf-border-active)",
+      },
+      transitionDuration: {
+        "sf-fast": "150ms",
+        "sf-base": "250ms",
+        "sf-moderate": "400ms",
+      },
       fontFamily: {
-        sans: ["var(--font-outfit)", "sans-serif"],
+        sans: ["var(--font-inter)", "sans-serif"],
         display: ["var(--font-sora)", "sans-serif"],
         mono: ["var(--font-jetbrains-mono)", "monospace"],
-        condensed: ["var(--font-barlow-condensed)", "'Barlow Condensed'", "sans-serif"],
-        space: ["var(--font-space-mono)", "'Space Mono'", "monospace"],
       },
       backgroundImage: {
         "gradient-radial": "radial-gradient(var(--tw-gradient-stops))",
@@ -83,12 +60,12 @@ const config: Config = {
           to: { opacity: "1", transform: "translateY(0)" },
         },
         "sf-pulse": {
-          "0%, 100%": { boxShadow: "0 0 0 0 rgba(0, 212, 200, 0.4)" },
-          "50%": { boxShadow: "0 0 0 8px rgba(0, 212, 200, 0)" },
+          "0%, 100%": { boxShadow: "0 0 0 0 rgba(20, 184, 166, 0.4)" },
+          "50%": { boxShadow: "0 0 0 8px rgba(20, 184, 166, 0)" },
         },
         "sf-pulse-red": {
-          "0%, 100%": { boxShadow: "0 0 0 0 rgba(255, 63, 91, 0.4)" },
-          "50%": { boxShadow: "0 0 0 8px rgba(255, 63, 91, 0)" },
+          "0%, 100%": { boxShadow: "0 0 0 0 rgba(255, 45, 85, 0.4)" },
+          "50%": { boxShadow: "0 0 0 8px rgba(255, 45, 85, 0)" },
         },
       },
     },

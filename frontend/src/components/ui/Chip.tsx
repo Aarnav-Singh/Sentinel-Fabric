@@ -7,7 +7,7 @@ interface ChipProps {
     className?: string;
 }
 
-export function Chip({ label, color = "#7a9ab8", variant = "outlined", className = "" }: ChipProps) {
+export function Chip({ label, color = "var(--sf-bg)", variant = "outlined", className = "" }: ChipProps) {
     return (
         <span
             className={`inline-flex items-center text-[10px] font-space tracking-wider leading-none px-1.5 py-0.5 rounded-sm ${className}`}

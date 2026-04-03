@@ -11,7 +11,7 @@ function getToken() {
 
 async function apiFetch(path: string, opts: RequestInit = {}) {
     const token = getToken();
-    const res = await fetch(`${API_BASE}/api/v1${path}`, {
+    const res = await fetch(`/api/proxy/api/v1${path}`, {
         ...opts,
         headers: {
             "Content-Type": "application/json",
@@ -97,10 +97,10 @@ export default function RetentionPage() {
         <div className="flex-1 flex flex-col h-full overflow-y-auto custom-scrollbar p-8">
             <header className="mb-8">
                 <h1 className="text-3xl font-bold text-white tracking-tight flex items-center gap-3">
-                    <Database className="w-8 h-8 text-brand-accent" />
+                    <Database className="w-8 h-8 text-sf-accent" />
                     Data Retention
                 </h1>
-                <p className="text-slate-400 mt-2">Configure how long security events and audit logs are retained.</p>
+                <p className="text-sf-muted mt-2">Configure how long security events and audit logs are retained.</p>
             </header>
 
             {error && (
@@ -124,14 +124,14 @@ export default function RetentionPage() {
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {/* Current Setting */}
-                <div className="bg-brand-card border border-brand-border rounded-xl p-6 space-y-6">
-                    <h2 className="text-sm font-bold uppercase tracking-widest text-brand-accent/80 flex items-center gap-2">
+                <div className="bg-sf-surface border border-sf-border rounded-xl p-6 space-y-6">
+                    <h2 className="text-sm font-bold uppercase tracking-widest text-sf-accent/80 flex items-center gap-2">
                         <Clock className="w-4 h-4" /> Retention Period
                     </h2>
 
                     <div className="text-center py-6">
                         <div className="text-6xl font-bold text-white tabular-nums">{pendingDays}</div>
-                        <p className="text-slate-400 text-sm mt-2">days</p>
+                        <p className="text-sf-muted text-sm mt-2">days</p>
                     </div>
 
                     <input
@@ -141,10 +141,10 @@ export default function RetentionPage() {
                         step={1}
                         value={pendingDays}
                         onChange={e => setPendingDays(Number(e.target.value))}
-                        className="w-full accent-brand-accent"
+                        className="w-full accent-sf-accent"
                     />
 
-                    <div className="flex justify-between text-[10px] text-slate-500 font-mono">
+                    <div className="flex justify-between text-[10px] text-sf-muted font-mono">
                         <span>30d</span>
                         <span>90d</span>
                         <span>180d</span>
@@ -159,8 +159,8 @@ export default function RetentionPage() {
                                 onClick={() => setPendingDays(preset.days)}
                                 className={`px-3 py-2 rounded border text-xs text-left transition-all ${
                                     pendingDays === preset.days
-                                        ? "border-brand-accent bg-brand-accent/10 text-brand-accent"
-                                        : "border-brand-border bg-brand-surface text-slate-400 hover:border-slate-500"
+                                        ? "border-sf-accent bg-sf-accent/10 text-sf-accent"
+                                        : "border-sf-border bg-sf-surface text-sf-muted hover:border-slate-500"
                                 }`}
                             >
                                 <span className="font-bold">{preset.label}</span>
@@ -172,7 +172,7 @@ export default function RetentionPage() {
                     <button
                         onClick={saveRetention}
                         disabled={saving || pendingDays === currentDays}
-                        className="w-full px-4 py-2.5 bg-brand-accent text-brand-dark font-bold rounded hover:bg-brand-accent/90 transition-colors flex items-center justify-center gap-2 text-sm disabled:opacity-40"
+                        className="w-full px-4 py-2.5 bg-sf-accent text-sf-bg font-bold rounded hover:bg-sf-accent/90 transition-colors flex items-center justify-center gap-2 text-sm disabled:opacity-40"
                     >
                         <Save className="w-4 h-4" />
                         {saving ? "Saving..." : "Save Retention Policy"}
@@ -181,8 +181,8 @@ export default function RetentionPage() {
 
                 {/* Info & Purge */}
                 <div className="space-y-6">
-                    <div className="bg-brand-card border border-brand-border rounded-xl p-6 space-y-4">
-                        <h2 className="text-sm font-bold uppercase tracking-widest text-brand-accent/80">
+                    <div className="bg-sf-surface border border-sf-border rounded-xl p-6 space-y-4">
+                        <h2 className="text-sm font-bold uppercase tracking-widest text-sf-accent/80">
                             Compliance Requirements
                         </h2>
                         <div className="space-y-3">
@@ -193,19 +193,19 @@ export default function RetentionPage() {
                                 { framework: "GDPR", minimum: "As long as needed (Art. 5)", color: "text-blue-400" },
                                 { framework: "NIST CSF 2.0", minimum: "Organization-defined", color: "text-emerald-400" },
                             ].map(item => (
-                                <div key={item.framework} className="flex justify-between items-center py-2 border-b border-brand-border last:border-0">
+                                <div key={item.framework} className="flex justify-between items-center py-2 border-b border-sf-border last:border-0">
                                     <span className={`text-sm font-medium ${item.color}`}>{item.framework}</span>
-                                    <span className="text-xs text-slate-400 font-mono">{item.minimum}</span>
+                                    <span className="text-xs text-sf-muted font-mono">{item.minimum}</span>
                                 </div>
                             ))}
                         </div>
                     </div>
 
-                    <div className="bg-brand-card border border-red-500/20 rounded-xl p-6 space-y-4">
+                    <div className="bg-sf-surface border border-red-500/20 rounded-xl p-6 space-y-4">
                         <h2 className="text-sm font-bold uppercase tracking-widest text-red-400/80 flex items-center gap-2">
                             <Trash2 className="w-4 h-4" /> Manual Data Purge
                         </h2>
-                        <p className="text-xs text-slate-400 leading-relaxed">
+                        <p className="text-xs text-sf-muted leading-relaxed">
                             Manually trigger a data purge to remove events and audit data older than
                             the current retention period ({currentDays} days). This operation is
                             <strong className="text-red-400"> irreversible</strong>.
