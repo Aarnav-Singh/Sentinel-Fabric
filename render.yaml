@@ -1,0 +1,63 @@
+services:
+  # ─── FastAPI Backend Web Service ──────────────────────────────────────────
+  - type: web
+    name: umbrix-api
+    env: docker
+    dockerContext: ./backend
+    dockerfilePath: ./Dockerfile
+    dockerTarget: api
+    region: ohio
+    plan: starter
+    healthCheckPath: /health
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: POSTGRES_DSN
+        fromDatabase:
+          name: umbrix-postgres
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: umbrix-redis
+          property: connectionString
+      - key: JWT_SECRET_KEY
+        generateValue: true
+      - key: CORS_ORIGINS
+        value: '["*"]' # Update this via Render Dashboard to match Vercel URL
+        
+  # ─── Kafka Background Worker ───────────────────────────────────────────────
+  - type: worker
+    name: umbrix-worker
+    env: docker
+    dockerContext: ./backend
+    dockerfilePath: ./Dockerfile
+    dockerTarget: worker
+    region: ohio
+    plan: starter
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: POSTGRES_DSN
+        fromDatabase:
+          name: umbrix-postgres
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: umbrix-redis
+          property: connectionString
+
+databases:
+  # ─── PostgreSQL Database ───────────────────────────────────────────────────
+  - name: umbrix-postgres
+    plan: starter
+    region: ohio
+    databaseName: sentinel_fabric
+    user: sentinel
+    
+  # ─── Redis Cache ───────────────────────────────────────────────────────────
+  - name: umbrix-redis
+    type: redis
+    plan: free
+    region: ohio
