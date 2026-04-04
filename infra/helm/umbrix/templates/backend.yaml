@@ -3,18 +3,18 @@ kind: Deployment
 metadata:
   name: {{ .Release.Name }}-backend
   labels:
-    app: sentinel-fabric
+    app: umbrix
     component: backend
 spec:
   replicas: {{ .Values.backend.replicas }}
   selector:
     matchLabels:
-      app: sentinel-fabric
+      app: umbrix
       component: backend
   template:
     metadata:
       labels:
-        app: sentinel-fabric
+        app: umbrix
         component: backend
     spec:
       securityContext:
@@ -84,5 +84,5 @@ spec:
       targetPort: 8000
       protocol: TCP
   selector:
-    app: sentinel-fabric
+    app: umbrix
     component: backend

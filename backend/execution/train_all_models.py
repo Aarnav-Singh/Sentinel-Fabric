@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Sentinel Fabric V2 — Unified Model Training Script
+UMBRIX — Unified Model Training Script
 ====================================================
 Generates trained weights for all 4 ML streams and saves them to
 ``backend/models/`` so the pipeline no longer falls back to random init.
@@ -445,7 +445,7 @@ def train_meta_learner(rng: np.random.RandomState) -> None:
 
 def main() -> None:
     print("=" * 60)
-    print("Sentinel Fabric V2 — Model Training")
+    print("UMBRIX — Model Training")
     print(f"Output directory: {MODELS_DIR}")
     print("=" * 60)
 

@@ -1,4 +1,4 @@
-"""Shared test fixtures for Sentinel Fabric V2.
+"""Shared test fixtures for UMBRIX.
 
 Provides auth override fixtures so all API tests can run
 without a real JWT infrastructure.

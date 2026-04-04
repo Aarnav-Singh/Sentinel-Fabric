@@ -1,4 +1,4 @@
-# Sentinel Fabric V2 — PodDisruptionBudgets
+# UMBRIX — PodDisruptionBudgets
 # Ensure minimum availability during rolling upgrades and node maintenance.
 
 # Backend: At least 1 pod must remain available during disruptions
@@ -7,13 +7,13 @@ kind: PodDisruptionBudget
 metadata:
   name: {{ .Release.Name }}-backend-pdb
   labels:
-    app: sentinel-fabric
+    app: umbrix
     component: backend
 spec:
   minAvailable: 1
   selector:
     matchLabels:
-      app: sentinel-fabric
+      app: umbrix
       component: backend
 
 ---
@@ -23,11 +23,11 @@ kind: PodDisruptionBudget
 metadata:
   name: {{ .Release.Name }}-frontend-pdb
   labels:
-    app: sentinel-fabric
+    app: umbrix
     component: frontend
 spec:
   minAvailable: 1
   selector:
     matchLabels:
-      app: sentinel-fabric
+      app: umbrix
       component: frontend

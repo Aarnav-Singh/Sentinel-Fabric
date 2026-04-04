@@ -15,7 +15,7 @@ Sentry.init({
 
     // Environment tagging
     environment: process.env.NODE_ENV || "development",
-    release: `sentinel-fabric@${process.env.npm_package_version || "2.0.0"}`,
+    release: `umbrix@${process.env.npm_package_version || "2.0.0"}`,
 
     // Filter noisy errors
     ignoreErrors: [

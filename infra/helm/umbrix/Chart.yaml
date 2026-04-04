@@ -1,0 +1,15 @@
+apiVersion: v2
+name: umbrix
+description: UMBRIX — Enterprise Security Posture Intelligence Platform
+type: application
+version: 1.0.0
+appVersion: "2.0.0"
+keywords:
+  - security
+  - siem
+  - soar
+  - ml
+  - threat-detection
+maintainers:
+  - name: UMBRIX Team
+    email: security@umbrix.io

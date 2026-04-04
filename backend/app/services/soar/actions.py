@@ -478,7 +478,7 @@ class ServiceNowProvider(ActionProvider):
         return "failed"
 
     async def _create_incident(self, context: Dict[str, Any]) -> str:
-        short_desc = context.get("short_description", "Sentinel Fabric — Security Incident")
+        short_desc = context.get("short_description", "UMBRIX — Security Incident")
         description = context.get("description", "")
         urgency = context.get("urgency", "2")  # 1=High, 2=Medium, 3=Low
         impact = context.get("impact", "2")

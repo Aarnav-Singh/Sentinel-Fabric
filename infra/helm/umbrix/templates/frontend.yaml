@@ -3,18 +3,18 @@ kind: Deployment
 metadata:
   name: {{ .Release.Name }}-frontend
   labels:
-    app: sentinel-fabric
+    app: umbrix
     component: frontend
 spec:
   replicas: {{ .Values.frontend.replicas }}
   selector:
     matchLabels:
-      app: sentinel-fabric
+      app: umbrix
       component: frontend
   template:
     metadata:
       labels:
-        app: sentinel-fabric
+        app: umbrix
         component: frontend
     spec:
       securityContext:
@@ -57,5 +57,5 @@ spec:
       targetPort: 3000
       protocol: TCP
   selector:
-    app: sentinel-fabric
+    app: umbrix
     component: frontend

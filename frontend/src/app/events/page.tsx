@@ -3,15 +3,11 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { Terminal, X, Share2, ShieldAlert, Activity } from 'lucide-react';
 import { useLiveEvents } from "@/hooks/useLiveEvents";
+import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatedNumber, PanelCard } from '@/components/ui/MotionWrappers';
+import { DataGrid } from '@/components/ui/DataGrid';
 
-interface LogEvent {
-    id: string;
-    timestamp: string;
-    level: "INFO" | "CRITICAL" | "WARN";
-    message: string;
-    meta: { key: string, value: string }[];
-    rawJson: any;
-}
+interface LogEvent { id: string; timestamp: string; level: "INFO" | "CRITICAL" | "WARN"; message: string; meta: { key: string, value: string }[]; rawJson: any; }
 
 const DEMO_LOGS: LogEvent[] = [
     {
@@ -26,23 +22,18 @@ const DEMO_LOGS: LogEvent[] = [
 
 function canonicalToLogEvent(event: Record<string, unknown>): LogEvent {
     const severity = (event.severity as string || "info").toLowerCase();
-    const metaScore = event.ml_scores && typeof event.ml_scores === "object"
-        ? (event.ml_scores as Record<string, number>).meta_score ?? 0
-        : 0;
-    const level: "INFO" | "CRITICAL" | "WARN" =
-        severity === "critical" || metaScore > 0.8 ? "CRITICAL" :
-            severity === "high" || metaScore > 0.5 ? "WARN" : "INFO";
+    const metaScore = event.ml_scores && typeof event.ml_scores === "object" ? (event.ml_scores as Record<string, number>).meta_score ?? 0 : 0;
+    const level: "INFO" | "CRITICAL" | "WARN" = severity === "critical" || metaScore > 0.8 ? "CRITICAL" : severity === "high" || metaScore > 0.5 ? "WARN" : "INFO";
 
     const ts = event.timestamp ? new Date(event.timestamp as string) : new Date();
     const timeStr = ts.toLocaleTimeString("en-US", { hour12: false, fractionalSecondDigits: 3 });
 
     const meta: { key: string; value: string }[] = [];
-    if (event.source_type) meta.push({ key: "source", value: String(event.source_type) });
-    if (metaScore > 0) meta.push({ key: "threat_score", value: metaScore.toFixed(2) });
-    if (event.campaign_id) meta.push({ key: "campaign", value: String(event.campaign_id) });
-    const label = event.ml_scores && typeof event.ml_scores === "object"
-        ? (event.ml_scores as Record<string, string>).ensemble_label : undefined;
-    if (label && label !== "benign") meta.push({ key: "label", value: String(label) });
+    if (event.source_type) meta.push({ key: "src", value: String(event.source_type) });
+    if (metaScore > 0) meta.push({ key: "scr", value: metaScore.toFixed(2) });
+    if (event.campaign_id) meta.push({ key: "cid", value: String(event.campaign_id) });
+    const label = event.ml_scores && typeof event.ml_scores === "object" ? (event.ml_scores as Record<string, string>).ensemble_label : undefined;
+    if (label && label !== "benign") meta.push({ key: "lbl", value: String(label) });
 
     return {
         id: String(event.event_id || `EV-${Date.now()}`),
@@ -54,39 +45,6 @@ function canonicalToLogEvent(event: Record<string, unknown>): LogEvent {
     };
 }
 
-const EventRow = ({ log, setSelectedLog }: { log: LogEvent, setSelectedLog: (log: LogEvent) => void }) => {
-    const isCritical = log.level === 'CRITICAL';
-    const isWarn = log.level === 'WARN';
-    const colorHex = isCritical ? 'var(--sf-critical)' : isWarn ? 'var(--sf-warning)' : 'var(--sf-accent)';
-
-    return (
-        <div className="mb-3">
-            <div
-                onClick={() => setSelectedLog(log)}
-                className={`h-[114px] bg-sf-surface/80 backdrop-blur-md p-4 rounded-xl border-l-[4px] flex flex-col gap-2 cursor-pointer transition-all hover:-translate-y-1 hover:shadow-lg ${isCritical ? 'border-l-[var(--sf-critical)] shadow-[0_0_20px_rgba(244,63,94,0.15)] border border-sf-critical/20' : isWarn ? 'border-l-[var(--sf-warning)] border border-sf-warning/20' : 'border-l-[var(--sf-accent)] border border-sf-accent/10 hover:border-sf-accent/40'}`}
-            >
-                <div className="flex justify-between items-start">
-                    <span className="font-mono text-[10px]" style={{ color: colorHex }}>T: {log.timestamp}</span>
-                    <span className="text-[10px] px-2 py-0.5 rounded-sm font-bold tracking-widest" style={{ color: colorHex, backgroundColor: `${colorHex}15`, border: `1px solid ${colorHex}30` }}>
-                        {log.level}
-                    </span>
-                </div>
-                <p className="text-slate-200 text-xs font-mono line-clamp-2 leading-relaxed">{log.message}</p>
-
-                {log.meta.length > 0 && (
-                    <div className="flex gap-2 mt-1 flex-wrap">
-                        {log.meta.map((m: any, i: number) => (
-                            <span key={i} className={`text-[10px] uppercase font-mono ${isCritical ? 'bg-sf-critical/10 text-sf-critical border-sf-critical/30' : 'bg-sf-bg text-sf-muted border-sf-border'} px-1.5 py-0.5 rounded border`}>
-                                {m.key}: {m.value}
-                            </span>
-                        ))}
-                    </div>
-                )}
-            </div>
-        </div>
-    );
-};
-
 export default function RawEventsPage() {
     const [selectedLog, setSelectedLog] = useState<LogEvent | null>(null);
     const [liveEvents, setLiveEvents] = useState<LogEvent[]>([]);
@@ -97,104 +55,151 @@ export default function RawEventsPage() {
             .then(r => r.json())
             .then(data => {
                 if (data.events && Array.isArray(data.events)) {
-                    const logs = data.events.map((e: any) => canonicalToLogEvent(e));
-                    setLiveEvents(logs);
+                    setLiveEvents(data.events.map((e: any) => canonicalToLogEvent(e)));
                 }
             })
             .catch(err => console.error("Failed to load recent events", err));
     }, []);
 
     const handleLiveEvent = useCallback((event: Record<string, unknown>) => {
-        const logEvent = canonicalToLogEvent(event);
-        setLiveEvents(prev => [logEvent, ...prev].slice(0, 100));
+        setLiveEvents(prev => [canonicalToLogEvent(event), ...prev].slice(0, 150));
         setEps(prev => prev + 1);
     }, []);
 
     useLiveEvents({ onEvent: handleLiveEvent });
-
     const allLogs = liveEvents.length > 0 ? liveEvents : DEMO_LOGS;
 
-
     return (
-        <div className="flex-1 overflow-hidden flex flex-col relative bg-[linear-gradient(rgba(0,242,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(0,242,255,0.03)_1px,transparent_1px)] bg-[size:30px_30px]">
-            {/* Header / Stats Overlay */}
-            <div className="flex flex-col md:flex-row gap-3 p-6 pb-2 z-10">
-                <div className="flex-1 bg-sf-bg/70 backdrop-blur-md border border-sf-accent/50 rounded-xl p-4 shadow-[0_0_15px_rgba(0,242,255,0.15)] relative overflow-hidden">
-                    <div className="absolute inset-0 bg-gradient-to-br from-sf-accent/5 to-transparent"></div>
-                    <p className="text-sf-muted text-xs font-medium uppercase tracking-wider relative">Events/Sec</p>
-                    <div className="flex items-end gap-2 mt-1 relative">
-                        <span className="text-white text-3xl font-bold leading-none tracking-tight">{eps > 0 ? eps.toLocaleString() : '0'}</span>
-                        {eps > 0 && <span className="text-sf-accent text-xs font-bold mb-1">LIVE</span>}
-                    </div>
+        <div className="flex-1 overflow-hidden p-6 bg-sf-bg flex flex-col min-h-0">
+            <div className="flex flex-col gap-4 w-full h-full max-w-[1600px] mx-auto min-h-0">
+                {/* Header Metrics */}
+                <div className="flex gap-4 shrink-0">
+                     <PanelCard className="flex flex-col p-4 w-64">
+                         <div className="text-[10px] text-sf-muted font-mono tracking-widest uppercase mb-1 flex items-center gap-2">
+                             <Activity className="w-3 h-3 text-sf-accent" /> Events / Sec
+                         </div>
+                         <div className="text-3xl font-mono text-sf-text mt-1">
+                             <AnimatedNumber value={eps > 0 ? eps : 0} />
+                         </div>
+                     </PanelCard>
+                      <PanelCard className="flex flex-col p-4 w-64">
+                         <div className="text-[10px] text-sf-muted font-mono tracking-widest uppercase mb-1">
+                             Buffer Size
+                         </div>
+                         <div className="text-3xl font-mono text-sf-text mt-1">
+                             <AnimatedNumber value={liveEvents.length || 0} />
+                         </div>
+                     </PanelCard>
+                      <div className="flex-1 flex items-center justify-end px-4">
+                           <div className="flex items-center gap-2 border border-sf-border bg-sf-surface px-3 py-1.5">
+                                <span className={`flex size-1.5 bg-${liveEvents.length > 0 ? 'sf-accent animate-pulse-fast' : 'sf-disabled'} rounded-none`} />
+                                <span className="text-[10px] font-mono uppercase tracking-widest text-sf-muted">
+                                    {liveEvents.length > 0 ? 'STREAM ACTIVE' : 'AWAITING DATA'}
+                                </span>
+                           </div>
+                      </div>
                 </div>
-                <div className="flex-1 bg-sf-bg/70 backdrop-blur-md border border-sf-accent/50 rounded-xl p-4 shadow-[0_0_15px_rgba(0,242,255,0.15)] relative overflow-hidden">
-                    <div className="absolute inset-0 bg-gradient-to-br from-sf-accent/5 to-transparent"></div>
-                    <p className="text-sf-muted text-xs font-medium uppercase tracking-wider relative">Total Events</p>
-                    <div className="flex items-end gap-2 mt-1 relative">
-                        <span className="text-white text-3xl font-bold leading-none tracking-tight">{liveEvents.length || '0'}</span>
-                        {liveEvents.length > 0 && <span className="text-sf-accent text-xs font-bold mb-1">streamed</span>}
-                    </div>
-                </div>
-            </div>
 
-            {/* Stream Label */}
-            <div className="px-6 py-4 flex items-center justify-between z-10 border-b border-sf-accent/10 mb-2 bg-sf-bg/50 backdrop-blur-sm">
-                <div className="flex items-center gap-2">
-                    <span className={`flex size-2.5 rounded-full ${liveEvents.length > 0 ? 'bg-sf-accent animate-pulse shadow-[0_0_8px_var(--sf-accent)]' : 'bg-slate-600'}`}></span>
-                    <h3 className="text-white text-sm font-bold uppercase tracking-widest flex items-center gap-2">
-                        <Activity className="w-4 h-4 text-sf-accent" />
-                        {liveEvents.length > 0 ? 'Real-time Stream' : 'Awaiting Events'}
-                    </h3>
-                </div>
-                <span className={`text-[10px] font-mono px-2 py-0.5 rounded border ${liveEvents.length > 0 ? 'text-sf-accent bg-sf-accent/10 border-sf-accent/30 animate-pulse' : 'text-sf-muted bg-sf-surface border-sf-border'}`}>
-                    {liveEvents.length > 0 ? 'LIVE_FEED' : 'WAITING'}
-                </span>
-            </div>
-
-            {/* Event Log Stream */}
-            <div className="flex-1 px-6 py-2 pb-10 overflow-y-auto overflow-x-hidden custom-scrollbar relative z-10 perspective-[1000px]">
-                {allLogs.map(log => (
-                    <EventRow key={log.id} log={log} setSelectedLog={setSelectedLog} />
-                ))}
+                {/* Raw Events DataGrid */}
+                <PanelCard className="flex-1 flex flex-col overflow-hidden min-h-0">
+                    <div className="px-4 py-2 border-b border-sf-border bg-sf-surface shrink-0 flex items-center">
+                        <Terminal className="w-3 h-3 text-sf-muted mr-2" />
+                        <h2 className="text-[10px] font-mono tracking-widest text-sf-muted uppercase">Live Event Stream</h2>
+                    </div>
+                    <div className="flex-1 overflow-auto p-2">
+                         <DataGrid 
+                            data={allLogs}
+                            rowKey="id"
+                            onRowClick={(row) => setSelectedLog(row)}
+                            columns={[
+                                {
+                                    header: "TIME",
+                                    key: "timestamp",
+                                    render: (val) => <span className="font-mono text-[10px] text-sf-muted">{val}</span>
+                                },
+                                {
+                                    header: "LVL",
+                                    key: "level",
+                                    render: (val) => {
+                                        const colorClass = val === 'CRITICAL' ? 'bg-sf-critical text-sf-bg' : val === 'WARN' ? 'bg-sf-warning text-sf-bg' : 'bg-sf-surface text-sf-text border border-sf-border';
+                                        return <span className={`text-[9px] font-bold uppercase tracking-widest px-1.5 py-0.5 ${colorClass}`}>{val}</span>;
+                                    }
+                                },
+                                {
+                                    header: "MESSAGE",
+                                    key: "message",
+                                    render: (val) => <span className="font-mono text-[10px] text-sf-text truncate block max-w-2xl">{val}</span>
+                                },
+                                {
+                                    header: "META",
+                                    key: "meta",
+                                    align: "right",
+                                    render: (val: any[]) => (
+                                        <div className="flex flex-wrap justify-end gap-1">
+                                            {val.map((m, i) => (
+                                                <span key={i} className="text-[9px] font-mono uppercase tracking-widest text-sf-muted border border-sf-border px-1">
+                                                    <span className="text-sf-accent/70">{m.key}:</span>{m.value}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    )
+                                }
+                            ]}
+                         />
+                    </div>
+                </PanelCard>
             </div>
 
             {/* Modal */}
+            <AnimatePresence>
             {selectedLog && (
-                <div className="absolute inset-x-4 md:inset-x-20 lg:inset-x-32 top-20 z-50 bg-sf-surface/95 backdrop-blur-xl rounded-xl p-6 shadow-[0_0_30px_rgba(0,242,255,0.2)] border border-sf-accent/50 animate-[slideDown_0.2s_ease-out]">
-                    <div className="flex justify-between items-center mb-4">
+                <motion.div
+                    initial={{ opacity: 0, y: 10, scale: 0.99 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 10, scale: 0.99 }}
+                    transition={{ duration: 0.15 }}
+                    className="absolute inset-x-8 md:inset-x-32 top-16 bottom-16 z-50 flex flex-col bg-sf-bg border border-sf-border shadow-2xl"
+                >
+                    <div className="flex justify-between items-center px-4 py-3 border-b border-sf-border bg-sf-surface">
                         <div className="flex items-center gap-2">
-                            <Terminal className="w-5 h-5 text-sf-accent" />
-                            <h4 className="text-white text-base font-bold uppercase tracking-wider">Event Inspector</h4>
+                            <Terminal className="w-4 h-4 text-sf-accent" />
+                            <h4 className="text-sf-text text-[11px] font-mono uppercase tracking-widest">Payload Inspector</h4>
                             <span className="text-[10px] font-mono text-sf-muted ml-2">{selectedLog.id}</span>
                         </div>
-                        <button onClick={() => setSelectedLog(null)} className="text-sf-muted hover:text-white transition-colors">
-                            <X className="w-5 h-5" />
+                        <button onClick={() => setSelectedLog(null)} className="text-sf-muted hover:text-sf-text transition-colors">
+                            <X className="w-4 h-4" />
                         </button>
                     </div>
 
-                    <div className="bg-black/80 rounded-lg p-5 font-mono text-[12px] leading-loose border border-sf-accent/20 overflow-x-auto max-h-[400px] overflow-y-auto">
-                        <pre className="text-slate-300 whitespace-pre-wrap">
+                    <div className="flex-1 bg-black p-4 font-mono text-[11px] leading-relaxed overflow-auto custom-scrollbar">
+                        <pre className="text-sf-safe/80 whitespace-pre-wrap">
                             {JSON.stringify(selectedLog.rawJson, null, 2)}
                         </pre>
                     </div>
 
-                    <div className="mt-5 flex gap-3">
-                        <button className="flex-1 bg-sf-accent text-sf-bg font-bold text-xs py-3 rounded-lg flex items-center justify-center gap-2 hover:bg-sf-accent hover:shadow-[0_0_15px_var(--sf-accent)] transition-all">
-                            <Share2 className="w-4 h-4" /> EXPORT JSON
+                    <div className="p-3 flex gap-3 border-t border-sf-border bg-sf-surface">
+                        <button className="flex-1 bg-sf-surface hover:bg-sf-bg border border-sf-border text-sf-text font-mono font-bold text-[10px] py-2 flex items-center justify-center gap-2 transition-all">
+                            <Share2 className="w-3 h-3" /> EXPORT JSON
                         </button>
-                        <button className="flex-1 bg-sf-accent/10 border border-sf-accent/40 text-sf-accent hover:bg-sf-accent/20 font-bold text-xs py-3 rounded-lg flex items-center justify-center gap-2 transition-all">
-                            <ShieldAlert className="w-4 h-4" /> TRACE SOURCE
+                        <button className="flex-[2] bg-sf-text hover:bg-sf-text/90 text-sf-bg border border-sf-text font-mono font-bold text-[10px] py-2 flex items-center justify-center gap-2 transition-all">
+                            <ShieldAlert className="w-3 h-3" /> CORRELATE THREAT
                         </button>
                     </div>
-                </div>
+                </motion.div>
             )}
+            </AnimatePresence>
 
+            <AnimatePresence>
             {selectedLog && (
-                <div
-                    className="absolute inset-0 bg-sf-bg/60 backdrop-blur-sm z-40"
+                <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="absolute inset-0 bg-black/60 backdrop-blur-sm z-40"
                     onClick={() => setSelectedLog(null)}
                 />
             )}
+            </AnimatePresence>
         </div>
     );
 }

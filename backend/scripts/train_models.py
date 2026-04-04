@@ -2,7 +2,7 @@
 
 This script simulates the ingestion of large cybersecurity datasets
 (e.g., CICIDS2017 or Kaggle Malware datasets) and trains the base
-anomaly detection models used by Sentinel Fabric V2.
+anomaly detection models used by UMBRIX.
 
 In this demonstration, we generate synthetic tabular data that mimics
 network traffic features to produce functional model artifacts (.pth, .txt).
@@ -133,7 +133,7 @@ def train_lightgbm_meta():
         logger.info(f"Saved dummy target file to {save_path}")
 
 def main():
-    parser = argparse.ArgumentParser(description="Sentinel Fabric V2 offline model trainer")
+    parser = argparse.ArgumentParser(description="UMBRIX offline model trainer")
     parser.add_argument("--vae", action="store_true", help="Train PyTorch VAE model")
     parser.add_argument("--lgbm", action="store_true", help="Train LightGBM meta-learner")
     parser.add_argument("--all", action="store_true", help="Train all models")
@@ -144,7 +144,7 @@ def main():
         args.vae = True
         args.lgbm = True
         
-    logger.info("=== Sentinel Fabric V2 Offline Training Pipeline ===")
+    logger.info("=== UMBRIX Offline Training Pipeline ===")
     
     if args.vae:
         train_vae_model()

@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-test.describe('Sentinel Fabric V2 Smoke Tests', () => {
+test.describe('UMBRIX Smoke Tests', () => {
     test('Dashboard loads and displays key metrics', async ({ page }) => {
         await page.goto('/dashboard');
         await expect(page.getByText('TOTAL ASSETS')).toBeVisible();

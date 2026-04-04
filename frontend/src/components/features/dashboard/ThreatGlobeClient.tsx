@@ -64,7 +64,8 @@ export default function ThreatGlobeClient() {
       // Set initial POV camera
       globeEl.current.pointOfView({ lat: 20, lng: -40, altitude: 2 });
     }
-  }, [globeEl.current]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   if (!windowDimensions.width) return <div className="w-full h-full animate-pulse bg-sf-surface-raised rounded-xl" />;
 

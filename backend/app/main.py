@@ -1,4 +1,4 @@
-"""Sentinel Fabric V2 — FastAPI Application.
+"""UMBRIX — FastAPI Application.
 
 Lifespan hooks initialize all database connections and services.
 """
@@ -264,7 +264,7 @@ def create_app() -> FastAPI:
     ]
 
     app = FastAPI(
-        title="Sentinel Fabric V2",
+        title="UMBRIX",
         description=(
             "Enterprise Security Posture Intelligence Platform. "
             "Real-time ML-powered threat detection, SOAR orchestration, "
@@ -275,11 +275,11 @@ def create_app() -> FastAPI:
         openapi_tags=openapi_tags,
         license_info={
             "name": "Proprietary",
-            "url": "https://sentinelfabric.io/license",
+            "url": "https://umbrix.io/license",
         },
         contact={
-            "name": "Sentinel Fabric Security Team",
-            "email": "security@sentinelfabric.io",
+            "name": "UMBRIX Security Team",
+            "email": "security@umbrix.io",
         },
         docs_url="/docs",
         redoc_url="/redoc",

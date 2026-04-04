@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """CIC-IDS-2017/2018 Feature Extractor — Phase 34D.
 
-Maps raw CIC-IDS CSV columns directly to Sentinel Fabric's 76-dimensional
+Maps raw CIC-IDS CSV columns directly to UMBRIX's 76-dimensional
 feature space. Handles data cleaning, column normalization, and produces
 evaluation-ready numpy arrays.
 
@@ -87,7 +87,7 @@ COLUMN_ALIASES = {
     "label": "Label",
 }
 
-# CIC-IDS-2017 attack labels → Sentinel Fabric attack classes
+# CIC-IDS-2017 attack labels → UMBRIX attack classes
 CIC_LABEL_MAP = {
     "BENIGN": "benign",
     "Bot": "botnet",
@@ -123,7 +123,7 @@ CIC_LABEL_MAP = {
     "Infilteration": "infiltration",
 }
 
-# Sentinel Fabric attack classes
+# UMBRIX attack classes
 ATTACK_CLASSES = [
     "benign", "dos", "ddos", "brute_force", "web_attack",
     "infiltration", "botnet", "port_scan", "sql_injection",
@@ -367,7 +367,7 @@ def run_evaluation(X: np.ndarray, y: np.ndarray) -> dict[str, Any]:
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Extract features from CIC-IDS-2017/2018 CSVs for Sentinel Fabric ML evaluation"
+        description="Extract features from CIC-IDS-2017/2018 CSVs for UMBRIX ML evaluation"
     )
     parser.add_argument("--input", "-i", help="Input CSV file or glob pattern")
     parser.add_argument("--merge-dir", help="Directory of CSV files to merge")

@@ -1,11 +1,11 @@
-# Sentinel Fabric V2 — Horizontal Pod Autoscaler
+# UMBRIX — Horizontal Pod Autoscaler
 # Backend: Scale 2-10 replicas based on CPU utilization
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
   name: {{ .Release.Name }}-backend-hpa
   labels:
-    app: sentinel-fabric
+    app: umbrix
     component: backend
 spec:
   scaleTargetRef:
@@ -48,7 +48,7 @@ kind: HorizontalPodAutoscaler
 metadata:
   name: {{ .Release.Name }}-frontend-hpa
   labels:
-    app: sentinel-fabric
+    app: umbrix
     component: frontend
 spec:
   scaleTargetRef:

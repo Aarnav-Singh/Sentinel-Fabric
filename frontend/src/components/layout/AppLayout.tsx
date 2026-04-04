@@ -5,27 +5,29 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Menu, X, Settings, Zap, FileText, Search, Bell, Shield, Network, LayoutDashboard, Crosshair, Fingerprint, BookOpen, Activity, ShieldCheck, Target, Server, Lock } from "lucide-react";
 import useSWR from "swr";
+import { motion, AnimatePresence } from "framer-motion";
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 const NAV_ITEMS = [
-    { id: "campaigns", name: "Command Center", href: "/dashboard", icon: <LayoutDashboard className="w-4 h-4" />, badge: null },
-    { id: "pipeline", name: "ML Pipeline", href: "/pipeline", icon: <Network className="w-4 h-4" />, badge: null },
-    { id: "events", name: "Raw Events", href: "/events", icon: <Fingerprint className="w-4 h-4" />, badge: null },
-    { id: "findings", name: "Threat Findings", href: "/findings", icon: <Crosshair className="w-4 h-4" />, badge: null },
-    { id: "posture", name: "Posture", href: "/posture", icon: <Shield className="w-4 h-4" />, badge: null },
-    { id: "sigma-rules", name: "Sigma Rules", href: "/sigma-rules", icon: <BookOpen className="w-4 h-4" />, badge: null },
-    { id: "campaigns", name: "Campaigns", href: "/campaigns", icon: <Target className="w-4 h-4" />, badge: null },
-    { id: "soar", name: "SOAR Actions", href: "/soar", icon: <Zap className="w-4 h-4" />, badge: null },
-    { id: "compliance", name: "Compliance", href: "/compliance", icon: <ShieldCheck className="w-4 h-4" />, badge: null },
-    { id: "assets", name: "Asset Registry", href: "/integrations", icon: <Server className="w-4 h-4" />, badge: null },
-    { id: "vault", name: "Secure Vault", href: "/vault", icon: <Lock className="w-4 h-4" />, badge: null },
-    { id: "reporting", name: "Reporting", href: "/reporting", icon: <FileText className="w-4 h-4" />, badge: null },
-    { id: "health", name: "System Health", href: "/health", icon: <Activity className="w-4 h-4" />, badge: null },
+    { id: "dashboard", name: "Command Center", href: "/dashboard", icon: <LayoutDashboard className="w-5 h-5 min-w-[20px]" />, badge: null },
+    { id: "pipeline", name: "ML Pipeline", href: "/pipeline", icon: <Network className="w-5 h-5 min-w-[20px]" />, badge: null },
+    { id: "events", name: "Raw Events", href: "/events", icon: <Fingerprint className="w-5 h-5 min-w-[20px]" />, badge: null },
+    { id: "findings", name: "Threat Findings", href: "/findings", icon: <Crosshair className="w-5 h-5 min-w-[20px]" />, badge: null },
+    { id: "posture", name: "Posture", href: "/posture", icon: <Shield className="w-5 h-5 min-w-[20px]" />, badge: null },
+    { id: "sigma-rules", name: "Sigma Rules", href: "/sigma-rules", icon: <BookOpen className="w-5 h-5 min-w-[20px]" />, badge: null },
+    { id: "campaigns", name: "Campaigns", href: "/campaigns", icon: <Target className="w-5 h-5 min-w-[20px]" />, badge: null },
+    { id: "soar", name: "SOAR Actions", href: "/soar", icon: <Zap className="w-5 h-5 min-w-[20px]" />, badge: null },
+    { id: "compliance", name: "Compliance", href: "/compliance", icon: <ShieldCheck className="w-5 h-5 min-w-[20px]" />, badge: null },
+    { id: "assets", name: "Asset Registry", href: "/integrations", icon: <Server className="w-5 h-5 min-w-[20px]" />, badge: null },
+    { id: "vault", name: "Secure Vault", href: "/vault", icon: <Lock className="w-5 h-5 min-w-[20px]" />, badge: null },
+    { id: "reporting", name: "Reporting", href: "/reporting", icon: <FileText className="w-5 h-5 min-w-[20px]" />, badge: null },
+    { id: "health", name: "System Health", href: "/health", icon: <Activity className="w-5 h-5 min-w-[20px]" />, badge: null },
 ];
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
     const [sidebarOpen, setSidebarOpen] = useState(false);
+    const [isHoveringSidebar, setIsHoveringSidebar] = useState(false);
     const pathname = usePathname();
     const [eventsRate, setEventsRate] = useState(0);
     const [lastEventCount, setLastEventCount] = useState(0);
@@ -38,177 +40,166 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         if (pipelineStatus?.events_processed !== undefined) {
             const currentCount = pipelineStatus.events_processed;
             if (lastEventCount > 0 && currentCount >= lastEventCount) {
-                // Approximate events per second since last 5s interval
                 setEventsRate(Math.max(0, Math.floor((currentCount - lastEventCount) / 5)));
             }
             setLastEventCount(currentCount);
         }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [pipelineStatus]);
 
-    // Don't show the shell on the login page
     if (pathname === "/") {
         return <>{children}</>;
     }
 
+    const isSidebarExpanded = sidebarOpen || isHoveringSidebar;
+
     return (
-        <div className="min-h-screen flex flex-col font-sans relative overflow-hidden bg-sf-bg">
-            {/* Background elements */}
-            <div className="absolute top-0 left-0 w-full h-[500px] bg-gradient-to-b from-sf-accent/10 to-transparent pointer-events-none" />
-            <div className="absolute -top-[300px] -right-[300px] w-[800px] h-[800px] bg-sf-accent-2/5 rounded-full blur-[120px] pointer-events-none" />
-            <div className="absolute -bottom-[300px] -left-[300px] w-[600px] h-[600px] bg-sf-critical/5 rounded-full blur-[100px] pointer-events-none" />
-
+        <div className="min-h-screen flex flex-col font-sans relative bg-sf-bg text-sf-text selection:bg-sf-accent/30 overflow-hidden">
+            
             {/* ── Top Command Bar ── */}
-            <header className="flex items-center gap-4 shrink-0 sticky top-0 z-50 h-16 bg-sf-surface/70 backdrop-blur-md border-b border-sf-border px-4 sm:px-6">
-                {/* Mobile toggle */}
-                <button onClick={() => setSidebarOpen(!sidebarOpen)} className="lg:hidden text-sf-muted hover:text-sf-text transition-colors">
+            <header className="flex items-center gap-4 shrink-0 sticky top-0 z-50 h-14 bg-sf-surface border-b border-sf-border px-4 sm:px-6">
+                
+                <motion.button
+                    onClick={() => setSidebarOpen(!sidebarOpen)}
+                    className="lg:hidden text-sf-muted hover:text-sf-text transition-colors"
+                >
                     {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-                </button>
+                </motion.button>
 
-                {/* Logo */}
                 <Link href="/dashboard" className="flex items-center gap-3 no-underline shrink-0 group">
-                    <div className="w-9 h-9 bg-sf-surface-raised border border-sf-border rounded-lg flex items-center justify-center text-sf-accent font-bold text-xs shadow-[0_0_15px_var(--sf-accent)] group-hover:shadow-[0_0_20px_var(--sf-accent)] transition-all">
-                        SF
+                    <div className="w-8 h-8 bg-sf-bg border border-sf-border flex items-center justify-center text-sf-accent font-bold text-xs">
+                        UX
                     </div>
                     <div className="hidden sm:block">
-                        <div className="text-[13px] font-bold tracking-widest text-sf-text group-hover:text-sf-text transition-colors">
-                            SENTINEL FABRIC
+                        <div className="text-xs font-bold tracking-widest text-sf-text transition-colors">
+                            UMBRIX
                         </div>
-                        <div className="text-[9px] text-sf-accent uppercase tracking-widest font-mono">
-                            Threat Intelligence
+                        <div className="text-[9px] text-sf-muted font-mono tracking-widest">
+                            NODE: US-EAST-1
                         </div>
                     </div>
                 </Link>
 
                 <div className="flex-1 px-4 max-w-2xl mx-auto hidden md:block">
-                    {/* Omnibar Search */}
                     <div className="relative group">
                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <Search className="h-4 w-4 text-sf-muted group-focus-within:text-sf-accent transition-colors" />
+                            <Search className="h-3.5 w-3.5 text-sf-muted" />
                         </div>
                         <input
                             type="text"
-                            className="block w-full pl-10 pr-3 py-2 border border-sf-border rounded-lg leading-5 bg-sf-surface text-sf-text placeholder-sf-muted focus:outline-none focus:bg-sf-surface-raised focus:border-sf-active focus:ring-1 focus:ring-sf-active sm:text-sm transition-all shadow-inner"
-                            placeholder="Search IPs, domains, hashes, or type '/' for commands..."
+                            className="block w-full pl-9 pr-3 py-1.5 border border-sf-border rounded-none leading-5 bg-sf-bg text-sf-text placeholder-sf-muted focus:outline-none focus:border-sf-accent focus:ring-1 focus:ring-sf-accent sm:text-xs font-mono transition-none"
+                            placeholder="SEARCH IP, HASH, CVE..."
                         />
                         <div className="absolute inset-y-0 right-0 pr-2 flex items-center pointer-events-none">
-                            <span className="text-[10px] text-sf-muted font-mono border border-sf-border rounded px-1.5 py-0.5 bg-sf-surface-raised">⌘K</span>
+                            <span className="text-[9px] text-sf-muted font-mono border border-sf-border px-1 bg-sf-surface">⌘K</span>
                         </div>
                     </div>
                 </div>
 
                 <div className="flex items-center gap-4 shrink-0">
-                    {/* Pipeline Telemetry Matrix */}
-                    <div className="hidden lg:flex items-center gap-4 px-4 py-1.5 bg-sf-surface-raised border border-sf-border rounded-lg shadow-inner">
+                    <div className="hidden lg:flex items-center gap-4 px-3 py-1 bg-sf-bg border border-sf-border">
                         <div className="flex items-center gap-2">
-                            <div className={`w-2 h-2 rounded-full ${pipelineStatus?.pipeline_active ? 'bg-sf-safe shadow-[0_0_8px_var(--sf-safe)]' : 'bg-sf-muted'}`} />
-                            <span className={`text-[11px] font-mono tracking-wide ${pipelineStatus?.pipeline_active ? 'text-sf-safe' : 'text-sf-muted'}`}>
+                            <div className={`w-1.5 h-1.5 ${pipelineStatus?.pipeline_active ? 'bg-sf-safe' : 'bg-sf-muted'}`} />
+                            <span className={`text-[10px] font-mono tracking-wide ${pipelineStatus?.pipeline_active ? 'text-sf-safe' : 'text-sf-muted'}`}>
                                 {pipelineStatus?.pipeline_active ? 'ACTIVE' : 'IDLE'}
                             </span>
                         </div>
-                        <div className="w-px h-4 bg-sf-border" />
-                        <div className="flex items-center gap-1.5 text-[11px] font-mono">
-                            <span className="text-sf-muted">Rate:</span>
-                            <span className="text-sf-data">{eventsRate} <span className="text-sf-muted text-[10px]">EPS</span></span>
-                        </div>
-                        <div className="w-px h-4 bg-sf-border" />
-                        <div className="flex items-center gap-1.5">
-                            <span className="text-[10px] font-bold text-sf-data tracking-wider uppercase font-mono">
-                                {(pipelineStatus?.events_processed || 0).toLocaleString()} <span className="text-sf-muted font-normal">VOL</span>
-                            </span>
+                        <div className="w-px h-3 bg-sf-border" />
+                        <div className="flex items-center gap-1.5 text-[10px] font-mono">
+                            <span className="text-sf-muted">RATE:</span>
+                            <span className="text-sf-text">{eventsRate} EPS</span>
                         </div>
                     </div>
 
-                    {/* Utils */}
-                    <Link href="/incidents" className="relative text-sf-muted hover:text-sf-text transition-colors w-8 h-8 flex items-center justify-center rounded-full hover:bg-sf-surface-raised">
+                    <Link href="/incidents" className="text-sf-muted hover:text-sf-text transition-colors relative">
                         <Bell className="w-4 h-4" />
-                        <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-sf-critical rounded-full border border-sf-bg" />
+                        <span className="absolute -top-1 -right-1 w-2 h-2 bg-sf-critical border border-sf-surface rounded-none" />
                     </Link>
-                    <Link href="/admin" className="text-sf-muted hover:text-sf-text transition-colors w-8 h-8 flex items-center justify-center rounded-full hover:bg-sf-surface-raised">
+                    <Link href="/admin" className="text-sf-muted hover:text-sf-text transition-colors">
                         <Settings className="w-4 h-4" />
                     </Link>
                     
-                    {/* User Profile Avatar */}
-                    <Link href="/profile" className="w-8 h-8 rounded-full bg-gradient-to-tr from-sf-accent-2 to-sf-accent p-[2px] ml-2 cursor-pointer hover:shadow-[0_0_15px_var(--sf-accent-2)] transition-all">
-                        <div className="w-full h-full rounded-full bg-sf-surface border border-sf-border flex items-center justify-center">
-                            <span className="text-[10px] font-bold text-white">OP</span>
-                        </div>
+                    <Link href="/profile" className="w-7 h-7 bg-sf-bg border border-sf-border flex items-center justify-center ml-2 hover:border-sf-accent transition-colors">
+                        <span className="text-[10px] font-bold font-mono text-sf-text">OP</span>
                     </Link>
                 </div>
             </header>
 
             {/* ── Body ── */}
-            <div className="flex flex-1 overflow-hidden relative z-10">
+            <div className="flex flex-1 overflow-hidden relative">
+                
                 {/* Mobile overlay */}
-                {sidebarOpen && (
-                    <div className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm lg:hidden transition-opacity" onClick={() => setSidebarOpen(false)} />
-                )}
+                <AnimatePresence>
+                    {sidebarOpen && (
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            transition={{ duration: 0.15 }}
+                            className="fixed inset-0 z-40 bg-sf-bg/90 lg:hidden"
+                            onClick={() => setSidebarOpen(false)}
+                        />
+                    )}
+                </AnimatePresence>
 
-                {/* Sidebar */}
+                {/* Sidebar - Slim Default */}
                 <aside
-                    className={`fixed inset-y-0 left-0 z-50 lg:relative lg:translate-x-0 transition-transform duration-[400ms] ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} lg:flex flex-col shrink-0 w-64 bg-sf-surface/80 backdrop-blur-md border-r border-sf-border`}
+                    onMouseEnter={() => setIsHoveringSidebar(true)}
+                    onMouseLeave={() => setIsHoveringSidebar(false)}
+                    className={`fixed inset-y-0 left-0 z-50 lg:relative lg:translate-x-0 transition-all duration-200 ease-out flex flex-col shrink-0 bg-sf-surface border-r border-sf-border
+                        ${sidebarOpen ? "translate-x-0 w-64" : "-translate-x-full lg:w-16"} 
+                        ${isHoveringSidebar ? "lg:w-64 lg:absolute lg:h-[calc(100vh-3.5rem)] lg:shadow-[4px_0_24px_rgba(0,0,0,0.8)]" : ""}
+                    `}
                 >
-                    <div className="flex-1 py-6 flex flex-col gap-6 overflow-y-auto custom-scrollbar">
-                        <div className="px-4">
-                            <p className="text-[10px] font-bold tracking-widest text-sf-muted uppercase mb-3 px-2">Operations</p>
-                            <nav className="space-y-1">
-                                {NAV_ITEMS.map((item) => {
-                                    const isActive = pathname === item.href || (item.href === "/dashboard" && pathname === "/campaigns");
-                                    return (
-                                        <Link
-                                            key={item.id}
-                                            href={item.href}
-                                            onClick={() => setSidebarOpen(false)}
-                                            className={`flex items-center gap-3 px-3 py-2.5 text-sm rounded-lg transition-all relative group ${isActive
-                                                    ? "text-sf-text bg-sf-surface-raised border border-sf-active/20"
-                                                    : "text-sf-muted hover:text-sf-text hover:bg-sf-surface-raised"
-                                                }`}
-                                        >
-                                            {isActive && (
-                                                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-sf-accent shadow-[0_0_10px_var(--sf-accent)] rounded-r" />
-                                            )}
-                                            <span className={`${isActive ? "text-sf-accent" : "text-sf-muted group-hover:text-sf-text"} transition-colors`}>
-                                                {item.icon}
-                                            </span>
-                                            <span className={`flex-1 font-medium ${isActive ? "text-shadow-sm" : ""}`}>{item.name}</span>
-                                            {item.badge && (
-                                                <span className={`text-[10px] px-1.5 py-0.5 rounded-md font-mono ${isActive
-                                                        ? "bg-sf-accent/20 text-sf-accent border border-sf-accent/30"
-                                                        : "bg-sf-surface text-sf-muted border border-sf-border"
-                                                    }`}>
-                                                    {item.badge}
-                                                </span>
-                                            )}
-                                        </Link>
-                                    );
-                                })}
-                            </nav>
-                        </div>
+                    <div className="flex-1 py-4 flex flex-col gap-2 overflow-y-auto overflow-x-hidden custom-scrollbar">
+                        <nav className="space-y-0.5 px-2">
+                            {NAV_ITEMS.map((item) => {
+                                const isActive = pathname === item.href || (item.href === "/dashboard" && pathname === "/campaigns");
+                                return (
+                                    <Link
+                                        key={item.id}
+                                        href={item.href}
+                                        onClick={() => setSidebarOpen(false)}
+                                        className={`flex items-center gap-4 px-2.5 py-2 text-sm transition-colors relative group whitespace-nowrap
+                                            ${isActive ? "text-sf-text bg-sf-bg border border-sf-border" : "text-sf-muted hover:text-sf-text hover:bg-sf-bg border border-transparent"}
+                                        `}
+                                    >
+                                        {isActive && (
+                                            <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-sf-accent" />
+                                        )}
+                                        <span className={`${isActive ? "text-sf-accent" : "text-sf-muted"} shrink-0`}>
+                                            {item.icon}
+                                        </span>
+                                        <span className={`font-mono text-[11px] uppercase tracking-wider transition-opacity duration-200 ${isSidebarExpanded ? "opacity-100" : "opacity-0"}`}>
+                                            {item.name}
+                                        </span>
+                                    </Link>
+                                );
+                            })}
+                        </nav>
                     </div>
 
-                    {/* Tenant info bottom module */}
-                    <div className="p-4 mt-auto">
-                        <div className="bg-sf-surface-raised border border-sf-border rounded-xl p-4 backdrop-blur-md">
-                            <div className="flex items-center justify-between mb-2">
-                                <p className="text-[10px] font-bold uppercase text-sf-muted tracking-wider">Active Tenant</p>
-                                <Shield className="w-3 h-3 text-sf-warning" />
-                            </div>
-                            <div className="text-sm text-sf-text font-semibold flex items-center gap-2">
-                                Global Enterprise
-                            </div>
-                            <div className="flex items-center gap-2 mt-3 pt-3 border-t border-sf-border">
-                                <span className="relative flex h-2 w-2">
-                                    <span className="motion-safe:animate-ping absolute inline-flex h-full w-full rounded-full bg-sf-safe opacity-75"></span>
-                                    <span className="relative inline-flex rounded-full h-2 w-2 bg-sf-safe"></span>
-                                </span>
-                                <span className="text-[10px] text-sf-muted font-mono">Enclave Secure • 3ms</span>
-                            </div>
+                    <div className={`p-4 mt-auto border-t border-sf-border transition-opacity duration-200 ${isSidebarExpanded ? "opacity-100" : "opacity-0"}`}>
+                        <div className="flex items-center gap-2">
+                            <span className="relative flex h-2 w-2">
+                                <span className="absolute inline-flex h-full w-full bg-sf-safe opacity-75"></span>
+                            </span>
+                            <span className="text-[10px] text-sf-muted font-mono whitespace-nowrap">SYSTEM SECURE</span>
                         </div>
                     </div>
                 </aside>
 
                 {/* Main content */}
-                <main className="flex-1 flex flex-col min-w-0 overflow-y-auto overflow-x-hidden custom-scrollbar relative z-0">
-                    {children}
+                <main className="flex-1 flex flex-col min-w-0 overflow-y-auto overflow-x-hidden custom-scrollbar relative z-0 bg-sf-bg">
+                    <motion.div
+                        key={pathname}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ duration: 0.15 }}
+                        className="flex-1 flex flex-col p-6"
+                    >
+                        {children}
+                    </motion.div>
                 </main>
             </div>
         </div>

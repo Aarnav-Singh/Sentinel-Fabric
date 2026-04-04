@@ -1,4 +1,4 @@
-# Sentinel Fabric V2 — Helm Values
+# UMBRIX — Helm Values
 # Override these in your environment-specific values file.
 
 # ── Global ────────────────────────────────────────────
@@ -9,7 +9,7 @@ global:
 # ── Backend API ───────────────────────────────────────
 backend:
   image:
-    repository: sentinel-fabric/backend
+    repository: umbrix/backend
     tag: "2.0.0"
   replicas: 2
   resources:
@@ -39,7 +39,7 @@ backend:
 backups:
   enabled: true
   schedule: "0 2 * * *"  # Daily at 2AM
-  s3Bucket: "sentinel-fabric-backups"
+  s3Bucket: "umbrix-backups"
   retention: "7d" # 7 daily rotation schema
   # Vault integration (if enabled)
   vault:
@@ -51,7 +51,7 @@ backups:
 # ── Frontend ─────────────────────────────────────────
 frontend:
   image:
-    repository: sentinel-fabric/frontend
+    repository: umbrix/frontend
     tag: "2.0.0"
   replicas: 2
   resources:
@@ -169,4 +169,4 @@ externalSecrets:
   vaultUrl: ""
   vaultMountPoint: secret
   vaultPath: data/sentinel
-  vaultRole: sentinel-fabric
+  vaultRole: umbrix

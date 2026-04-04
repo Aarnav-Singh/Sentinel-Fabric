@@ -1,4 +1,4 @@
-# Sentinel Fabric V2 — Zero-Trust NetworkPolicies
+# UMBRIX — Zero-Trust NetworkPolicies
 # Default deny-all + explicit allow rules per component tier.
 
 # ── Default Deny All Ingress & Egress ────────────────
@@ -7,11 +7,11 @@ kind: NetworkPolicy
 metadata:
   name: {{ .Release.Name }}-default-deny
   labels:
-    app: sentinel-fabric
+    app: umbrix
 spec:
   podSelector:
     matchLabels:
-      app: sentinel-fabric
+      app: umbrix
   policyTypes:
     - Ingress
     - Egress
@@ -25,7 +25,7 @@ metadata:
 spec:
   podSelector:
     matchLabels:
-      app: sentinel-fabric
+      app: umbrix
       component: backend
   policyTypes:
     - Ingress
@@ -35,7 +35,7 @@ spec:
     - from:
         - podSelector:
             matchLabels:
-              app: sentinel-fabric
+              app: umbrix
               component: frontend
       ports:
         - port: 8000
@@ -61,7 +61,7 @@ spec:
     - to:
         - podSelector:
             matchLabels:
-              app: sentinel-fabric
+              app: umbrix
               component: postgres
       ports:
         - port: 5432
@@ -70,7 +70,7 @@ spec:
     - to:
         - podSelector:
             matchLabels:
-              app: sentinel-fabric
+              app: umbrix
               component: redis
       ports:
         - port: 6379
@@ -79,7 +79,7 @@ spec:
     - to:
         - podSelector:
             matchLabels:
-              app: sentinel-fabric
+              app: umbrix
               component: clickhouse
       ports:
         - port: 8123
@@ -90,7 +90,7 @@ spec:
     - to:
         - podSelector:
             matchLabels:
-              app: sentinel-fabric
+              app: umbrix
               component: kafka
       ports:
         - port: 9092
@@ -99,7 +99,7 @@ spec:
     - to:
         - podSelector:
             matchLabels:
-              app: sentinel-fabric
+              app: umbrix
               component: qdrant
       ports:
         - port: 6333
@@ -127,7 +127,7 @@ metadata:
 spec:
   podSelector:
     matchLabels:
-      app: sentinel-fabric
+      app: umbrix
       component: frontend
   policyTypes:
     - Ingress
@@ -153,7 +153,7 @@ spec:
     - to:
         - podSelector:
             matchLabels:
-              app: sentinel-fabric
+              app: umbrix
               component: backend
       ports:
         - port: 8000
@@ -168,7 +168,7 @@ metadata:
 spec:
   podSelector:
     matchLabels:
-      app: sentinel-fabric
+      app: umbrix
       component: postgres
   policyTypes:
     - Ingress
@@ -176,7 +176,7 @@ spec:
     - from:
         - podSelector:
             matchLabels:
-              app: sentinel-fabric
+              app: umbrix
               component: backend
       ports:
         - port: 5432
@@ -194,7 +194,7 @@ metadata:
 spec:
   podSelector:
     matchLabels:
-      app: sentinel-fabric
+      app: umbrix
       component: backup
   policyTypes:
     - Egress

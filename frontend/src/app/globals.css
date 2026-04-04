@@ -6,31 +6,31 @@
 
 @layer base {
   :root {
-    --sf-bg: var(--sf-bg);
-    --sf-surface: var(--sf-bg);
-    --sf-surface-raised: var(--sf-bg);
-    --sf-card: var(--sf-bg);
+    --sf-bg: #0a0a0c;
+    --sf-base: #0a0a0c;
+    --sf-surface: #111115;
+    --sf-surface-raised: #15151a;
+    --sf-card: #111115;
     
-    --sf-border: rgba(20, 184, 166, 0.15);
-    --sf-border-active: rgba(20, 184, 166, 0.5);
+    --sf-border: #2a2a35;
+    --sf-border-active: #0d9488;
     
-    --sf-accent: var(--sf-critical);
-    --sf-accent-2: var(--sf-accent-2);
-    --sf-critical: var(--sf-critical);
-    --sf-warning: var(--sf-warning);
-    --sf-safe: var(--sf-safe);
-    --sf-data: var(--sf-accent-2);
-    --sf-muted: var(--sf-muted);
-    --sf-text: var(--sf-bg);
+    --sf-accent: #0d9488;
+    --sf-accent-2: #475569;
+    --sf-critical: #dc2626;
+    --sf-warning: #d97706;
+    --sf-safe: #059669;
+    --sf-data: #0d9488;
+    --sf-muted: #64748b;
+    --sf-text: #e2e8f0;
   }
 
   body {
-    background: radial-gradient(ellipse 80% 60% at 50% -10%, rgba(20, 184, 166, 0.08) 0%, var(--sf-bg) 70%);
     background-color: var(--sf-bg);
     color: var(--sf-text);
   }
 
-  /* Scanline overlay */
+  /* Scanline overlay - strict / less visible */
   @media (prefers-reduced-motion: no-preference) {
     body::after {
       content: '';
@@ -38,69 +38,83 @@
       inset: 0; 
       pointer-events: none; 
       z-index: 9999;
-      background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.02) 2px, rgba(0,0,0,0.02) 4px);
+      background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px);
     }
   }
 }
 
 @layer utilities {
-  .sf-card {
-    background: var(--sf-card);
+  /* ─── Panel Utilities (Replacing Glass) ─────────────────────────────────── */
+  .sf-panel {
+    background-color: var(--sf-surface);
     border: 1px solid var(--sf-border);
-    border-radius: 12px;
-    box-shadow: 0 4px 24px rgba(0,0,0,0.6), 0 1px 0 rgba(255,255,255,0.04) inset;
+    border-top: 1px solid rgba(255, 255, 255, 0.05); /* Slight hard highlight on top */
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .sf-panel-elevated {
+    background-color: var(--sf-surface-raised);
+    border: 1px solid var(--sf-border);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.6);
   }
 
+
+
+
   .sf-glow-accent {
-    box-shadow: 0 0 12px rgba(20, 184, 166, 0.55);
+    box-shadow: 0 0 8px rgba(13, 148, 136, 0.25);
   }
   
   .sf-glow-critical {
-    box-shadow: 0 0 10px rgba(255, 45, 85, 0.5);
-  }
-  
-  .sf-glow-safe {
-    box-shadow: 0 0 8px rgba(16, 185, 129, 0.45);
-  }
-
-  .sf-scanline {
-    background: linear-gradient(to bottom, transparent 0%, rgba(20, 184, 166, 0.05) 50%, transparent 100%);
-    background-size: 100% 4px;
-    animation: sf-scanline 8s linear infinite;
+    box-shadow: 0 0 8px rgba(220, 38, 38, 0.3);
   }
 
   .node-map-bg {
-    background-image: radial-gradient(circle at 2px 2px, rgba(255,255,255,0.05) 1px, transparent 0);
+    background-image: 
+      linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
     background-size: 24px 24px;
+    background-color: var(--sf-bg);
+  }
+
+  /* ─── Shimmer Skeleton (Strict) ─────────────────────────────────── */
+  .sf-shimmer {
+    position: relative;
+    overflow: hidden;
+    background: var(--sf-border);
+    border-radius: 2px;
+  }
+
+  .sf-shimmer::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.05) 20%,
+      rgba(255, 255, 255, 0.1) 50%,
+      rgba(255, 255, 255, 0.05) 80%,
+      transparent 100%
+    );
+    animation: sf-shimmer-sweep 1.5s linear infinite;
+    transform: translateX(-100%);
   }
 }
 
-@keyframes sf-scanline {
-  0% { transform: translateY(-100%); }
-  100% { transform: translateY(100vh); }
-}
+/* ─── Scrollbar ──────────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--sf-bg); border-left: 1px solid var(--sf-border); }
+::-webkit-scrollbar-thumb { background: var(--sf-border); border-radius: 0px; }
+::-webkit-scrollbar-thumb:hover { background: var(--sf-accent-2); }
 
-@keyframes sf-blink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.3; }
+/* ─── Reduced Motion ─────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
-
-@keyframes sf-fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes sf-pulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(20, 184, 166, 0.4); }
-  50% { box-shadow: 0 0 0 8px rgba(20, 184, 166, 0); }
-}
-
-@keyframes sf-pulse-red {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(255, 45, 85, 0.4); }
-  50% { box-shadow: 0 0 0 8px rgba(255, 45, 85, 0); }
-}
-
-::-webkit-scrollbar { width: 4px; height: 4px; }
-::-webkit-scrollbar-track { background: var(--sf-bg); }
-::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 4px; }
-::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.3); }

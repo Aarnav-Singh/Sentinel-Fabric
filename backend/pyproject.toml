@@ -1,7 +1,7 @@
 [project]
-name = "sentinel-fabric-backend"
+name = "umbrix-backend"
 version = "2.0.0"
-description = "Sentinel Fabric V2 — Real-time security posture intelligence backend"
+description = "UMBRIX — Real-time security posture intelligence backend"
 requires-python = ">=3.11"
 dependencies = [
     # ── Core Framework ──

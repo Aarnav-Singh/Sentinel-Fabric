@@ -2,9 +2,9 @@
 apiVersion: batch/v1
 kind: CronJob
 metadata:
-  name: {{ include "sentinel-fabric.fullname" . }}-db-backup
+  name: {{ include "umbrix.fullname" . }}-db-backup
   labels:
-    {{- include "sentinel-fabric.labels" . | nindent 4 }}
+    {{- include "umbrix.labels" . | nindent 4 }}
 spec:
   schedule: {{ .Values.backups.schedule | quote }}
   successfulJobsHistoryLimit: 3
@@ -38,17 +38,17 @@ spec:
                 - name: POSTGRES_USER
                   valueFrom:
                     secretKeyRef:
-                      name: {{ include "sentinel-fabric.fullname" . }}-secrets
+                      name: {{ include "umbrix.fullname" . }}-secrets
                       key: db-user
                 - name: POSTGRES_PASSWORD
                   valueFrom:
                     secretKeyRef:
-                      name: {{ include "sentinel-fabric.fullname" . }}-secrets
+                      name: {{ include "umbrix.fullname" . }}-secrets
                       key: db-password
                 - name: POSTGRES_DB
                   valueFrom:
                     secretKeyRef:
-                      name: {{ include "sentinel-fabric.fullname" . }}-secrets
+                      name: {{ include "umbrix.fullname" . }}-secrets
                       key: db-name
                 - name: S3_BUCKET
                   value: {{ .Values.backups.s3Bucket | quote }}
@@ -70,11 +70,11 @@ spec:
                 - name: AWS_ACCESS_KEY_ID
                   valueFrom:
                     secretKeyRef:
-                      name: {{ include "sentinel-fabric.fullname" . }}-secrets
+                      name: {{ include "umbrix.fullname" . }}-secrets
                       key: aws-access-key
                 - name: AWS_SECRET_ACCESS_KEY
                   valueFrom:
                     secretKeyRef:
-                      name: {{ include "sentinel-fabric.fullname" . }}-secrets
+                      name: {{ include "umbrix.fullname" . }}-secrets
                       key: aws-secret-key
 {{- end }}

@@ -12,7 +12,7 @@ export function PlaceholderPage({ title }: { title: string }) {
                 <TerminalSquare className="w-12 h-12 text-sf-warning mb-4 opacity-80" />
                 <h2 className="text-lg font-bold text-text-primary mb-2">Under Construction</h2>
                 <p className="text-text-muted text-sm text-center max-w-md">
-                    This module is part of the Sentinel Fabric roadmap. Interface and data integration are currently being provisioned.
+                    This module is part of the UMBRIX roadmap. Interface and data integration are currently being provisioned.
                 </p>
             </div>
         </div>

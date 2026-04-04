@@ -1,6 +1,6 @@
 """Stream 1: Supervised Ensemble — XGBoost + RandomForest.
 
-Trained on CIC-IDS-2017/2018 mapped to Sentinel Fabric's 76-dim
+Trained on CIC-IDS-2017/2018 mapped to UMBRIX's 76-dim
 feature vector. Uses real model artifacts when available, falls
 back to a synthetic RF for development.
 

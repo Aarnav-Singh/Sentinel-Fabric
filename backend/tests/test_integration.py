@@ -87,7 +87,7 @@ async def test_mfa_totp_lifecycle():
 
     # 2. Generate a provisioning URI
     totp = pyotp.TOTP(secret)
-    uri = totp.provisioning_uri(name="analyst@sentinel.local", issuer_name="Sentinel Fabric V2")
+    uri = totp.provisioning_uri(name="analyst@sentinel.local", issuer_name="UMBRIX")
     assert "otpauth://totp/" in uri
     assert "Sentinel%20Fabric%20V2" in uri
 

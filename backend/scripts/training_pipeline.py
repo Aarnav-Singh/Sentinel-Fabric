@@ -1,6 +1,6 @@
 """Phase 22A — ML Training Pipeline.
 
-Downloads CIC-IDS-2017/2018 dataset, maps features to the Sentinel Fabric
+Downloads CIC-IDS-2017/2018 dataset, maps features to the UMBRIX
 76-dimensional CanonicalEvent feature vector, trains production models,
 and exports weight artifacts to backend/models/.
 
@@ -40,7 +40,7 @@ VAE_MODEL_PATH = MODELS_DIR / "vae.pth"
 SCALER_PATH = MODELS_DIR / "feature_scaler.pkl"
 METADATA_PATH = MODELS_DIR / "training_metadata.json"
 
-# CIC-IDS-2017 attack labels → Sentinel Fabric attack classes
+# CIC-IDS-2017 attack labels → UMBRIX attack classes
 CIC_LABEL_MAP = {
     "BENIGN": "benign",
     "Bot": "botnet",
@@ -62,7 +62,7 @@ CIC_LABEL_MAP = {
     "Web Attack \\x96 XSS": "web_attack",
 }
 
-# Sentinel Fabric attack classes (from ensemble.py)
+# UMBRIX attack classes (from ensemble.py)
 ATTACK_CLASSES = [
     "benign", "dos", "ddos", "brute_force", "web_attack",
     "infiltration", "botnet", "port_scan", "sql_injection",
@@ -735,7 +735,7 @@ def run_full_pipeline():
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Sentinel Fabric V2 ML Training Pipeline")
+    parser = argparse.ArgumentParser(description="UMBRIX ML Training Pipeline")
     parser.add_argument("--stage", default="all",
                         choices=["all", "acquire", "prepare", "train_ensemble", "train_vae", "evaluate"],
                         help="Pipeline stage to run")

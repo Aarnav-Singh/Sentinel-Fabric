@@ -197,6 +197,7 @@ export default function ProfilePage() {
                             </p>
                             <div className="bg-white p-4 rounded-lg w-fit mx-auto">
                                 {/* QR code placeholder — use provisioning URI */}
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
                                 <img
                                     src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(mfaUri)}`}
                                     alt="MFA QR Code"

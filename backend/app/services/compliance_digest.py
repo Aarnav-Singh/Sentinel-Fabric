@@ -197,14 +197,14 @@ class ComplianceDigestGenerator:
                         (SOC 2, HIPAA, ISO 27001, GDPR, PCI-DSS v4.0, NIST CSF 2.0) in the latest digest cycle.
                     </p>
                     <p style="color: #475569; font-size: 12px; margin-top: 24px;">
-                        — Sentinel Fabric V2 Compliance Engine
+                        — UMBRIX V2 Compliance Engine
                     </p>
                 </div>
             </div>
             """
             await email_service.send_digest(
                 to=recipients,
-                subject=f"Sentinel Fabric Compliance Digest — {event_count} events",
+                subject=f"UMBRIX Compliance Digest — {event_count} events",
                 html_content=html,
             )
         except Exception as e:

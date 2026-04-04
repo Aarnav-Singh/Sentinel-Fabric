@@ -97,7 +97,7 @@ class EmailService:
         <div style="font-family: -apple-system, sans-serif; max-width: 600px; margin: auto;">
             <div style="background: #0f172a; padding: 24px; border-radius: 12px;">
                 <h2 style="color: #e2e8f0; margin: 0 0 8px;">
-                    🔒 Sentinel Fabric Alert
+                    🔒 UMBRIX Alert
                 </h2>
                 <div style="background: {sev_color}22; border-left: 4px solid {sev_color};
                             padding: 12px 16px; border-radius: 8px; margin: 16px 0;">
@@ -107,7 +107,7 @@ class EmailService:
                 </div>
                 <p style="color: #94a3b8; font-size: 14px; line-height: 1.6;">{details}</p>
                 <p style="color: #475569; font-size: 12px; margin-top: 24px;">
-                    — Sentinel Fabric V2 Automated Alert
+                    — UMBRIX V2 Automated Alert
                 </p>
             </div>
         </div>
@@ -153,7 +153,7 @@ class EmailService:
                 </div>
                 {f'<a href="{download_url}" style="display:inline-block; background:#22d3ee; color:#0f172a; padding:10px 20px; border-radius:6px; text-decoration:none; font-weight:700; font-size:13px;">Download Report</a>' if download_url else ''}
                 <p style="color: #475569; font-size: 12px; margin-top: 24px;">
-                    — Sentinel Fabric V2 Reporting Engine
+                    — UMBRIX V2 Reporting Engine
                 </p>
             </div>
         </div>

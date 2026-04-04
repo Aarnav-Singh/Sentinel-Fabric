@@ -3,48 +3,18 @@
 import React, { useState } from 'react';
 import { Target, ExternalLink, Database, Clock, ShieldAlert, Users, Server, UserPlus, Zap, Filter, Radio, Brain, Bug } from 'lucide-react';
 import useSWR from 'swr';
+import { FadeIn, SlideIn, ShimmerSkeleton, AnimatedNumber, PanelCard } from '@/components/ui/MotionWrappers';
+import { DataGrid } from '@/components/ui/DataGrid';
 
 const fetcher = (url: string) => fetch(url).then(r => r.json());
 
 // ─── Types ───────────────────────────────────────────────
-
-interface CveContext {
-  cve_id: string;
-  cvss_score?: number;
-  severity?: string;
-  description?: string;
-  patch_available?: boolean;
-}
-
-interface TriageResult {
-  severity: string;
-  confidence: number;
-  summary: string;
-  recommended_action: string;
-  tools_used: string[];
-}
-
-interface Finding {
-  id: string;
-  title: string;
-  description: string;
-  severity: 'critical' | 'high' | 'medium' | 'low';
-  source?: string;
-  status: 'open' | 'approved' | 'dismissed' | 'escalated' | 'new';
-  created_at?: string;
-  ip?: string;
-  domain?: string;
-  linked_techniques?: string[];
-  cve_context?: CveContext[];
-  triage_result?: TriageResult;
-}
-
-interface FindingsResponse {
-  findings?: Finding[];
-}
+interface CveContext { cve_id: string; cvss_score?: number; severity?: string; description?: string; patch_available?: boolean; }
+interface TriageResult { severity: string; confidence: number; summary: string; recommended_action: string; tools_used: string[]; }
+interface Finding { id: string; title: string; description: string; severity: 'critical' | 'high' | 'medium' | 'low'; source?: string; status: 'open' | 'approved' | 'dismissed' | 'escalated' | 'new'; created_at?: string; ip?: string; domain?: string; linked_techniques?: string[]; cve_context?: CveContext[]; triage_result?: TriageResult; }
+interface FindingsResponse { findings?: Finding[]; }
 
 // ─── Helpers ─────────────────────────────────────────────
-
 function timeAgo(iso?: string): string {
   if (!iso) return '';
   const diff = (Date.now() - new Date(iso).getTime()) / 1000;
@@ -54,52 +24,29 @@ function timeAgo(iso?: string): string {
 }
 
 const SEVERITY_MAP = {
-  critical: { label: 'CRITICAL', border: 'var(--sf-critical)', text: 'text-sf-critical', bg: 'bg-sf-critical/10 border-sf-critical/30' },
-  high: { label: 'HIGH', border: 'var(--sf-warning)', text: 'text-sf-warning', bg: 'bg-sf-warning/10 border-sf-warning/30' },
-  medium: { label: 'MEDIUM', border: 'var(--sf-accent-2)', text: 'text-sf-accent-2', bg: 'bg-sf-accent-2/10 border-sf-accent-2/30' },
-  low: { label: 'LOW', border: 'var(--sf-muted)', text: 'text-sf-muted', bg: 'bg-sf-surface border-sf-border' },
+  critical: { label: 'CR', color: 'var(--sf-critical)', text: 'text-sf-critical' },
+  high: { label: 'HI', color: 'var(--sf-warning)', text: 'text-sf-warning' },
+  medium: { label: 'ME', color: 'var(--sf-muted)', text: 'text-sf-text' },
+  low: { label: 'LO', color: 'var(--sf-muted)', text: 'text-sf-muted' },
 };
 
 const STATUS_MAP = {
   open: 'text-sf-warning',
-  new: 'text-sf-accent',
+  new: 'text-sf-text',
   approved: 'text-sf-safe',
-  dismissed: 'text-sf-muted line-through',
+  dismissed: 'text-sf-disabled line-through',
   escalated: 'text-sf-critical',
 };
 
-function SkeletonCard() {
-  return (
-    <div className="py-4 border-b border-white/5 animate-pulse space-y-3">
-      <div className="h-4 bg-sf-surface rounded w-3/4" />
-      <div className="h-3 bg-sf-surface/80 rounded w-full" />
-      <div className="flex gap-4">
-        <div className="h-3 bg-sf-surface/80 rounded w-24" />
-        <div className="h-3 bg-sf-surface/80 rounded w-16" />
-      </div>
-    </div>
-  );
-}
-
-// ─── Action POST ─────────────────────────────────────────
-
 async function postAction(id: string, action: 'approve' | 'dismiss' | 'escalate', feedback?: string) {
-  const res = await fetch(`/api/proxy/api/v1/findings/${id}/action`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ action, feedback }),
-  });
+  const res = await fetch(`/api/proxy/api/v1/findings/${id}/action`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action, feedback }) });
   if (!res.ok) throw new Error(`Action failed: ${res.status}`);
   return res.json();
 }
 
 async function triggerAiTriage(id: string): Promise<TriageResult | null> {
   try {
-    const res = await fetch('/api/proxy/api/v1/agents/triage', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ finding_id: id }),
-    });
+    const res = await fetch('/api/proxy/api/v1/agents/triage', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ finding_id: id }) });
     if (!res.ok) return null;
     return await res.json();
   } catch {
@@ -115,26 +62,16 @@ export default function FindingsPage() {
   const [triageResults, setTriageResults] = useState<Record<string, TriageResult>>({});
   const [triagePending, setTriagePending] = useState<Record<string, boolean>>({});
 
-  const { data, isLoading, mutate } = useSWR<FindingsResponse | Finding[]>(
-    '/api/proxy/api/v1/findings',
-    fetcher,
-    { refreshInterval: 10000 }
-  );
+  const { data, isLoading, mutate } = useSWR<FindingsResponse | Finding[]>('/api/proxy/api/v1/findings', fetcher, { refreshInterval: 10000 });
 
-  // Normalise: API may return array or { findings: [] }
   let findings: Finding[] = [];
   if (data) {
-    if (Array.isArray(data)) {
-      findings = data;
-    } else if ((data as FindingsResponse).findings) {
-      findings = (data as FindingsResponse).findings!;
-    }
+    if (Array.isArray(data)) findings = data;
+    else if ((data as FindingsResponse).findings) findings = (data as FindingsResponse).findings!;
   }
 
-  // Apply local status overrides (from verdict actions)
   findings = findings.map(f => localStatuses[f.id] ? { ...f, status: localStatuses[f.id] } : f);
 
-  // Apply filters
   const filtered = findings.filter(f => {
     if (severityFilter !== 'all' && f.severity !== severityFilter) return false;
     if (statusFilter !== 'all' && f.status !== statusFilter) return false;
@@ -151,353 +88,207 @@ export default function FindingsPage() {
       const newStatus: Finding['status'] = action === 'approve' ? 'approved' : action === 'dismiss' ? 'dismissed' : 'escalated';
       setLocalStatuses(p => ({ ...p, [id]: newStatus }));
       mutate();
-    } catch {
-      // silently keep local state
-    } finally {
-      setVerdictPending(p => { const n = { ...p }; delete n[id]; return n; });
-    }
+    } catch { } 
+    finally { setVerdictPending(p => { const n = { ...p }; delete n[id]; return n; }); }
   };
 
-  const sourceIconMap: Record<string, React.ElementType> = {
-    endpoint: Database,
-    network: ShieldAlert,
-    identity: Users,
-    cloud: Server,
-  };
+  const sourceIconMap: Record<string, React.ElementType> = { endpoint: Database, network: ShieldAlert, identity: Users, cloud: Server };
 
   return (
-    <div className="flex-1 overflow-auto custom-scrollbar p-6 relative bg-transparent">
-      <div className="flex flex-col lg:flex-row gap-6 max-w-7xl mx-auto relative z-10">
-        {/* Left Column: Threat Status & Triage */}
-        <div className="flex-1 space-y-6">
-          <header className="flex justify-between items-end mb-2">
-            <div>
-              <h1 className="text-2xl font-bold text-sf-text tracking-tight flex items-center gap-3">
-                  <Target className="w-6 h-6 text-sf-critical motion-safe:animate-pulse" />
-                  Threat Vectors
-              </h1>
-              <p className="text-sm text-sf-muted mt-1">Review and triage incoming security events</p>
-            </div>
-            <span className="text-sf-accent-2 text-[10px] uppercase font-bold tracking-widest bg-sf-accent-2/10 px-3 py-1.5 rounded-full border border-sf-accent-2/30 motion-safe:animate-pulse hidden md:inline-flex items-center gap-2 shadow-[0_0_15px_var(--sf-accent-2)]">
-              <span className="flex size-1.5 bg-sf-accent-2 rounded-full" />
-              LIVE_FEED.SYS
-            </span>
-          </header>
-
-          {/* Hologram Section for Global Status (Borderless) */}
-          <div className="py-6 border-b border-sf-accent/20 relative group">
-            <div className="flex justify-between items-start mb-6 relative z-10">
-              <div>
-                <p className="text-sf-muted text-[10px] font-medium uppercase tracking-widest">Global Status</p>
-                <p className="text-4xl font-display font-light text-sf-text mt-1">
-                  {criticalCount > 0 ? 'Elevated Risk' : 'Nominal'}
-                </p>
-              </div>
-              {criticalCount > 0 && (
-                <div className="text-sf-critical text-2xl font-display font-light motion-safe:animate-pulse">
-                  {criticalCount} <span className="text-[10px] uppercase font-bold tracking-widest text-sf-muted ml-1">CRITICAL</span>
+    <div className="flex-1 overflow-auto custom-scrollbar p-6 bg-sf-bg flex min-h-0">
+      <div className="flex flex-col xl:flex-row gap-6 w-full h-full max-w-[1600px] mx-auto min-h-0">
+        
+        {/* Left Column: DataGrid of Findings */}
+        <div className="flex-[2] flex flex-col min-h-0 min-w-0">
+            <PanelCard className="flex flex-col h-full min-h-0">
+                <div className="px-4 py-3 border-b border-sf-border bg-sf-surface flex items-center justify-between shrink-0">
+                    <div>
+                        <h2 className="text-[10px] font-mono tracking-widest text-sf-muted uppercase">Threat Vectors</h2>
+                    </div>
+                    <div className="flex gap-2 text-[10px] uppercase font-mono tracking-widest text-sf-text">
+                        <select className="bg-sf-bg border border-sf-border px-2 py-1 outline-none" value={severityFilter} onChange={e => setSeverityFilter(e.target.value)}>
+                            <option value="all">ALL SEV</option>
+                            <option value="critical">CRITICAL</option>
+                            <option value="high">HIGH</option>
+                            <option value="medium">MEDIUM</option>
+                            <option value="low">LOW</option>
+                        </select>
+                         <select className="bg-sf-bg border border-sf-border px-2 py-1 outline-none" value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
+                            <option value="all">ALL STATUS</option>
+                            <option value="open">OPEN</option>
+                            <option value="new">NEW</option>
+                            <option value="approved">APPROVED</option>
+                            <option value="dismissed">DISMISSED</option>
+                            <option value="escalated">ESCALATED</option>
+                        </select>
+                    </div>
                 </div>
-              )}
-            </div>
 
-            {/* Dynamic 3D Radar Threat Plot View */}
-             <div className="relative h-28 w-full flex items-center mb-6 overflow-hidden bg-sf-surface/30 rounded-xl border border-sf-border shadow-inner">
-                 <svg className="w-full h-full text-sf-accent/30 stroke-current text-opacity-10" fill="none">
-                    {/* Grid lines */}
-                    <line x1="0" y1="25%" x2="100%" y2="25%" strokeWidth="1" strokeDasharray="2 4" opacity="0.5" />
-                    <line x1="0" y1="50%" x2="100%" y2="50%" strokeWidth="1" strokeDasharray="4 4" />
-                    <line x1="0" y1="75%" x2="100%" y2="75%" strokeWidth="1" strokeDasharray="2 4" opacity="0.5" />
+                {isLoading ? (
+                    <div className="p-4 space-y-4">
+                        <ShimmerSkeleton className="h-10 w-full" />
+                        <ShimmerSkeleton className="h-10 w-full" />
+                    </div>
+                ) : filtered.length === 0 ? (
+                    <div className="flex-1 flex items-center justify-center font-mono text-[10px] text-sf-muted tracking-widest uppercase">
+                        No active findings
+                    </div>
+                ) : (
+                    <div className="flex-1 overflow-y-auto">
+                        <DataGrid 
+                            data={filtered}
+                            rowKey="id"
+                            columns={[
+                                { 
+                                    header: "!", 
+                                    key: "severity", 
+                                    render: (val, row) => (
+                                        <div className={`w-6 text-center text-[9px] font-bold ${row.status === 'dismissed' || row.status === 'approved' ? 'text-sf-disabled border-sf-disabled' : SEVERITY_MAP[val as keyof typeof SEVERITY_MAP].text} border py-0.5`}>
+                                            {SEVERITY_MAP[val as keyof typeof SEVERITY_MAP].label}
+                                        </div>
+                                    ) 
+                                },
+                                {
+                                    header: "SOURCE",
+                                    key: "source",
+                                    render: (val, row) => {
+                                        const Icon = sourceIconMap[val] || Target;
+                                        return <div className="flex items-center gap-2 text-[10px] text-sf-muted uppercase"><Icon className="w-3 h-3" /> {val}</div>
+                                    }
+                                },
+                                {
+                                    header: "OBSERVATION",
+                                    key: "title",
+                                    render: (val, row) => (
+                                        <div className={`flex flex-col ${row.status === 'dismissed' || row.status === 'approved' ? 'grayscale opacity-50' : ''}`}>
+                                            <span className="text-sm font-medium text-sf-text font-mono truncate max-w-sm" title={val}>{val}</span>
+                                            <span className="text-[9px] text-sf-muted font-mono truncate max-w-sm" title={row.description}>{row.description}</span>
+                                        </div>
+                                    )
+                                },
+                                {
+                                    header: "IP/DOMAIN",
+                                    key: "ip",
+                                    render: (val, row) => <span className="text-[10px] font-mono text-sf-muted">{val || row.domain || '-'}</span>
+                                },
+                                {
+                                    header: "STATUS",
+                                    key: "status",
+                                    render: (val) => <span className={`text-[9px] font-bold uppercase tracking-widest ${STATUS_MAP[val as keyof typeof STATUS_MAP]}`}>{val}</span>
+                                },
+                                {
+                                    header: "ACT",
+                                    key: "actions" as keyof Finding,
+                                    align: "right",
+                                    render: (_, row) => {
+                                        const isResolved = row.status === 'approved' || row.status === 'dismissed';
+                                        return (
+                                            <div className="flex gap-1 justify-end">
+                                                {!isResolved && (
+                                                    <>
+                                                        {!triageResults[row.id] && !row.triage_result && (
+                                                            <button 
+                                                                className="px-2 py-1 bg-sf-surface border border-sf-border text-[9px] text-sf-text hover:bg-sf-border transition-colors font-bold uppercase disabled:opacity-50"
+                                                                onClick={() => {
+                                                                    setTriagePending(p => ({ ...p, [row.id]: true }));
+                                                                    triggerAiTriage(row.id).then(r => {
+                                                                        if (r) setTriageResults(p => ({ ...p, [row.id]: r }));
+                                                                        setTriagePending(p => { const n = { ...p }; delete n[row.id]; return n; });
+                                                                    });
+                                                                }}
+                                                                disabled={triagePending[row.id]}
+                                                            >
+                                                                {triagePending[row.id] ? '...' : 'AI'}
+                                                            </button>
+                                                        )}
+                                                        <button 
+                                                            className="px-2 py-1 bg-sf-surface border border-sf-border hover:bg-sf-safe hover:text-black hover:border-sf-safe text-[9px] text-sf-safe transition-colors font-bold uppercase disabled:opacity-50"
+                                                            onClick={() => handleAction(row.id, 'approve')}
+                                                            disabled={!!verdictPending[row.id]}
+                                                        >A</button>
+                                                         <button 
+                                                            className="px-2 py-1 bg-sf-surface border border-sf-border hover:bg-sf-disabled hover:text-black hover:border-sf-disabled text-[9px] text-sf-muted transition-colors font-bold uppercase disabled:opacity-50"
+                                                            onClick={() => handleAction(row.id, 'dismiss')}
+                                                            disabled={!!verdictPending[row.id]}
+                                                        >D</button>
+                                                           <button 
+                                                            className="px-2 py-1 bg-sf-surface border border-sf-critical text-[9px] text-sf-critical transition-colors hover:bg-sf-critical hover:text-black font-bold uppercase disabled:opacity-50"
+                                                            onClick={() => handleAction(row.id, 'escalate')}
+                                                            disabled={!!verdictPending[row.id]}
+                                                        >ESC</button>
+                                                    </>
+                                                )}
+                                            </div>
+                                        );
+                                    }
+                                }
+                            ]}
+                        />
+                    </div>
+                )}
+            </PanelCard>
+        </div>
 
-                    <line x1="25%" y1="0" x2="25%" y2="100%" strokeWidth="1" strokeDasharray="2 4" opacity="0.5" />
-                    <line x1="50%" y1="0" x2="50%" y2="100%" strokeWidth="1" strokeDasharray="4 4" />
-                    <line x1="75%" y1="0" x2="75%" y2="100%" strokeWidth="1" strokeDasharray="2 4" opacity="0.5" />
+        {/* Right Column: Visualization & Summary */}
+        <div className="flex-1 flex flex-col gap-4 min-w-[300px]">
+            <PanelCard className="flex flex-col overflow-hidden relative">
+                <div className="absolute top-0 right-0 p-3 pointer-events-none">
+                     <span className="text-[10px] font-mono tracking-widest text-sf-accent flex items-center gap-1.5 border border-sf-accent px-1.5 py-0.5">
+                         <span className="w-1.5 h-1.5 bg-sf-accent animate-pulse-fast border border-black/50" /> LIVE_PLOT
+                     </span>
+                </div>
+                <div className="p-4 border-b border-sf-border flex flex-col">
+                    <span className="text-[10px] font-mono uppercase tracking-widest text-sf-muted">Risk Surface</span>
+                    <div className="text-4xl font-mono text-sf-text mt-1">{criticalCount > 0 ? 'ELEVATED' : 'NOMINAL'}</div>
+                </div>
 
-                    {/* Threat Nodes */}
-                    {findings.map((f, i) => {
-                      // Pseudo-random deterministic placement based on ID
-                      const seed1 = f.id.charCodeAt(0) || 0;
-                      const seed2 = f.id.charCodeAt(f.id.length - 1) || 0;
-                      const x = `${10 + (Math.abs(Math.sin(seed1 * i)) * 80)}%`;
-                      const y = `${10 + (Math.abs(Math.cos(seed2 * i)) * 80)}%`;
-                      
-                      const color = SEVERITY_MAP[f.severity]?.border || 'var(--sf-accent)';
+                {/* Scope Plot */}
+                <div className="h-48 w-full relative bg-sf-bg border-b border-sf-border overflow-hidden flex items-center justify-center">
+                    <svg className="absolute inset-0 w-full h-full stroke-sf-border stroke-1" fill="none">
+                        <circle cx="50%" cy="50%" r="20%" />
+                        <circle cx="50%" cy="50%" r="40%" />
+                        <line x1="0" y1="50%" x2="100%" y2="50%" />
+                        <line x1="50%" y1="0" x2="50%" y2="100%" />
+                        {filtered.map((f, i) => {
+                            const cx = `${10 + (Math.abs(Math.sin((f.id.charCodeAt(0)||0) * i)) * 80)}%`;
+                            const cy = `${10 + (Math.abs(Math.cos((f.id.charCodeAt(f.id.length-1)||0) * i)) * 80)}%`;
+                            const unresolved = f.status !== 'approved' && f.status !== 'dismissed';
+                            return (
+                                <circle 
+                                    key={f.id}
+                                    cx={cx} cy={cy} r={unresolved ? (f.severity === 'critical' ? 3 : 2) : 1}
+                                    className={unresolved ? 'fill-current animate-pulse-fast' : 'fill-sf-disabled'}
+                                    style={{ color: unresolved ? SEVERITY_MAP[f.severity]?.color : undefined }}
+                                />
+                            );
+                        })}
+                    </svg>
+                    <div className="absolute w-full h-[1px] bg-sf-accent shadow-[0_0_8px_var(--sf-accent)] rotate-[45deg] origin-center opacity-30 animate-[spin_4s_linear_infinite]" />
+                </div>
 
-                      return (
-                         <circle 
-                            key={f.id} 
-                            cx={x} 
-                            cy={y} 
-                            r={f.severity === 'critical' ? '4' : '2'} 
-                            fill={color} 
-                            className="animate-pulse"
-                            style={{ filter: `drop-shadow(0 0 6px ${color})` }}
-                          />
-                      );
+                <div className="p-4 grid grid-cols-2 gap-4 bg-sf-surface">
+                    {(['critical', 'high', 'medium', 'low'] as const).map(s => {
+                        const count = findings.filter(f => f.severity === s && f.status !== 'dismissed').length;
+                        return (
+                            <div key={s} className="flex flex-col">
+                                <span className={`text-2xl font-mono ${count > 0 ? SEVERITY_MAP[s].text : 'text-sf-disabled'}`}>{count}</span>
+                                <span className="text-[9px] font-mono uppercase tracking-widest text-sf-muted mt-0.5">{s}</span>
+                            </div>
+                        );
                     })}
-                 </svg>
-                 <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_20%,var(--sf-bg)_100%)] pointer-events-none" />
-                 
-                 <div className="absolute left-4 bottom-2 flex gap-6 z-10 bg-sf-bg/80 px-3 py-1 rounded border border-sf-accent/20 backdrop-blur-sm">
-                    <div className="text-[10px] font-mono font-medium text-sf-accent">NODE_ALPHA: ACTIVE</div>
-                    <div className="text-[10px] font-mono font-medium text-sf-accent">THREAT_NODES: {findings.length}</div>
-                 </div>
-            </div>
-          </div>
-
-          {/* Filters + Triage */}
-          <section className="space-y-4 pt-6 mt-6 border-t border-sf-border">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-              <div>
-                <h3 className="text-sf-text text-lg font-bold">Findings Triage</h3>
-              </div>
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-[10px] bg-sf-accent-2/10 text-sf-accent-2 px-2 py-1 rounded border border-sf-accent-2/30 font-bold tracking-widest">
-                  NEW ({newCount})
-                </span>
-                {/* Severity filter */}
-                <div className="flex items-center gap-1.5 bg-sf-surface border border-sf-border shadow-inner rounded-lg px-3 py-1.5">
-                  <Filter className="w-3.5 h-3.5 text-sf-muted" />
-                  <select
-                    value={severityFilter}
-                    onChange={e => setSeverityFilter(e.target.value)}
-                    className="bg-transparent text-[11px] font-bold uppercase tracking-wider text-sf-text outline-none cursor-pointer"
-                  >
-                    <option value="all">All Severities</option>
-                    <option value="critical">Critical</option>
-                    <option value="high">High</option>
-                    <option value="medium">Medium</option>
-                    <option value="low">Low</option>
-                  </select>
                 </div>
-                {/* Status filter */}
-                <div className="flex items-center gap-1.5 bg-sf-surface border border-sf-border shadow-inner rounded-lg px-3 py-1.5">
-                  <select
-                    value={statusFilter}
-                    onChange={e => setStatusFilter(e.target.value)}
-                    className="bg-transparent text-[11px] font-bold uppercase tracking-wider text-sf-text outline-none cursor-pointer"
-                  >
-                    <option value="all">All Statuses</option>
-                    <option value="open">Open</option>
-                    <option value="new">New</option>
-                    <option value="approved">Approved</option>
-                    <option value="dismissed">Dismissed</option>
-                    <option value="escalated">Escalated</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              {isLoading && (
-                <>
-                  <SkeletonCard />
-                  <SkeletonCard />
-                </>
-              )}
-
-              {!isLoading && filtered.length === 0 && (
-                <div className="py-8 text-center">
-                  <Target className="w-10 h-10 text-sf-muted mx-auto mb-3" />
-                  <p className="text-sf-muted text-sm font-medium">No findings detected</p>
-                  <p className="text-sf-muted text-[10px] mt-1 uppercase tracking-widest">All threat vectors nominal</p>
-                </div>
-              )}
-
-              {!isLoading && filtered.map((finding) => {
-                const sev = SEVERITY_MAP[finding.severity] ?? SEVERITY_MAP.low;
-                const Icon = sourceIconMap[finding.source ?? ''] ?? Database;
-                const isPending = !!verdictPending[finding.id];
-                const currentStatus = localStatuses[finding.id] ?? finding.status;
-                const isResolved = currentStatus === 'approved' || currentStatus === 'dismissed';
-
-                return (
-                  <div
-                    key={finding.id}
-                    className={`py-4 border-b border-white/5 relative group hover:bg-white/5 transition-all cursor-pointer ${isResolved ? 'opacity-60 grayscale-[0.3]' : ''}`}
-                  >
-                    <div className="flex justify-between items-start mb-2">
-                      <h4 className="text-sf-text font-bold text-sm pr-2">{finding.title}</h4>
-                      <div className="flex items-center gap-2 shrink-0">
-                        <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border ${sev.bg} ${sev.text}`}>
-                          {sev.label}
-                        </span>
-                        <ExternalLink className="w-4 h-4 text-sf-muted group-hover:text-sf-text transition-colors" />
-                      </div>
-                    </div>
-                    <p className="text-sf-muted text-xs mb-3">{finding.description}</p>
-
-                    {/* CVE Enrichment Badges (Phase 34B) */}
-                    {finding.cve_context && finding.cve_context.length > 0 && (
-                      <div className="flex flex-wrap gap-2 mb-3">
-                        {finding.cve_context.map((cve) => (
-                          <div key={cve.cve_id} className="flex items-center gap-1.5 px-2 py-1 bg-sf-accent-2/10 border border-sf-accent-2/30 rounded text-[10px]">
-                            <Bug className="w-3 h-3 text-sf-accent-2" />
-                            <span className="font-mono font-bold text-sf-accent-2">{cve.cve_id}</span>
-                            {cve.cvss_score && (
-                              <span className={`px-1.5 py-0.5 rounded font-bold ${
-                                cve.cvss_score >= 9 ? 'bg-sf-critical/20 text-sf-critical' : 
-                                cve.cvss_score >= 7 ? 'bg-sf-warning/20 text-sf-warning' : 
-                                'bg-sf-accent/20 text-sf-accent'
-                              }`}>CVSS {cve.cvss_score}</span>
-                            )}
-                            {cve.patch_available !== undefined && (
-                              <span className={`uppercase font-bold ${cve.patch_available ? 'text-sf-safe' : 'text-sf-critical'}`}>
-                                {cve.patch_available ? 'PATCHED' : 'UNPATCHED'}
-                              </span>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                    {/* AI Triage Result (Phase 34A) */}
-                    {(triageResults[finding.id] || finding.triage_result) && (
-                      <div className="mb-3 p-3 bg-sf-surface border-l-2 border-l-sf-accent border-y border-r border-sf-border rounded-r-lg">
-                        <div className="flex items-center gap-2 mb-1">
-                          <Brain className="w-3.5 h-3.5 text-sf-accent" />
-                          <span className="text-[10px] uppercase font-bold tracking-widest text-sf-accent font-mono z-10">AI TRIAGE</span>
-                          <span className="text-[10px] font-mono text-sf-muted">
-                            {Math.round(((triageResults[finding.id] || finding.triage_result)?.confidence ?? 0) * 100)}% confidence
-                          </span>
-                        </div>
-                        <p className="text-xs text-sf-text font-mono">{(triageResults[finding.id] || finding.triage_result)?.summary}</p>
-                        <p className="text-[10px] text-sf-accent/80 mt-1 font-mono font-medium">
-                          → {(triageResults[finding.id] || finding.triage_result)?.recommended_action}
-                        </p>
-                      </div>
-                    )}
-
-                    <div className="flex items-center justify-between flex-wrap gap-2">
-                      <div className="flex items-center gap-4">
-                        {finding.ip && (
-                          <div className="flex items-center gap-1.5 px-2 py-1 bg-sf-surface rounded border border-sf-border">
-                            <Icon className="w-3.5 h-3.5 text-sf-muted" />
-                            <span className="text-[10px] text-sf-text font-mono font-bold">{finding.ip}</span>
-                          </div>
-                        )}
-                        {finding.created_at && (
-                          <div className="flex items-center gap-1.5">
-                            <Clock className="w-3.5 h-3.5 text-sf-muted" />
-                            <span className="text-[10px] text-sf-muted font-mono">{timeAgo(finding.created_at).toUpperCase()}</span>
-                          </div>
-                        )}
-                        <span className={`text-[10px] font-bold uppercase tracking-widest ${STATUS_MAP[currentStatus] ?? 'text-sf-muted'}`}>
-                          {currentStatus}
-                        </span>
-                      </div>
-
-                      {/* Verdict buttons */}
-                      {!isResolved && (
-                        <div className="flex items-center gap-2">
-                          {/* AI Triage trigger */}
-                          {!triageResults[finding.id] && !finding.triage_result && (
-                            <button
-                              disabled={!!triagePending[finding.id]}
-                              onClick={async () => {
-                                setTriagePending(p => ({ ...p, [finding.id]: true }));
-                                const result = await triggerAiTriage(finding.id);
-                                if (result) setTriageResults(p => ({ ...p, [finding.id]: result }));
-                                setTriagePending(p => { const n = { ...p }; delete n[finding.id]; return n; });
-                              }}
-                              className="text-[10px] uppercase tracking-wider font-bold px-3 py-1.5 rounded bg-sf-accent/10 text-sf-accent border border-sf-accent/30 hover:bg-sf-accent/20 transition-all disabled:opacity-50 flex items-center gap-1.5"
-                            >
-                              <Brain className="w-3 h-3" />
-                              {triagePending[finding.id] ? 'Analyzing...' : 'AI Triage'}
-                            </button>
-                          )}
-                          <button
-                            disabled={isPending}
-                            onClick={() => handleAction(finding.id, 'approve')}
-                            className="text-[10px] uppercase tracking-wider font-bold px-3 py-1.5 rounded bg-sf-safe/10 text-sf-safe border border-sf-safe/30 hover:bg-sf-safe/20 transition-all disabled:opacity-50"
-                          >
-                            {verdictPending[finding.id] === 'approve' ? '...' : 'Approve'}
-                          </button>
-                          <button
-                            disabled={isPending}
-                            onClick={() => handleAction(finding.id, 'dismiss')}
-                            className="text-[10px] uppercase tracking-wider font-bold px-3 py-1.5 rounded bg-sf-muted/10 text-sf-muted border border-sf-muted/30 hover:bg-sf-surface transition-all disabled:opacity-50"
-                          >
-                            {verdictPending[finding.id] === 'dismiss' ? '...' : 'Dismiss'}
-                          </button>
-                          <button
-                            disabled={isPending}
-                            onClick={() => handleAction(finding.id, 'escalate')}
-                            className="text-[10px] uppercase tracking-wider font-bold px-3 py-1.5 rounded bg-sf-critical/10 text-sf-critical border border-sf-critical/30 hover:bg-sf-critical/20 transition-all shadow-[0_0_10px_var(--sf-critical)] disabled:opacity-50"
-                          >
-                            {verdictPending[finding.id] === 'escalate' ? '...' : 'Escalate'}
-                          </button>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Background large icon */}
-                    <div className="absolute -right-4 -bottom-4 opacity-5 group-hover:opacity-10 transition-opacity pointer-events-none z-0">
-                      <Target className="w-24 h-24" style={{ color: sev.border }} />
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </section>
+            </PanelCard>
+            
+            <PanelCard className="flex flex-col p-4 bg-sf-bg gap-2 mt-auto">
+                <button className="w-full border border-sf-border py-2 text-[10px] font-mono tracking-widest text-sf-text hover:bg-sf-surface uppercase transition-colors flex items-center justify-center gap-2">
+                    <UserPlus className="w-3 h-3 text-sf-muted" /> ASSIGN INCIDENT
+                </button>
+                 <button className="w-full border border-sf-text bg-sf-text py-2 text-[10px] font-mono tracking-widest text-sf-bg hover:bg-sf-text/90 uppercase transition-colors flex items-center justify-center gap-2">
+                    <Zap className="w-3 h-3" /> START MITIGATION
+                </button>
+            </PanelCard>
         </div>
 
-        <div className="lg:w-1/3 flex flex-col pt-[60px]">
-          <div className="sticky top-6 relative overflow-hidden pl-8 border-l border-white/5">
-
-            <div className="flex items-center gap-4 mb-6 relative z-10">
-              <div className="w-12 h-12 rounded-lg bg-sf-accent/10 flex items-center justify-center border border-sf-accent/30 shadow-[0_0_15px_var(--sf-accent)]">
-                <Radio className="w-6 h-6 text-sf-accent" />
-              </div>
-              <div>
-                <h4 className="text-sf-text font-bold text-lg">Node Analysis</h4>
-                <p className="text-[10px] text-sf-muted font-mono uppercase tracking-widest mt-1">
-                  {findings.length} FINDINGS TOTAL
-                </p>
-              </div>
-            </div>
-
-            {/* 3D Wireframe Server Visualization */}
-            <div className="w-full h-56 relative overflow-hidden flex items-center justify-center mb-6 group">
-              <div className="absolute inset-0 bg-gradient-radial from-sf-accent-2/5 via-transparent to-transparent" />
-
-              <div className="relative w-32 h-32 flex flex-col items-center justify-center -mt-4 transition-transform duration-700 group-hover:scale-110">
-                <div className="w-24 h-24 border border-sf-accent-2/40 rotate-45 flex items-center justify-center relative shadow-[inset_0_0_20px_rgba(6,182,212,0.1)]">
-                  <div className="w-16 h-16 border border-sf-accent-2/60 
-                                  absolute motion-safe:animate-pulse" />
-                  <div className="w-full h-[1px] bg-sf-accent-2/20 absolute top-1/2 -translate-y-1/2" />
-                  <div className="w-[1px] h-full bg-sf-accent-2/20 absolute left-1/2 -translate-x-1/2" />
-                  <Server className="w-8 h-8 text-sf-accent-2 -rotate-45 relative z-10 drop-shadow-[0_0_10px_var(--sf-accent-2)]" />
-                </div>
-                <div className="absolute -bottom-8 text-[10px] font-mono font-medium text-sf-accent-2 motion-safe:animate-pulse">WIRE_FRAME: RENDERED</div>
-              </div>
-            </div>
-
-            {/* Summary stats */}
-            <div className="mb-6 grid grid-cols-2 gap-x-8 gap-y-4 relative z-10">
-              {(['critical', 'high', 'medium', 'low'] as const).map(s => {
-                const cnt = findings.filter(f => f.severity === s).length;
-                const sev = SEVERITY_MAP[s];
-                return (
-                  <div key={s} className="flex flex-col border-b border-white/5 pb-2">
-                    <p className={`text-2xl font-display font-light ${sev.text}`}>{cnt}</p>
-                    <p className="text-[9px] uppercase font-medium tracking-widest text-sf-muted mt-0.5">{s}</p>
-                  </div>
-                );
-              })}
-            </div>
-
-            <div className="flex flex-col gap-3 relative z-10">
-              <button className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl bg-sf-surface-raised border border-sf-border font-bold text-xs uppercase tracking-wider hover:bg-sf-surface transition-colors text-sf-text">
-                <UserPlus className="w-4 h-4 text-sf-muted" />
-                Assign Incident
-              </button>
-              <button className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl bg-sf-accent text-sf-bg font-bold text-xs uppercase tracking-wider shadow-[0_0_20px_var(--sf-accent)] hover:shadow-[0_0_30px_var(--sf-accent)] hover:bg-sf-accent-2 transition-all">
-                <Zap className="w-4 h-4" />
-                Start Mitigation
-              </button>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   );

@@ -1,7 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
 
 /**
- * Sentinel Fabric V2 — Playwright E2E Configuration
+ * UMBRIX — Playwright E2E Configuration
  *
  * Run with: npx playwright test
  * Debug:    npx playwright test --debug

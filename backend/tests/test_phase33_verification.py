@@ -131,16 +131,16 @@ class TestBackupCronJobTemplate:
         """backup-cronjob.yaml must exist in Helm templates."""
         template_path = os.path.join(
             os.path.dirname(__file__), "..", "..",
-            "infra", "helm", "sentinel-fabric", "templates", "backup-cronjob.yaml"
+            "infra", "helm", "umbrix", "templates", "backup-cronjob.yaml"
         )
         # Also try absolute path
-        abs_path = r"c:\Sentinel Fabri V2\infra\helm\sentinel-fabric\templates\backup-cronjob.yaml"
+        abs_path = r"c:\Sentinel Fabri V2\infra\helm\umbrix\templates\backup-cronjob.yaml"
         assert os.path.exists(template_path) or os.path.exists(abs_path), \
             "backup-cronjob.yaml template must exist"
 
     def test_cronjob_contains_pg_dump(self):
         """Template must reference pg_dump for PostgreSQL backups."""
-        abs_path = r"c:\Sentinel Fabri V2\infra\helm\sentinel-fabric\templates\backup-cronjob.yaml"
+        abs_path = r"c:\Sentinel Fabri V2\infra\helm\umbrix\templates\backup-cronjob.yaml"
         if not os.path.exists(abs_path):
             pytest.skip("Template not found at expected path")
 

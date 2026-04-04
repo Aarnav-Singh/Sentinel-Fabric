@@ -159,7 +159,7 @@ async def generate_pdf_report(
     normal_style = styles['Normal']
 
     story = []
-    story.append(Paragraph("Sentinel Fabric V2 - Executive Security Report", title_style))
+    story.append(Paragraph("UMBRIX - Executive Security Report", title_style))
     story.append(Spacer(1, 12))
     story.append(Paragraph(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}", normal_style))
     story.append(Paragraph(f"Total Evaluated Events: {len(events)}", normal_style))

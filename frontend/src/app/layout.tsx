@@ -9,7 +9,7 @@ const sora = Sora({ subsets: ["latin"], variable: "--font-sora" });
 const jetbrainsMono = JetBrains_Mono({ subsets: ["latin"], weight: ["400", "700"], variable: "--font-jetbrains-mono" });
 
 export const metadata: Metadata = {
-  title: "Sentinel Fabric | Command Center",
+  title: "UMBRIX | Command Center",
   description: "Turns security tool noise into attack campaign narratives.",
 };
 

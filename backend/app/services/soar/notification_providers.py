@@ -32,12 +32,12 @@ class SlackActionProvider(ActionProvider):
         if not webhook_url:
             raise ActionExecutionError("No slack_webhook_url configured in context or settings.")
 
-        message = context.get("message", "Sentinel Fabric Alert")
+        message = context.get("message", "UMBRIX Alert")
         event_id = context.get("event_id", "Unknown")
         severity = context.get("severity", "info")
 
         payload = {
-            "text": f"*[{severity.upper()}] Sentinel Fabric Alert:*\n{message}\nEvent ID: `{event_id}`"
+            "text": f"*[{severity.upper()}] UMBRIX Alert:*\n{message}\nEvent ID: `{event_id}`"
         }
 
         async with httpx.AsyncClient() as client:
@@ -71,7 +71,7 @@ class TeamsActionProvider(ActionProvider):
         if not webhook_url:
             raise ActionExecutionError("No teams_webhook_url configured in context or settings.")
 
-        message = context.get("message", "Sentinel Fabric Alert")
+        message = context.get("message", "UMBRIX Alert")
         event_id = context.get("event_id", "Unknown")
         severity = context.get("severity", "info")
 
@@ -88,7 +88,7 @@ class TeamsActionProvider(ActionProvider):
                                 "type": "TextBlock",
                                 "size": "Medium",
                                 "weight": "Bolder",
-                                "text": f"Sentinel Fabric V2: {severity.upper()} Alert"
+                                "text": f"UMBRIX V2: {severity.upper()} Alert"
                             },
                             {
                                 "type": "TextBlock",

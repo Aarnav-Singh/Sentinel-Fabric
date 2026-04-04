@@ -272,7 +272,7 @@ def run_evaluation(dataset_path: str):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Evaluate Sentinel Fabric ML models against realistic traffic datasets."
+        description="Evaluate UMBRIX ML models against realistic traffic datasets."
     )
     parser.add_argument(
         "--dataset", type=str, default=None,

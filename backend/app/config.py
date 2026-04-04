@@ -18,7 +18,7 @@ class Settings(BaseSettings):
     )
 
     # ── App ──────────────────────────────────────────────
-    app_name: str = "Sentinel Fabric V2"
+    app_name: str = "UMBRIX"
     environment: str = "development"
     debug: bool = False
     log_level: str = "INFO"
@@ -145,7 +145,7 @@ class Settings(BaseSettings):
     smtp_port: int = 587
     smtp_user: str = ""
     smtp_password: str = ""
-    smtp_from_address: str = "noreply@sentinelfabric.io"
+    smtp_from_address: str = "noreply@umbrix.io"
     smtp_use_tls: bool = True
 
     # ── ClickHouse Data Retention ────────────────────────

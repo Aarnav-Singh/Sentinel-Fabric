@@ -34,7 +34,7 @@ class TriageResult:
 
 # ───────────────────────── System Prompt ─────────────────────────────────────
 
-SYSTEM_PROMPT = """You are the primary triage analyst for an enterprise security operations center (SOC) powered by the Sentinel Fabric platform.
+SYSTEM_PROMPT = """You are the primary triage analyst for an enterprise security operations center (SOC) powered by the UMBRIX platform.
 
 Your role:
 - Analyze security findings presented to you with full context from platform tools.

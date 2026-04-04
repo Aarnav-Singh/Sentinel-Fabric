@@ -1,9 +1,9 @@
 <#
 .SYNOPSIS
-    Sentinel Fabric V2 — Start All Components
+    UMBRIX — Start All Components
 
 .DESCRIPTION
-    Starts the complete Sentinel Fabric stack in one command:
+    Starts the complete UMBRIX stack in one command:
       1. Docker infrastructure (ClickHouse / Redis / PostgreSQL / Kafka / Qdrant)
       2. FastAPI backend (auto-fallbacks to in-memory if Docker unavailable)
       3. Next.js frontend
@@ -50,7 +50,7 @@ function Write-Err2($msg) { Write-Host "  x $msg" -ForegroundColor Red }
 function Show-Banner {
     Write-Host ""
     Write-Host "  =====================================" -ForegroundColor DarkCyan
-    Write-Host "    SENTINEL FABRIC V2                  " -ForegroundColor DarkCyan
+    Write-Host "    UMBRIX                  " -ForegroundColor DarkCyan
     Write-Host "    Security Posture Intelligence       " -ForegroundColor DarkCyan
     Write-Host "  =====================================" -ForegroundColor DarkCyan
     Write-Host ""
@@ -64,7 +64,7 @@ function Stop-Port([int]$port) {
 
 # ── Stop Everything ─────────────────────────────────────
 function Stop-All {
-    Write-Status "Stopping all Sentinel Fabric components..."
+    Write-Status "Stopping all UMBRIX components..."
 
     try {
         Invoke-RestMethod -Uri "http://localhost:${BackendPort}/api/v1/simulate/stop" -Method POST -ErrorAction SilentlyContinue | Out-Null

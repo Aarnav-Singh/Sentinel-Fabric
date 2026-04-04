@@ -1,4 +1,4 @@
-"""Kafka Consumer Worker for Sentinel Fabric V2 Pipeline.
+"""Kafka Consumer Worker for UMBRIX Pipeline.
 
 This process decouples API ingestion from ML processing.
 The API Gateway drops raw events onto a Kafka topic.
@@ -31,7 +31,7 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(me
 logger = logging.getLogger(__name__)
 
 async def main():
-    logger.info("Starting Sentinel Fabric V2 Kafka Worker...")
+    logger.info("Starting UMBRIX Kafka Worker...")
     
     # Initialize dependencies
     ch = ClickHouseRepository()

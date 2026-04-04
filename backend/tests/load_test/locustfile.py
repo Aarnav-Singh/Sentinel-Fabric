@@ -1,4 +1,4 @@
-"""Sentinel Fabric V2 — Load Testing with Locust.
+"""UMBRIX — Load Testing with Locust.
 
 Targets:
   - Event ingestion throughput (Suricata, Zeek, Syslog)

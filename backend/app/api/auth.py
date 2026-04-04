@@ -117,7 +117,7 @@ async def enable_mfa(
     """Generate a new TOTP secret for the user."""
     import pyotp
     secret = pyotp.random_base32()
-    uri = pyotp.totp.TOTP(secret).provisioning_uri(name=claims["sub"], issuer_name="Sentinel Fabric V2")
+    uri = pyotp.totp.TOTP(secret).provisioning_uri(name=claims["sub"], issuer_name="UMBRIX")
     
     await postgres.update_user_mfa(email=claims["sub"], secret=secret, enabled=False)
     AuditLogger.log("mfa_setup_initiated", request=request, claims=claims)

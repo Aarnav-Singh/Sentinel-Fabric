@@ -20,7 +20,7 @@ from app.config import settings
 logger = structlog.get_logger(__name__)
 
 app = FastAPI(
-    title="Sentinel Fabric Edge Gateway",
+    title="UMBRIX Edge Gateway",
     description="Distributed Edge Ingestion Node",
     version="2.0.0"
 )
