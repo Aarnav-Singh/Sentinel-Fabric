@@ -6,13 +6,12 @@ on high-level directives.
 """
 import uuid
 import logging
-import json
 import asyncio
 from typing import Dict, Any, List, Optional
 
 from jinja2 import Template
 
-from app.services.soar.actions import ActionProvider, PaloAltoProvider, CrowdStrikeProvider, ActionRegistry
+from app.services.soar.actions import ActionRegistry
 from app.services.sse_broadcaster import broadcaster
 from pydantic import BaseModel
 
@@ -197,7 +196,7 @@ class ExecutionEngine:
                     )
                     logger.info(f"[SOAR] Playbook {playbook.id} paused at node {node.id}, approval_id={approval_id}")
                 else:
-                    logger.warning(f"[SOAR] Playbook paused but no postgres repo for state persistence")
+                    logger.warning("[SOAR] Playbook paused but no postgres repo for state persistence")
                 
                 results[-1]["approval_id"] = approval_id
                 break
