@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from fastapi import FastAPI
-from prometheus_client import Counter, Histogram, generate_latest, CONTENT_TYPE_LATEST
+from prometheus_client import Counter, Histogram, generate_latest, CONTENT_TYPE_LATEST, Gauge
 from fastapi.responses import Response
 import time
 
@@ -30,8 +30,6 @@ PIPELINE_STEP_LATENCY = Histogram(
     "Latency per pipeline step", 
     ["step_name"]
 )
-
-from prometheus_client import Gauge
 
 VAE_ANOMALY_SCORE = Gauge(
     "vae_anomaly_score_current",

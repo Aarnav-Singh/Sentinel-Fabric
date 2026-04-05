@@ -10,6 +10,7 @@ matching ``settings.ingest_api_key``.
 from __future__ import annotations
 
 import json
+import re
 from typing import Dict, Any
 
 from fastapi import APIRouter, HTTPException, Request, Depends, Header
@@ -19,6 +20,10 @@ from app.config import settings
 from app.schemas.canonical_event import CanonicalEvent
 from app.dependencies import get_app_pipeline, get_app_ratelimiter
 from app.services.pii_masking import mask_event
+from app.services.ingestion.sentinel_connector import MicrosoftSentinelParser
+from app.schemas.canonical_event import (
+    ActionType, OutcomeType, SeverityLevel, NetworkInfo, Entity, EntityType, EventMetadata,
+)
 
 import structlog
 
@@ -47,15 +52,6 @@ async def require_ingest_key(
         logger.warning("ingest_auth_failed", provided_key_prefix=x_ingest_api_key[:4] + "***")
         raise HTTPException(status_code=401, detail="Invalid ingest API key.")
 
-
-# ── Real parsers for cloud log sources ────────────────────
-import re
-from datetime import datetime, timezone
-from app.services.ingestion.sentinel_connector import MicrosoftSentinelParser
-
-from app.schemas.canonical_event import (
-    ActionType, OutcomeType, SeverityLevel, NetworkInfo, Entity, EntityType, EventMetadata,
-)
 
 _SYSLOG_RFC3164 = re.compile(
     r"^<(?P<pri>\d{1,3})>"
