@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { Database, Network, BrainCircuit, Gauge, CheckCircle, Cpu, Activity, Zap, GitBranch, Shield, Eye, Cloud, Terminal, FileText, Wifi } from 'lucide-react';
 import useSWR from 'swr';
-import { useLiveEvents } from '@/hooks/useLiveEvents';
+import { useEventStream } from "@/contexts/EventStreamContext";
 import { PanelCard, AnimatedNumber, StaggerChildren } from '@/components/ui/MotionWrappers';
 import { DataGrid } from '@/components/ui/DataGrid';
 
@@ -102,6 +102,16 @@ export default function MLPipelinePage() {
     const isFlagged = metaScore > 0.7 || severity === 'critical' || severity === 'high';
     const sourceType = (event.source_type as string) || 'UNKNOWN';
     const evId = ((event.event_id as string) || '').slice(0, 8);
+    
+    if (!evId) {
+        setNeuralLog(prev => [{
+            timestamp: ts,
+            type: 'SYSTEM' as const,
+            message: `[HEARTBEAT] Connection active — ping verified`,
+            status: 'CLEAN' as const
+        }, ...prev].slice(0, 50));
+        return;
+    }
 
     const entry: NeuralLogEntry = {
       timestamp: ts,
@@ -124,7 +134,12 @@ export default function MLPipelinePage() {
     setTimeout(() => { setPulses(p => p.filter(pulse => pulse.id !== newPulse.id)); }, 300);
   }, []);
 
-  useLiveEvents({ onEvent: handleLiveEvent });
+  const { lastEvent } = useEventStream();
+  useEffect(() => {
+    if (lastEvent) {
+      handleLiveEvent(lastEvent);
+    }
+  }, [lastEvent, handleLiveEvent]);
 
   const avgAccuracy = models.length ? models.reduce((sum, m) => sum + (m.accuracy ?? 0), 0) / models.length : 98.4;
   const servingCount = models.filter(m => m.status === 'serving').length;
@@ -136,7 +151,13 @@ export default function MLPipelinePage() {
       <div className="flex shrink-0 gap-4 mb-4">
         <PanelCard className="flex-1 p-3 flex flex-col gap-1">
             <span className="text-[10px] text-sf-muted font-mono tracking-widest">AVG LATENCY</span>
-            <div className="text-2xl font-mono text-sf-text">{pipelineStatus.avg_duration_ms}<span className="text-sm text-sf-muted ml-0.5">MS</span></div>
+            <div className="text-2xl font-mono text-sf-text">
+                {pipelineStatus.avg_duration_ms != null && !isNaN(Number(pipelineStatus.avg_duration_ms)) ? (
+                    <>{pipelineStatus.avg_duration_ms}<span className="text-sm text-sf-muted ml-0.5">MS</span></>
+                ) : (
+                    "—"
+                )}
+            </div>
         </PanelCard>
         <PanelCard className="flex-1 p-3 flex flex-col gap-1">
             <span className="text-[10px] text-sf-muted font-mono tracking-widest">AVG ACCURACY</span>
@@ -148,7 +169,13 @@ export default function MLPipelinePage() {
         </PanelCard>
         <PanelCard className="flex-1 p-3 flex flex-col gap-1">
             <span className="text-[10px] text-sf-muted font-mono tracking-widest">EVENTS PROCESSED</span>
-            <div className="text-2xl font-mono text-sf-text"><AnimatedNumber value={pipelineStatus.events_processed} /></div>
+            <div className="text-2xl font-mono text-sf-text">
+                {Number.isFinite(Number(pipelineStatus.events_processed)) ? (
+                    <AnimatedNumber value={Number(pipelineStatus.events_processed) || 0} />
+                ) : (
+                    "—"
+                )}
+            </div>
         </PanelCard>
       </div>
 
@@ -176,7 +203,9 @@ export default function MLPipelinePage() {
                             vectorEffect="non-scaling-stroke"
                             d={`M ${conn.from.x} ${conn.from.y} L ${conn.to.x} ${conn.to.y}`}
                             fill="none"
-                            className={`transition-colors duration-100 ${isPulsing ? 'stroke-sf-accent stroke-2' : 'stroke-sf-border stroke-1'}`}
+                            stroke={isPulsing ? 'var(--sf-accent)' : 'var(--sf-border)'}
+                            strokeWidth={isPulsing ? 1.5 : 0.5}
+                            className="transition-colors duration-100"
                         />
                         );
                     })}
@@ -210,22 +239,27 @@ export default function MLPipelinePage() {
                     <span className="text-[10px] text-sf-muted font-mono tracking-widest uppercase">Stream Telemetry</span>
                 </div>
                 <div className="flex-1 grid grid-cols-2 lg:grid-cols-3 gap-6 p-4">
-                     {Object.entries(streams).map(([key, info]) => {
-                        const score = (info as StreamInfo)?.score ?? 0;
-                        const scoreColor = score > 0.8 ? 'var(--sf-safe)' : score > 0.6 ? 'var(--sf-warning)' : 'var(--sf-critical)';
-                        return (
-                            <div key={key} className="flex flex-col">
-                                <div className="flex justify-between items-end mb-1">
-                                    <span className="text-[10px] text-sf-muted font-mono tracking-widest uppercase">{STREAM_LABELS[key] ?? key}</span>
-                                    <span className="text-[10px] font-mono" style={{ color: scoreColor }}>{(score * 100).toFixed(1)}%</span>
+                     {Object.keys(streams).length === 0 ? (
+                         <div className="col-span-full h-full flex flex-col items-center justify-center text-sf-muted opacity-50">
+                             <span className="text-[10px] font-mono tracking-widest uppercase">No Active Data Streams</span>
+                         </div>
+                     ) : (
+                         Object.entries(streams).map(([key, info]) => {
+                            const score = (info as StreamInfo)?.score ?? 0;
+                            const scoreColor = score > 0.8 ? 'var(--sf-safe)' : score > 0.6 ? 'var(--sf-warning)' : 'var(--sf-critical)';
+                            return (
+                                <div key={key} className="flex flex-col">
+                                    <div className="flex justify-between items-end mb-1">
+                                        <span className="text-[10px] text-sf-muted font-mono tracking-widest uppercase">{STREAM_LABELS[key] ?? key}</span>
+                                        <span className="text-[10px] font-mono" style={{ color: scoreColor }}>{(score * 100).toFixed(1)}%</span>
+                                    </div>
+                                    <div className="w-full h-1 bg-sf-bg border border-sf-border relative">
+                                        <div className="absolute top-0 left-0 h-full transition-all duration-300" style={{ width: `${score * 100}%`, backgroundColor: scoreColor }} />
+                                    </div>
                                 </div>
-                                <div className="w-full h-1 bg-sf-bg border border-sf-border relative">
-                                    <div className="absolute top-0 left-0 h-full transition-all duration-300"
-                                        style={{ width: `${score * 100}%`, backgroundColor: scoreColor }} />
-                                </div>
-                            </div>
-                        );
-                     })}
+                            );
+                         })
+                     )}
                 </div>
             </PanelCard>
         </div>

@@ -94,7 +94,12 @@ export default function CompliancePage() {
             <div className="animate-pulse bg-sf-surface/60 h-64 rounded-xl" />
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 flex-wrap">
-              {tactics.map((tactic: any) => (
+              {tactics.length === 0 ? (
+                <div className="col-span-1 md:col-span-2 text-center py-12 border border-dashed border-sf-border bg-sf-surface/50 text-sf-muted">
+                    <AlertTriangle className="w-8 h-8 mx-auto mb-3 opacity-30 text-sf-text" />
+                    <p className="text-[10px] font-mono uppercase tracking-widest text-sf-muted">NO ATT&CK DATA AVAILABLE — RUN A COMPLIANCE SCAN TO GENERATE.</p>
+                </div>
+              ) : tactics.map((tactic: any) => (
                 <div key={tactic.tactic} className="bg-sf-surface/70 border border-sf-accent/20 p-4 rounded-xl shadow-[0_4px_20px_rgba(0,0,0,0.5)]">
                   <h3 className="font-bold text-slate-300 mb-3 tracking-widest text-xs uppercase text-sf-accent/80">{tactic.tactic}</h3>
                   <ul className="space-y-2">

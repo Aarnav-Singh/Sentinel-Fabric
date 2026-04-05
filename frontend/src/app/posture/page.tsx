@@ -45,11 +45,11 @@ export default function PosturePage() {
   const [sortKey, setSortKey] = useState<SortKey>('priority');
   const [sortAsc, setSortAsc] = useState(true);
 
-  const { data: scoreData, isLoading: scoreLoading } = useSWR<PostureScore>('/api/proxy/api/v1/posture/score', fetcher, { refreshInterval: 10000 });
-  const { data: domainsData, isLoading: domainsLoading } = useSWR<PostureDomainsResponse>('/api/proxy/api/v1/posture/domains', fetcher, { refreshInterval: 10000 });
-  const { data: coverageData, isLoading: coverageLoading } = useSWR<PostureCoverageResponse>('/api/proxy/api/v1/posture/coverage', fetcher, { refreshInterval: 30000 });
-  const { data: remediationData, isLoading: remediationLoading } = useSWR<RemediationResponse>('/api/proxy/api/v1/posture/remediation', fetcher, { refreshInterval: 10000 });
-  const { data: historyData, isLoading: historyLoading } = useSWR<HistoryResponse>('/api/proxy/api/v1/posture/history', fetcher, { refreshInterval: 60000 });
+  const { data: scoreData, isLoading: scoreLoading } = useSWR<PostureScore>('/api/proxy/api/v1/posture/score', fetcher, { refreshInterval: 10000, keepPreviousData: true });
+  const { data: domainsData, isLoading: domainsLoading } = useSWR<PostureDomainsResponse>('/api/proxy/api/v1/posture/domains', fetcher, { refreshInterval: 10000, keepPreviousData: true });
+  const { data: coverageData, isLoading: coverageLoading } = useSWR<PostureCoverageResponse>('/api/proxy/api/v1/posture/coverage', fetcher, { refreshInterval: 30000, keepPreviousData: true });
+  const { data: remediationData, isLoading: remediationLoading } = useSWR<RemediationResponse>('/api/proxy/api/v1/posture/remediation', fetcher, { refreshInterval: 10000, keepPreviousData: true });
+  const { data: historyData, isLoading: historyLoading } = useSWR<HistoryResponse>('/api/proxy/api/v1/posture/history', fetcher, { refreshInterval: 60000, keepPreviousData: true });
 
   const score = scoreData ?? { composite: 71, domains: {}, last_evaluated: 0 };
   const domains = domainsData?.domains ?? [
@@ -68,7 +68,8 @@ export default function PosturePage() {
       score: 62 + Math.round(Math.sin(i * 0.4) * 7 + i * 0.3) + Math.random() * 5
   }));
 
-  const compositeScore = score.composite ?? 0;
+  const calculatedComposite = domains.reduce((sum, d) => sum + (d.score ?? 0) * (d.weight ?? 0.2), 0);
+  const compositeScore = typeof score?.composite === 'number' && !isNaN(score.composite) ? score.composite : (calculatedComposite > 0 ? calculatedComposite : 71);
   const scoreColor = compositeScore > 80 ? 'text-sf-safe' : compositeScore > 60 ? 'text-sf-warning' : 'text-sf-critical';
 
   const sortedFindings = [...findings].sort((a, b) => {

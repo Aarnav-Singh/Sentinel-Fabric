@@ -134,13 +134,13 @@ class TestBackupCronJobTemplate:
             "infra", "helm", "umbrix", "templates", "backup-cronjob.yaml"
         )
         # Also try absolute path
-        abs_path = r"c:\Sentinel Fabri V2\infra\helm\umbrix\templates\backup-cronjob.yaml"
+        abs_path = r"c:\UMBRIX\infra\helm\umbrix\templates\backup-cronjob.yaml"
         assert os.path.exists(template_path) or os.path.exists(abs_path), \
             "backup-cronjob.yaml template must exist"
 
     def test_cronjob_contains_pg_dump(self):
         """Template must reference pg_dump for PostgreSQL backups."""
-        abs_path = r"c:\Sentinel Fabri V2\infra\helm\umbrix\templates\backup-cronjob.yaml"
+        abs_path = r"c:\UMBRIX\infra\helm\umbrix\templates\backup-cronjob.yaml"
         if not os.path.exists(abs_path):
             pytest.skip("Template not found at expected path")
 
@@ -153,7 +153,7 @@ class TestBackupCronJobTemplate:
 
     def test_restore_runbook_exists(self):
         """RESTORE.md runbook must exist."""
-        abs_path = r"c:\Sentinel Fabri V2\docs\runbooks\RESTORE.md"
+        abs_path = r"c:\UMBRIX\docs\runbooks\RESTORE.md"
         assert os.path.exists(abs_path), "RESTORE.md runbook must exist"
 
         content = open(abs_path).read()

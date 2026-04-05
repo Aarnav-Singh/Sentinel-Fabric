@@ -72,7 +72,7 @@ export default function LoginPage() {
               <div className="p-6 bg-sf-bg relative">
                    <form onSubmit={handleLogin} className="space-y-4">
                         <motion.div custom={0} initial="hidden" animate="visible" variants={formFieldVariants} className="space-y-1.5 flex flex-col">
-                            <label className="text-[9px] font-bold text-sf-muted">ANALYST ID</label>
+                            <label className="text-[10px] font-bold text-sf-muted tracking-widest uppercase">ANALYST ID</label>
                             <div className="relative">
                                 <Command className="absolute left-3 top-1/2 -translate-y-1/2 w-3 h-3 text-sf-muted" />
                                 <input
@@ -89,7 +89,7 @@ export default function LoginPage() {
                         </motion.div>
 
                         <motion.div custom={1} initial="hidden" animate="visible" variants={formFieldVariants} className="space-y-1.5 flex flex-col">
-                            <label className="text-[9px] font-bold text-sf-muted">ACCESS PIN</label>
+                            <label className="text-[10px] font-bold text-sf-muted tracking-widest uppercase">ACCESS PIN</label>
                             <div className="relative">
                                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-3 h-3 text-sf-muted" />
                                 <input

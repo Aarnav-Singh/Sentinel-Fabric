@@ -22,7 +22,7 @@ export default function HealthDashboardPage() {
     const { data, error, isValidating, mutate } = useSWR<DeepHealthResponse>(
         '/api/proxy/api/v1/health/deep',
         fetcher,
-        { refreshInterval: 5000 }
+        { refreshInterval: 5000, keepPreviousData: true }
     );
 
     const isLoading = !data && !error;
@@ -79,7 +79,7 @@ export default function HealthDashboardPage() {
                             isLoading ? 'text-sf-muted' : 
                             isError ? 'text-[var(--sf-critical)]' : 'text-[var(--sf-safe)]'
                         }`}>
-                            Current Status: {data?.status?.toUpperCase() || 'UNKNOWN'}
+                            Current Status: {isLoading ? 'SCANNING' : isError ? 'DEGRADED' : data?.status?.toUpperCase() || 'UNKNOWN'}
                         </p>
                     </div>
                 </div>

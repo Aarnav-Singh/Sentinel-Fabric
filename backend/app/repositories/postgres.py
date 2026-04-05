@@ -369,6 +369,18 @@ class PostgresRepository:
             )
             return list(result.scalars().all())
 
+    async def get_verdicts_for_finding(
+        self, event_id: str, tenant_id: str
+    ) -> list[AnalystVerdict]:
+        async with self._session() as session:
+            result = await session.execute(
+                select(AnalystVerdict)
+                .where(AnalystVerdict.event_id == event_id)
+                .where(AnalystVerdict.tenant_id == tenant_id)
+                .order_by(AnalystVerdict.created_at.asc())
+            )
+            return list(result.scalars().all())
+
     async def search_verdicts_by_note(self, tenant_id: str, query: str, limit: int = 10) -> list[dict]:
         """Search analyst notes using PostgreSQL full-text search (tsvector)."""
         sql = text("""

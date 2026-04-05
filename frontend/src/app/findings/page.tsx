@@ -4,9 +4,12 @@ import React, { useState } from 'react';
 import { Target, ExternalLink, Database, Clock, ShieldAlert, Users, Server, UserPlus, Zap, Filter, Radio, Brain, Bug } from 'lucide-react';
 import useSWR from 'swr';
 import { FadeIn, SlideIn, ShimmerSkeleton, AnimatedNumber, PanelCard } from '@/components/ui/MotionWrappers';
+import { useToast } from '@/components/ui/Toast';
 import { DataGrid } from '@/components/ui/DataGrid';
 
 const fetcher = (url: string) => fetch(url).then(r => r.json());
+
+import { FindingHistoryModal } from '@/components/features/findings/FindingHistoryModal';
 
 // ─── Types ───────────────────────────────────────────────
 interface CveContext { cve_id: string; cvss_score?: number; severity?: string; description?: string; patch_available?: boolean; }
@@ -61,6 +64,9 @@ export default function FindingsPage() {
   const [localStatuses, setLocalStatuses] = useState<Record<string, Finding['status']>>({});
   const [triageResults, setTriageResults] = useState<Record<string, TriageResult>>({});
   const [triagePending, setTriagePending] = useState<Record<string, boolean>>({});
+  const [selectedFindingId, setSelectedFindingId] = useState<string | null>(null);
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const { toast } = useToast();
 
   const { data, isLoading, mutate } = useSWR<FindingsResponse | Finding[]>('/api/proxy/api/v1/findings', fetcher, { refreshInterval: 10000 });
 
@@ -88,7 +94,13 @@ export default function FindingsPage() {
       const newStatus: Finding['status'] = action === 'approve' ? 'approved' : action === 'dismiss' ? 'dismissed' : 'escalated';
       setLocalStatuses(p => ({ ...p, [id]: newStatus }));
       mutate();
-    } catch { } 
+      toast(
+          `FINDING ${action.toUpperCase()}${action.endsWith('e') ? 'D' : 'ED'} - ID: ${id.slice(0, 8)}`,
+          action === 'escalate' ? 'error' : 'success'
+      );
+    } catch { 
+        toast(`Could not process ${action}.`, 'error');
+    } 
     finally { setVerdictPending(p => { const n = { ...p }; delete n[id]; return n; }); }
   };
 
@@ -138,6 +150,10 @@ export default function FindingsPage() {
                         <DataGrid 
                             data={filtered}
                             rowKey="id"
+                            onRowClick={(row) => {
+                                setSelectedFindingId(row.id);
+                                setIsHistoryOpen(true);
+                            }}
                             columns={[
                                 { 
                                     header: "!", 
@@ -289,7 +305,14 @@ export default function FindingsPage() {
             </PanelCard>
         </div>
 
+
       </div>
+
+      <FindingHistoryModal 
+        isOpen={isHistoryOpen}
+        onClose={() => setIsHistoryOpen(false)}
+        findingId={selectedFindingId}
+      />
     </div>
   );
 }

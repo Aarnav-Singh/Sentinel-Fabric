@@ -3,6 +3,9 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, Save, Plus, GripVertical, Trash2, ShieldAlert, UserCheck, Play, Send } from "lucide-react";
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
+import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 type ActionType = "isolate_host" | "block_ip" | "wait_for_approval" | "send_email" | "create_ticket";
 
@@ -19,6 +22,50 @@ const AVAILABLE_ACTIONS: { type: ActionType; icon: React.ReactNode; label: strin
     { type: "send_email", icon: <Send className="w-4 h-4 text-[var(--sf-safe)]" />, label: "Send Notification", desc: "Email or webhook alert" },
     { type: "create_ticket", icon: <Plus className="w-4 h-4 text-[var(--sf-accent-2)]" />, label: "Create Ticket", desc: "Jira / ServiceNow incident" },
 ];
+
+function SortableStepItem({ step, removeStep }: { step: PlaybookStep; removeStep: (id: string) => void }) {
+    const actionDef = AVAILABLE_ACTIONS.find(a => a.type === step.type);
+    const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: step.id });
+    
+    const style = {
+        transform: CSS.Transform.toString(transform),
+        transition,
+        zIndex: isDragging ? 50 : 1,
+        opacity: isDragging ? 0.8 : 1,
+    };
+
+    return (
+        <div ref={setNodeRef} style={style} className="relative group">
+            {/* Connector Line */}
+            <div className={`absolute left-1/2 -top-4 w-px h-4 bg-slate-700 -translate-x-1/2 ${isDragging ? 'opacity-0' : ''}`} />
+            
+            <div className={`bg-sf-bg border ${isDragging ? 'border-sf-accent shadow-lg scale-[1.02]' : 'border-sf-border'} group-hover:border-[var(--sf-accent)]/50 rounded-xl p-4 flex items-center gap-4 transition-all shadow-md`}>
+                <div 
+                    {...attributes} 
+                    {...listeners} 
+                    className="cursor-grab active:cursor-grabbing p-1 text-slate-600 hover:text-sf-muted focus:outline-none touch-none"
+                >
+                    <GripVertical className="w-5 h-5" />
+                </div>
+                <div className="w-10 h-10 rounded-lg bg-sf-surface flex items-center justify-center border border-sf-border">
+                    {actionDef?.icon}
+                </div>
+                <div className="flex-1">
+                    <p className="text-sm font-bold text-white">{actionDef?.label}</p>
+                    <div className="text-[11px] text-sf-muted mt-1 font-mono">
+                        Action ID: {step.type}
+                    </div>
+                </div>
+                <button 
+                    onClick={() => removeStep(step.id)}
+                    className="p-2 text-sf-muted hover:text-[var(--sf-critical)] hover:bg-[var(--sf-critical)]/10 rounded-lg transition-colors"
+                >
+                    <Trash2 className="w-4 h-4" />
+                </button>
+            </div>
+        </div>
+    );
+}
 
 export default function PlaybookEditorPage() {
     const [name, setName] = useState("New Security Playbook");
@@ -59,6 +106,22 @@ export default function PlaybookEditorPage() {
             setSaveStatus('Save failed');
         } finally {
             setSaving(false);
+        }
+    };
+
+    const sensors = useSensors(
+        useSensor(PointerSensor),
+        useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+    );
+
+    const handleDragEnd = (event: any) => {
+        const { active, over } = event;
+        if (over && active.id !== over.id) {
+            setSteps((items) => {
+                const oldIndex = items.findIndex(i => i.id === active.id);
+                const newIndex = items.findIndex(i => i.id === over.id);
+                return arrayMove(items, oldIndex, newIndex);
+            });
         }
     };
 
@@ -114,36 +177,13 @@ export default function PlaybookEditorPage() {
                                 </div>
                             )}
 
-                            {steps.map((step, index) => {
-                                const actionDef = AVAILABLE_ACTIONS.find(a => a.type === step.type);
-                                return (
-                                    <div key={step.id} className="relative group">
-                                        {/* Connector Line */}
-                                        <div className="absolute left-1/2 -top-4 w-px h-4 bg-slate-700 -translate-x-1/2" />
-                                        
-                                        <div className="bg-sf-bg border border-sf-border group-hover:border-[var(--sf-accent)]/50 rounded-xl p-4 flex items-center gap-4 transition-all shadow-md">
-                                            <div className="cursor-grab active:cursor-grabbing p-1 text-slate-600 hover:text-sf-muted">
-                                                <GripVertical className="w-5 h-5" />
-                                            </div>
-                                            <div className="w-10 h-10 rounded-lg bg-sf-surface flex items-center justify-center border border-sf-border">
-                                                {actionDef?.icon}
-                                            </div>
-                                            <div className="flex-1">
-                                                <p className="text-sm font-bold text-white">{actionDef?.label}</p>
-                                                <div className="text-[11px] text-sf-muted mt-1 font-mono">
-                                                    Action ID: {step.type}
-                                                </div>
-                                            </div>
-                                            <button 
-                                                onClick={() => removeStep(step.id)}
-                                                className="p-2 text-sf-muted hover:text-[var(--sf-critical)] hover:bg-[var(--sf-critical)]/10 rounded-lg transition-colors"
-                                            >
-                                                <Trash2 className="w-4 h-4" />
-                                            </button>
-                                        </div>
-                                    </div>
-                                );
-                            })}
+                            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                                <SortableContext items={steps.map(s => s.id)} strategy={verticalListSortingStrategy}>
+                                    {steps.map((step) => (
+                                        <SortableStepItem key={step.id} step={step} removeStep={removeStep} />
+                                    ))}
+                                </SortableContext>
+                            </DndContext>
                         </div>
                     </div>
                 </div>

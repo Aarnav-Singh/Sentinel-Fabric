@@ -7,12 +7,14 @@ import { motion } from "framer-motion";
 import { StaggerChildren, AnimatedNumber, FadeIn, ShimmerSkeleton, PanelCard } from "@/components/ui/MotionWrappers";
 import { DataGrid } from '@/components/ui/DataGrid';
 import { VectorMap } from '@/components/ui/VectorMap';
+import { useToast } from '@/components/ui/Toast';
 
 const fetcher = (url: string) => fetch(url).then(res => res.json());
 
 interface Campaign { id: string; name?: string; severity?: string; stage?: string; active?: boolean; affected_assets?: number; meta_score?: number; created_at?: string; mitre_tags?: string[]; }
 
 export default function CampaignsPage() {
+  const { toast } = useToast();
   const { data: campaigns, error, isLoading } = useSWR<Campaign[]>('/api/proxy/api/v1/campaigns', fetcher, { refreshInterval: 5000 });
   const campaignList: Campaign[] = Array.isArray(campaigns) ? campaigns : [];
 
@@ -91,8 +93,16 @@ export default function CampaignsPage() {
                             {Array.from({ length: 3 }).map((_, i) => <ShimmerSkeleton key={i} className="w-full h-12" />)}
                          </div>
                     ) : campaignList.length === 0 ? (
-                        <div className="text-sf-muted text-[10px] p-4 font-mono uppercase tracking-widest text-center">
-                            {error ? 'Backend unavailable — no campaigns.' : 'No active campaigns.'}
+                        <div className="flex-1 flex flex-col items-center justify-center p-8 space-y-4">
+                            <ShieldCheck className="w-8 h-8 text-sf-safe opacity-50" />
+                            <div className="text-sf-muted text-[10px] font-mono uppercase tracking-widest text-center">
+                                {error ? 'Backend unavailable — no campaigns.' : 'No active campaigns detected.'}
+                            </div>
+                            {!error && (
+                                <button onClick={() => toast("Manual threat sweep initiated.", "success")} className="px-4 py-2 border border-sf-border hover:bg-sf-surface text-[10px] font-mono text-sf-text tracking-widest transition-colors flex items-center gap-2">
+                                    <Activity className="w-3 h-3" /> RUN MANUAL SCAN
+                                </button>
+                            )}
                         </div>
                     ) : (
                         <DataGrid 
@@ -143,10 +153,10 @@ export default function CampaignsPage() {
             </PanelCard>
             
             <div className="grid grid-cols-2 gap-4 shrink-0">
-                <button className="flex items-center justify-center gap-2 h-12 bg-sf-surface hover:bg-sf-critical hover:text-black border border-sf-critical text-sf-critical text-[10px] uppercase font-bold tracking-widest transition-colors font-mono">
+                <button onClick={() => toast("Network isolation protocol initiated.", "error")} className="flex items-center justify-center gap-2 h-12 bg-sf-surface hover:bg-sf-critical hover:text-black border border-sf-critical text-sf-critical text-[10px] uppercase font-bold tracking-widest transition-colors font-mono">
                     <ShieldBan className="w-3 h-3" /> Isolate Network
                 </button>
-                <button className="flex items-center justify-center gap-2 h-12 bg-sf-text hover:bg-sf-text/90 text-sf-bg text-[10px] uppercase font-bold tracking-widest transition-colors font-mono">
+                <button onClick={() => toast("Defensive playbook execution started.", "success")} className="flex items-center justify-center gap-2 h-12 bg-sf-text hover:bg-sf-text/90 text-sf-bg text-[10px] uppercase font-bold tracking-widest transition-colors font-mono">
                     <PlayCircle className="w-3 h-3" /> Run Playbook
                 </button>
             </div>

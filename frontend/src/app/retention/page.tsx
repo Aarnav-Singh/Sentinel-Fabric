@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { Database, Clock, Save, AlertTriangle, CheckCircle2, Trash2, HardDrive } from "lucide-react";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
@@ -41,6 +42,7 @@ export default function RetentionPage() {
     const [saved, setSaved] = useState(false);
     const [purgeResult, setPurgeResult] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
+    const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
     // Fetch current retention setting on mount
     useEffect(() => {
@@ -74,9 +76,6 @@ export default function RetentionPage() {
     };
 
     const triggerPurge = async () => {
-        if (!confirm("Are you sure you want to purge data older than the retention period? This action is irreversible.")) {
-            return;
-        }
 
         setPurging(true);
         setError(null);
@@ -211,7 +210,7 @@ export default function RetentionPage() {
                             <strong className="text-red-400"> irreversible</strong>.
                         </p>
                         <button
-                            onClick={triggerPurge}
+                            onClick={() => setIsConfirmOpen(true)}
                             disabled={purging}
                             className="w-full px-4 py-2.5 bg-red-500/10 border border-red-500/30 text-red-400 font-bold rounded hover:bg-red-500/20 transition-colors flex items-center justify-center gap-2 text-sm disabled:opacity-40"
                         >
@@ -221,6 +220,16 @@ export default function RetentionPage() {
                     </div>
                 </div>
             </div>
+
+            <ConfirmDialog 
+                isOpen={isConfirmOpen}
+                title="Purge Data"
+                message={`Are you sure you want to purge data older than the retention period (${currentDays} days)? This action is irreversible.`}
+                confirmLabel="Purge Data"
+                dangerous={true}
+                onConfirm={triggerPurge}
+                onCancel={() => setIsConfirmOpen(false)}
+            />
         </div>
     );
 }

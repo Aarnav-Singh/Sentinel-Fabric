@@ -109,6 +109,7 @@ export function AddIntegrationModal({ isOpen, onClose }: { isOpen: boolean, onCl
                         value={apiKey}
                         onChange={(e) => setApiKey(e.target.value)}
                         placeholder="sk_live_..." 
+                        autoComplete="new-password"
                         className="w-full bg-sf-surface border border-surface-border rounded-lg py-2.5 px-4 text-sm text-text-primary focus:border-sf-warning outline-none tracking-widest transition-all focus:shadow-[0_0_10px_rgba(249,115,22,0.1)]"
                     />
                 </div>

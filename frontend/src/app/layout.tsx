@@ -3,6 +3,8 @@ import { Inter, Sora, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { QueryProvider } from "@/components/providers/QueryProvider";
+import { EventStreamProvider } from "@/contexts/EventStreamContext";
+import { ToastProvider } from "@/components/ui/Toast";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 const sora = Sora({ subsets: ["latin"], variable: "--font-sora" });
@@ -22,9 +24,13 @@ export default function RootLayout({
     <html lang="en" className="dark h-full bg-sf-bg">
       <body className={`${inter.variable} ${sora.variable} ${jetbrainsMono.variable} font-sans antialiased h-full flex flex-col overflow-hidden selection:bg-sf-accent/30 text-sf-text bg-sf-bg`}>
         <QueryProvider>
-          <AppLayout>
-            {children}
-          </AppLayout>
+          <ToastProvider>
+            <EventStreamProvider>
+              <AppLayout>
+                {children}
+              </AppLayout>
+            </EventStreamProvider>
+          </ToastProvider>
         </QueryProvider>
       </body>
     </html>

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-import { Users, Plus, Shield, ChevronDown, UserX, UserCheck, Search } from "lucide-react";
+import { Users, Plus, Shield, ChevronDown, UserX, UserCheck, Search, AlertCircle } from "lucide-react";
 
 interface User {
     id: string;
@@ -28,6 +28,7 @@ async function apiFetch(path: string, opts: RequestInit = {}) {
         },
     });
     if (!res.ok) {
+        if (res.status === 500) throw new Error("Admin service unavailable. Please check backend logs.");
         const body = await res.json().catch(() => ({}));
         throw new Error(body.detail || `Request failed: ${res.status}`);
     }
@@ -118,9 +119,19 @@ export default function AdminPage() {
             </header>
 
             {error && (
-                <div className="mb-4 px-4 py-3 rounded bg-red-500/10 border border-red-500/30 text-red-400 text-sm">
-                    {error}
-                    <button onClick={() => setError(null)} className="ml-4 underline">Dismiss</button>
+                <div className="mb-4 px-4 py-3 rounded bg-sf-critical/10 border border-sf-critical/30 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <AlertCircle className="w-4 h-4 text-sf-critical" />
+                        <span className="text-[11px] font-mono uppercase tracking-wide text-sf-critical font-bold">
+                            {error}
+                        </span>
+                    </div>
+                    <button 
+                        onClick={() => setError(null)} 
+                        className="text-[10px] font-mono uppercase tracking-widest text-sf-muted hover:text-white transition-colors border border-sf-border bg-sf-surface px-2 py-1 rounded"
+                    >
+                        Dismiss
+                    </button>
                 </div>
             )}
 

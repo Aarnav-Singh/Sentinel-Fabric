@@ -419,6 +419,29 @@ class ClickHouseRepository:
         rows = [dict(zip(result.column_names, row)) for row in result.result_rows]
         return rows, total
 
+    async def get_event_by_id(self, event_id: str, tenant_id: str = "default") -> dict | None:
+        """Fetch a single event by its ID."""
+        if not self._client:
+            for e in self._fallback_events:
+                if e.get("event_id") == event_id and e.get("tenant_id") == tenant_id:
+                    return e
+            return None
+
+        query = """
+            SELECT * FROM events
+            WHERE event_id = {event_id:String}
+              AND tenant_id = {tenant_id:String}
+            LIMIT 1
+        """
+        result = await asyncio.to_thread(
+            self.client.query,
+            query,
+            parameters={"event_id": event_id, "tenant_id": tenant_id},
+        )
+        if not result.result_rows:
+            return None
+        return dict(zip(result.column_names, result.result_rows[0]))
+
     async def get_event_count(self, tenant_id: str = "default") -> int:
         if not self._client:
             return len([e for e in self._fallback_events if e["tenant_id"] == tenant_id])

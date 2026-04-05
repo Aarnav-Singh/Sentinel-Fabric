@@ -2,7 +2,7 @@
 
 import React, { useState, useCallback, useEffect } from 'react';
 import { Terminal, X, Share2, ShieldAlert, Activity } from 'lucide-react';
-import { useLiveEvents } from "@/hooks/useLiveEvents";
+import { useEventStream } from "@/contexts/EventStreamContext";
 import { motion, AnimatePresence } from 'framer-motion';
 import { AnimatedNumber, PanelCard } from '@/components/ui/MotionWrappers';
 import { DataGrid } from '@/components/ui/DataGrid';
@@ -48,7 +48,7 @@ function canonicalToLogEvent(event: Record<string, unknown>): LogEvent {
 export default function RawEventsPage() {
     const [selectedLog, setSelectedLog] = useState<LogEvent | null>(null);
     const [liveEvents, setLiveEvents] = useState<LogEvent[]>([]);
-    const [eps, setEps] = useState(0);
+    const { lastEvent, eventsRate: eps } = useEventStream();
 
     useEffect(() => {
         fetch('/api/proxy/api/v1/events/recent?limit=50')
@@ -61,12 +61,11 @@ export default function RawEventsPage() {
             .catch(err => console.error("Failed to load recent events", err));
     }, []);
 
-    const handleLiveEvent = useCallback((event: Record<string, unknown>) => {
-        setLiveEvents(prev => [canonicalToLogEvent(event), ...prev].slice(0, 150));
-        setEps(prev => prev + 1);
-    }, []);
-
-    useLiveEvents({ onEvent: handleLiveEvent });
+    useEffect(() => {
+        if (lastEvent) {
+            setLiveEvents(prev => [canonicalToLogEvent(lastEvent), ...prev].slice(0, 150));
+        }
+    }, [lastEvent]);
     const allLogs = liveEvents.length > 0 ? liveEvents : DEMO_LOGS;
 
     return (
@@ -171,8 +170,14 @@ export default function RawEventsPage() {
                         </button>
                     </div>
 
-                    <div className="flex-1 bg-black p-4 font-mono text-[11px] leading-relaxed overflow-auto custom-scrollbar">
-                        <pre className="text-sf-safe/80 whitespace-pre-wrap">
+                    <div className="px-4 py-3 border-b border-sf-border bg-sf-surface/50">
+                        <div className="font-mono text-[11px] text-sf-text whitespace-pre-wrap break-words leading-relaxed select-text">
+                            {selectedLog.message}
+                        </div>
+                    </div>
+
+                    <div className="flex-1 bg-black p-4 font-mono text-[11px] leading-relaxed overflow-auto custom-scrollbar select-text">
+                        <pre className="text-sf-safe/80 whitespace-pre-wrap break-all">
                             {JSON.stringify(selectedLog.rawJson, null, 2)}
                         </pre>
                     </div>

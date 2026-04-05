@@ -56,8 +56,9 @@ export function DataGrid<T>({ data, columns, className = "", rowKey, onRowClick 
                 </tbody>
             </table>
             {data.length === 0 && (
-                <div className="p-4 text-center text-sf-muted text-xs font-mono">
-                    NO DATA AVAILABLE
+                <div className="p-8 text-center flex flex-col items-center justify-center border-t border-sf-border border-dashed bg-sf-surface/20">
+                    <div className="w-1.5 h-1.5 bg-sf-muted/50 mb-3 rotate-45" />
+                    <span className="text-sf-muted tracking-widest text-[10px] font-mono">DATASET EMPTY</span>
                 </div>
             )}
         </div>

@@ -143,10 +143,14 @@ export default function SigmaRulesPage() {
                     <div className="flex-1 overflow-y-auto p-4 space-y-2">
                         {isLoading ? (
                             <div className="text-sm text-sf-muted text-center py-4">Loading rules...</div>
-                        ) : error ? (
-                            <div className="text-sm text-red-400 text-center py-4">Failed to load rules</div>
-                        ) : !Array.isArray(rules) ? (
-                            <div className="text-sm text-red-400 text-center py-4 text-wrap break-words">{(rules as any)?.detail || (rules as any)?.error || "Invalid response from server"}</div>
+                        ) : error || !Array.isArray(rules) ? (
+                            <div className="bg-sf-critical/10 border border-sf-critical/30 p-4 m-4 rounded flex flex-col items-center justify-center text-center">
+                                <AlertCircle className="w-8 h-8 text-sf-critical mb-2" />
+                                <span className="text-[10px] font-mono uppercase tracking-widest text-sf-critical font-bold mt-2">API CONNECTION FAILED</span>
+                                <span className="text-[9px] font-mono text-sf-muted mt-2">
+                                    {(rules as any)?.detail || (rules as any)?.error || (error as any)?.message || "Unable to retrieve Sigma rules."}
+                                </span>
+                            </div>
                         ) : rules.length === 0 ? (
                             <div className="text-sm text-sf-muted text-center py-8">
                                 No custom rules found.<br/>Click + to create one.

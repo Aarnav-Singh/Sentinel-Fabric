@@ -129,7 +129,7 @@ export default function ProfilePage() {
                             <Mail className="w-4 h-4 text-sf-muted" />
                             <div>
                                 <p className="text-[10px] text-sf-muted uppercase tracking-wider font-bold">Email</p>
-                                <p className="text-sm text-white font-mono">{email}</p>
+                                <p className={`text-sm font-mono ${email === "—" ? "text-sf-muted font-bold" : "text-white"}`}>{email}</p>
                             </div>
                         </div>
                         <div className="flex items-center gap-3">

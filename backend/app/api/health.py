@@ -79,7 +79,7 @@ async def health_deep() -> dict:
         qdrant = get_app_qdrant()
         if getattr(qdrant, "_client", None):
             t0 = time.time()
-            col_info = await qdrant._client.get_collection("behavioral_dna")
+            col_info = qdrant.client.get_collection("behavioral_dna")
             latency_ms = round((time.time() - t0) * 1000, 2)
             vector_count = col_info.points_count
             checks["qdrant"] = {"status": "ok", "vector_count": vector_count, "latency_ms": latency_ms}

@@ -17,6 +17,11 @@ export function useLiveEvents({ tenantId = "default", onEvent }: UseLiveEventsOp
     const eventSourceRef = useRef<EventSource | null>(null);
     const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
 
+    const onEventRef = useRef(onEvent);
+    useEffect(() => {
+        onEventRef.current = onEvent;
+    }, [onEvent]);
+
     const connect = useCallback(() => {
         // Close any existing connection
         eventSourceRef.current?.close();
@@ -28,7 +33,7 @@ export function useLiveEvents({ tenantId = "default", onEvent }: UseLiveEventsOp
         es.onmessage = (e) => {
             try {
                 const data = JSON.parse(e.data);
-                onEvent?.(data);
+                onEventRef.current?.(data);
             } catch {
                 // Ignore heartbeat/malformed messages
             }
@@ -39,7 +44,7 @@ export function useLiveEvents({ tenantId = "default", onEvent }: UseLiveEventsOp
             // Reconnect after 3 seconds
             reconnectTimeoutRef.current = setTimeout(connect, 3000);
         };
-    }, [tenantId, onEvent]);
+    }, [tenantId]);
 
     useEffect(() => {
         connect();

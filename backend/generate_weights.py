@@ -4,7 +4,7 @@ import torch.nn as nn
 import lightgbm as lgb
 import numpy as np
 
-models_dir = r"C:\Sentinel Fabri V2\backend\models"
+models_dir = r"C:\UMBRIX\backend\models"
 os.makedirs(models_dir, exist_ok=True)
 
 # 1. VAE Autoencoder

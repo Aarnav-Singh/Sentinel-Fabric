@@ -47,6 +47,8 @@ async function handleProxyRequest(request: NextRequest, pathArray: string[]) {
         const reqContentType = request.headers.get("Content-Type");
         if (reqContentType) {
             headers.set("Content-Type", reqContentType);
+        } else if (request.method !== "GET" && request.method !== "HEAD") {
+            headers.set("Content-Type", "application/json");
         }
 
         const reqInit: RequestInit = {
@@ -61,6 +63,9 @@ async function handleProxyRequest(request: NextRequest, pathArray: string[]) {
         const response = await fetch(targetUrl, reqInit);
 
         const text = await response.text();
+        if (!response.ok) {
+            console.error(`[Proxy] HTTP ${response.status} from backend ${targetUrl}:`, text);
+        }
         let body;
         try {
             body = JSON.parse(text);

@@ -41,6 +41,25 @@ const ICON_BY_CATEGORY: Record<string, React.ElementType> = {
     network: Network, firewall: Server, endpoint: Shield, cloud: Cloud, identity: Database, default: Activity,
 };
 
+const TOPOLOGY_NODES = [
+    { id: 'hub', label: 'CENTRAL_HUB', x: 50, y: 50, icon: Activity, main: true },
+    { id: 'us-east', label: 'US-EAST-1', x: 50, y: 20, icon: Server },
+    { id: 'edge', label: 'EDGE_ROUTER', x: 30, y: 75, icon: Network },
+    { id: 'rds', label: 'RDS_CLUSTER', x: 70, y: 75, icon: Database, warning: true },
+    { id: 'aws', label: 'AWS_PROD', x: 25, y: 30, icon: Cloud, safe: true },
+    { id: 'fw', label: 'FW_PRIMARY', x: 75, y: 30, icon: Shield, critical: true },
+    { id: 'ext', label: 'EXT_API', x: 85, y: 62.5, icon: Cloud, isExt: true }
+];
+
+const TOPOLOGY_LINKS = [
+    { source: 'hub', target: 'us-east', type: 'dashed' },
+    { source: 'hub', target: 'edge', type: 'dashed' },
+    { source: 'hub', target: 'rds', type: 'dashed' },
+    { source: 'hub', target: 'aws', type: 'safe' },
+    { source: 'hub', target: 'fw', type: 'warning' },
+    { source: 'fw', target: 'ext', type: 'neutral' },
+];
+
 function mapConnector(c: ConnectorFromAPI): Integration {
     const status: Integration['status'] = c.is_active === false ? 'disconnected' : (c.status as Integration['status']) ?? (c.is_active ? 'connected' : 'disconnected');
     const category = c.category ?? c.source_type ?? 'Network';
@@ -136,62 +155,37 @@ export default function IntegrationsPage() {
                          <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:32px_32px] pointer-events-none" />
 
                         <div style={{ transform: `translate(${panOffset.x}px, ${panOffset.y}px) scale(${zoomScale})`, transformOrigin: 'center', transition: isDragging ? 'none' : 'transform 0.15s linear' }} className="w-full h-full absolute inset-0 pointer-events-none">
-                             {/* Network Lines */}
                              <svg className="absolute inset-0 w-full h-full" preserveAspectRatio="none" viewBox="0 0 1000 400">
-                                {/* Base Grid lines */}
-                                <line x1="500" y1="200" x2="500" y2="80" stroke="var(--sf-accent)" strokeWidth="1" strokeDasharray="4 2" className="opacity-50" />
-                                <line x1="500" y1="200" x2="300" y2="300" stroke="var(--sf-accent)" strokeWidth="1" strokeDasharray="4 2" className="opacity-50" />
-                                <line x1="500" y1="200" x2="700" y2="300" stroke="var(--sf-accent)" strokeWidth="1" strokeDasharray="4 2" className="opacity-50" />
-                                
-                                {/* Data streams */}
-                                <line x1="500" y1="200" x2="250" y2="120" stroke="var(--sf-safe)" strokeWidth="1.5" className={liveMode ? "animate-pulse" : ""} />
-                                <line x1="500" y1="200" x2="750" y2="120" stroke="var(--sf-warning)" strokeWidth="1.5" className={liveMode ? "animate-pulse-fast" : ""} />
-                                <line x1="750" y1="120" x2="850" y2="250" stroke="var(--sf-border)" strokeWidth="1" />
+                                {TOPOLOGY_LINKS.map((link, i) => {
+                                    const srcNode = TOPOLOGY_NODES.find(n => n.id === link.source);
+                                    const tgtNode = TOPOLOGY_NODES.find(n => n.id === link.target);
+                                    if (!srcNode || !tgtNode) return null;
+                                    const x1 = srcNode.x * 10, y1 = srcNode.y * 4, x2 = tgtNode.x * 10, y2 = tgtNode.y * 4;
+                                    
+                                    if (link.type === 'dashed') return <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} stroke="var(--sf-accent)" strokeWidth="1" strokeDasharray="4 2" className="opacity-50" />;
+                                    if (link.type === 'safe') return <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} stroke="var(--sf-safe)" strokeWidth="1.5" className={liveMode ? "animate-pulse" : ""} />;
+                                    if (link.type === 'warning') return <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} stroke="var(--sf-warning)" strokeWidth="1.5" className={liveMode ? "animate-pulse-fast" : ""} />;
+                                    return <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} stroke="var(--sf-border)" strokeWidth="1" />;
+                                })}
                             </svg>
 
                             {/* Nodes */}
-                            <div className="absolute top-[50%] left-[50%] -translate-x-1/2 -translate-y-1/2 flex flex-col items-center pointer-events-auto">
-                                <div className="p-3 border border-sf-accent bg-sf-bg shadow-[0_0_15px_rgba(0,242,255,0.2)]">
-                                    <Activity className="w-5 h-5 text-sf-accent" />
+                            {TOPOLOGY_NODES.map(node => (
+                                <div key={node.id} className="absolute flex flex-col items-center pointer-events-auto group" style={{ top: `${node.y}%`, left: `${node.x}%`, transform: 'translate(-50%, -50%)' }}>
+                                    <div className={`p-2 border bg-sf-bg transition-transform group-hover:scale-110 ${
+                                            node.main ? 'p-3 shadow-[0_0_15px_rgba(0,242,255,0.2)] border-sf-accent text-sf-accent' :
+                                            node.safe ? 'shadow-[0_0_10px_var(--sf-safe)] border-sf-safe text-sf-safe' :
+                                            node.warning ? 'border-sf-warning text-sf-warning' :
+                                            node.critical ? 'border-sf-critical text-sf-critical' :
+                                            'border-sf-border text-sf-text'
+                                    }`}>
+                                        <node.icon className={node.main ? "w-5 h-5" : "w-4 h-4"} />
+                                    </div>
+                                    <div className={`mt-1 font-mono tracking-widest ${node.main ? 'mt-2 text-[9px] font-bold bg-sf-surface px-2 py-0.5 border border-sf-border text-sf-text' : 'text-[8px] text-sf-muted'}`}>
+                                        {node.label}
+                                    </div>
                                 </div>
-                                <div className="mt-2 text-[9px] font-bold tracking-widest bg-sf-surface px-2 py-0.5 border border-sf-border text-sf-text">CENTRAL_HUB</div>
-                            </div>
-
-                            <div className="absolute top-[20%] left-[50%] -translate-x-1/2 -translate-y-1/2 flex flex-col items-center pointer-events-auto">
-                                <div className="p-2 border border-sf-safe bg-sf-bg">
-                                    <Server className="w-4 h-4 text-sf-safe" />
-                                </div>
-                                <div className="mt-1 text-[8px] font-mono tracking-widest text-sf-muted">US-EAST-1</div>
-                            </div>
-
-                            <div className="absolute top-[75%] left-[30%] -translate-x-1/2 -translate-y-1/2 flex flex-col items-center pointer-events-auto">
-                                <div className="p-2 border border-sf-border bg-sf-bg">
-                                    <Network className="w-4 h-4 text-sf-text" />
-                                </div>
-                                <div className="mt-1 text-[8px] font-mono tracking-widest text-sf-muted">EDGE_ROUTER</div>
-                            </div>
-                            
-                            <div className="absolute top-[75%] left-[70%] -translate-x-1/2 -translate-y-1/2 flex flex-col items-center pointer-events-auto">
-                                <div className="p-2 border border-sf-warning bg-sf-bg">
-                                    <Database className="w-4 h-4 text-sf-warning" />
-                                </div>
-                                <div className="mt-1 text-[8px] font-mono tracking-widest text-sf-muted">RDS_CLUSTER</div>
-                            </div>
-                            
-                            <div className="absolute top-[30%] left-[25%] -translate-x-1/2 -translate-y-1/2 flex flex-col items-center pointer-events-auto">
-                                <div className="p-2 border border-sf-safe bg-sf-bg shadow-[0_0_10px_var(--sf-safe)]">
-                                    <Cloud className="w-4 h-4 text-sf-safe" />
-                                </div>
-                                <div className="mt-1 text-[8px] font-mono tracking-widest text-sf-muted">AWS_PROD</div>
-                            </div>
-
-                            <div className="absolute top-[30%] left-[75%] -translate-x-1/2 -translate-y-1/2 flex flex-col items-center pointer-events-auto">
-                                <div className="p-2 border border-sf-critical bg-sf-bg">
-                                    <Shield className="w-4 h-4 text-sf-critical" />
-                                </div>
-                                <div className="mt-1 text-[8px] font-mono tracking-widest text-sf-muted">FW_PRIMARY</div>
-                            </div>
-
+                            ))}
                         </div>
                         
                         {/* Overlay Controls */}
@@ -231,13 +225,14 @@ export default function IntegrationsPage() {
                                     value={search}
                                     onChange={e => setSearch(e.target.value)}
                                     placeholder="SEARCH MODULES..."
+                                    autoComplete="off"
                                     className="w-full bg-sf-surface border border-sf-border rounded-none py-2 pl-9 pr-4 text-[10px] font-mono text-sf-text focus:border-sf-accent outline-none transition-colors placeholder:text-sf-muted/50"
                                 />
                             </div>
                             <button onClick={() => mutate()} title="Refresh" className="p-2 border border-sf-border text-sf-muted hover:text-sf-text bg-sf-surface">
                                 <RefreshCw className="w-3.5 h-3.5" />
                             </button>
-                            <button onClick={() => setIsAddModalOpen(true)} className="w-full sm:w-auto flex items-center justify-center gap-2 border border-sf-accent bg-sf-accent/10 hover:bg-sf-accent hover:text-black text-sf-accent px-4 py-2 font-bold transition-colors font-mono text-[10px] uppercase tracking-widest">
+                            <button type="button" onClick={() => setIsAddModalOpen(true)} className="w-full sm:w-auto flex items-center justify-center gap-2 border border-sf-accent bg-sf-accent/10 hover:bg-sf-accent hover:text-black text-sf-accent px-4 py-2 font-bold transition-colors font-mono text-[10px] uppercase tracking-widest">
                                 <Plus className="w-3.5 h-3.5" /> Add Module
                             </button>
                         </div>

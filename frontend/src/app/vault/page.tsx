@@ -44,6 +44,13 @@ export default function VaultPage() {
                   <span className="bg-sf-surface/50 px-2 py-1 rounded border border-sf-border">Auto-Rotation: Enabled</span>
                 </div>
               )}
+              {!configured && (
+                <div className="mt-5">
+                    <button className="px-4 py-2 border border-sf-text bg-sf-text hover:bg-transparent text-sf-bg hover:text-white transition-colors text-[10px] font-mono tracking-widest uppercase font-bold">
+                        Configure Vault
+                    </button>
+                </div>
+              )}
             </div>
           </div>
         )}

@@ -46,7 +46,7 @@ async def list_findings(
             if severity_map.get(sev, 0) < min_sev_val:
                 continue
             findings.append({
-                "id": f"FE-{ev.get('event_id', 'unknown')[:8]}",
+                "id": f"FE-{ev.get('event_id', 'unknown')}",
                 "source": "campaign" if ev.get("campaign_id") else "detection",
                 "title": ev.get("message") or f"High-risk event from {ev.get('source_type', 'unknown')}",
                 "description": (
@@ -68,7 +68,7 @@ async def list_findings(
         for cmeta in campaigns:
             cid = cmeta.get("id", "unknown")
             findings.append({
-                "id": f"FC-{cid[:8]}",
+                "id": f"FC-{cid}",
                 "source": "campaign",
                 "title": f"Active campaign: {cid}",
                 "description": f"Stage: {cmeta.get('stage', 'unknown')}, affected assets: {cmeta.get('affected_assets', 0)}",
@@ -168,3 +168,61 @@ async def action_finding(
         "new_weights": pipeline.meta_learner.current_weights if hasattr(pipeline, "meta_learner") else []
     }
 
+
+@router.get("/{finding_id}/details")
+async def get_finding_details(
+    finding_id: str,
+    claims: dict = Depends(require_analyst),
+):
+    """Retrieve full context and history for a finding."""
+    ch = get_app_clickhouse()
+    redis = get_app_redis()
+    postgres = get_app_postgres()
+    tenant_id = claims.get("tenant_id", "default")
+
+    history = []
+    finding_data = {}
+
+    if finding_id.startswith("FE-"):
+        event_id = finding_id[3:]
+        event = await ch.get_event_by_id(event_id, tenant_id)
+        if event:
+            finding_data = event
+            history.append({
+                "type": "creation",
+                "timestamp": event.get("timestamp"),
+                "message": "Finding generated from raw event",
+                "source": event.get("source_type")
+            })
+
+    elif finding_id.startswith("FC-"):
+        campaign_id = finding_id[3:]
+        campaigns = await redis.get_all_campaigns(tenant_id)
+        finding_data = next((c for c in campaigns if c.get("id") == campaign_id), {})
+        if finding_data:
+            history.append({
+                "type": "creation",
+                "timestamp": finding_data.get("created_at"),
+                "message": f"Finding generated from campaign: {campaign_id}",
+                "source": "campaign_engine"
+            })
+
+    # Fetch Analyst Verdicts
+    verdicts = await postgres.get_verdicts_for_finding(finding_id, tenant_id)
+    for v in verdicts:
+        history.append({
+            "type": "analyst_action",
+            "timestamp": v.created_at,
+            "message": f"Analyst decision: {v.verdict}",
+            "author": v.analyst_id,
+            "notes": v.notes
+        })
+
+    # Sort history by timestamp
+    history.sort(key=lambda x: str(x.get("timestamp", "")), reverse=True)
+
+    return {
+        "finding_id": finding_id,
+        "details": finding_data,
+        "history": history
+    }

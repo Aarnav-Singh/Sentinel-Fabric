@@ -73,7 +73,7 @@ export default function SoarPage() {
                     {playbooks.map((action) => (
                         <div key={action.id} className="bg-sf-surface border border-sf-border rounded-xl p-5 flex flex-col">
                             <div className="flex justify-between items-start mb-4">
-                                <h3 className="text-lg font-semibold text-white">{action.name}</h3>
+                                <h3 className="text-lg font-mono tracking-widest uppercase text-white">{action.name}</h3>
                                 <span className={`px-2 py-0.5 rounded text-[10px] uppercase font-bold border ${action.status === 'Active' ? 'bg-sf-safe/10 text-sf-safe border-sf-safe/30' : 'bg-slate-500/10 text-sf-muted border-slate-500/30'}`}>
                                     {action.status}
                                 </span>
