@@ -1,31 +1,86 @@
 # ══════════════════════════════════════════════════════════════════════════
-# UMBRIX — Local Development Docker Compose
+# UMBRIX — Docker Compose (unified — infra + optional app profile)
 # ══════════════════════════════════════════════════════════════════════════
-# One-command dev setup:  docker compose up
 #
-# This file starts ALL dependencies (ClickHouse, Redis, Postgres, Kafka,
-# Qdrant) plus Prometheus/Grafana for observability.  The backend and
-# frontend are designed to be run OUTSIDE Docker for hot-reload:
+# Usage
+# ─────
+#   Infrastructure only (run app locally with hot-reload):
+#     docker compose up
 #
-#   Terminal 1:  cd backend && uvicorn app.main:app --reload
-#   Terminal 2:  cd frontend && npm run dev
+#   Full stack (everything in containers, production-like):
+#     docker compose --profile app up --build
 #
-# If you prefer everything in Docker, uncomment the backend/frontend
-# services at the bottom of this file.
+# Environment
+# ───────────
+#   Copy .env.prod.example → .env and fill in secrets before running
+#   the full-stack profile.  Infra-only mode uses built-in defaults.
+#
 # ══════════════════════════════════════════════════════════════════════════
 
+# ── Shared env blocks (YAML anchors) ──────────────────────────────────────
+# Applied to both api and worker so they always stay in sync.
+x-app-env: &app-env
+  KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+  CLICKHOUSE_HOST: clickhouse
+  REDIS_URL: redis://redis:6379/0
+  REDIS_HOST: redis
+  # Bug 1 fix: align sentinel master name with what the Sentinel container advertises
+  REDIS_SENTINEL_MASTER: sf_master
+  QDRANT_HOST: qdrant
+  POSTGRES_DSN: postgresql+asyncpg://sentinel:${POSTGRES_PASSWORD:-sentinel}@pgbouncer:5432/sentinel
+  JWT_SECRET_KEY: ${JWT_SECRET_KEY}
+  # Bug 3 fix: inject Memgraph URI so STIX2 graph ops resolve inside the network
+  MEMGRAPH_URI: bolt://memgraph:7687
+  # Bug 4 fix: inject ScyllaDB contact point so enabling scylla_enabled works
+  SCYLLA_CONTACT_POINTS: scylladb
+
 services:
-  # ── Data Tier ─────────────────────────────────────────
-  clickhouse:
-    image: clickhouse/clickhouse-server:24
+
+  # ──────────────────────────────────────────────────────────────────────
+  # Kafka  (KRaft mode — no Zookeeper)
+  # ──────────────────────────────────────────────────────────────────────
+  kafka:
+    image: apache/kafka:3.7.0
+    user: "0:0"
     ports:
-      - "8123:8123"   # HTTP
-      - "9000:9000"   # Native TCP
+      - "9092:9092"
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093,PLAINTEXT_INTERNAL://0.0.0.0:29092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092,PLAINTEXT_INTERNAL://kafka:29092
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT,PLAINTEXT_INTERNAL:PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@localhost:9093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+      # Bug 2 fix: valid 22-char base64url-encoded UUID (KRaft requirement)
+      CLUSTER_ID: "4L6g3nShT-eMCtK--X86sw"
     volumes:
-      - clickhouse_data:/var/lib/clickhouse
+      - kafka_data:/var/lib/kafka/data
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-broker-api-versions --bootstrap-server localhost:9092 || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
+    restart: unless-stopped
+    networks:
+      - sf_network
+
+  # ──────────────────────────────────────────────────────────────────────
+  # ClickHouse
+  # ──────────────────────────────────────────────────────────────────────
+  clickhouse:
+    image: clickhouse/clickhouse-server:24.3-alpine
+    ports:
+      - "8123:8123"
+      - "9000:9000"
     environment:
       CLICKHOUSE_DB: sentinel
       CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: 1
+    volumes:
+      - clickhouse_data:/var/lib/clickhouse
     cap_add:
       - SYS_NICE
       - NET_ADMIN
@@ -40,9 +95,16 @@ services:
       timeout: 5s
       retries: 3
       start_period: 10s
+    restart: unless-stopped
+    networks:
+      - sf_network
 
+  # ──────────────────────────────────────────────────────────────────────
+  # Redis  (master + replica + Sentinel for HA)
+  # ──────────────────────────────────────────────────────────────────────
   redis:
-    image: redis:7-alpine
+    image: redis:7.2.4-alpine   # pinned — was :latest
+    container_name: redis-master
     ports:
       - "6379:6379"
     command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru
@@ -52,9 +114,42 @@ services:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       timeout: 5s
-      retries: 3
+      retries: 5
       start_period: 5s
+    restart: unless-stopped
+    networks:
+      - sf_network
 
+  redis-replica:
+    image: redis:7.2.4-alpine   # pinned
+    container_name: redis-replica
+    command: redis-server --replicaof redis 6379
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - sf_network
+
+  # Bug 1 fix: REDIS_MASTER_SET now matches REDIS_SENTINEL_MASTER=sf_master in app env
+  redis-sentinel:
+    image: bitnami/redis-sentinel:7.2.4   # pinned — was :latest
+    container_name: redis-sentinel
+    environment:
+      - REDIS_MASTER_HOST=redis
+      - REDIS_MASTER_PORT_NUMBER=6379
+      - REDIS_MASTER_SET=sf_master
+      - REDIS_SENTINEL_QUORUM=1
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - sf_network
+
+  # ──────────────────────────────────────────────────────────────────────
+  # PostgreSQL + PgBouncer
+  # ──────────────────────────────────────────────────────────────────────
   postgres:
     image: postgres:16-alpine
     ports:
@@ -62,35 +157,46 @@ services:
     environment:
       POSTGRES_DB: sentinel
       POSTGRES_USER: sentinel
-      POSTGRES_PASSWORD: sentinel
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-sentinel}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U sentinel -d sentinel"]
       interval: 10s
       timeout: 5s
-      retries: 3
+      retries: 5
       start_period: 10s
+    restart: unless-stopped
+    networks:
+      - sf_network
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
 
-  kafka:
-    image: apache/kafka:3.7.0
-    user: "0:0"
+  pgbouncer:
+    image: edoburu/pgbouncer:1.22.1   # pinned — was :latest
     ports:
-      - "9092:9092"
+      - "6432:5432"
     environment:
-      KAFKA_NODE_ID: 1
-      KAFKA_PROCESS_ROLES: broker,controller
-      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
-      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT
-      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@localhost:9093
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-      KAFKA_LOG_DIRS: /tmp/kraft-combined-logs
-      CLUSTER_ID: "MkU3OEVBNTcwNTEyNm"
-    volumes:
-      - kafka_data:/tmp/kraft-combined-logs
+      DB_USER: sentinel
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-sentinel}
+      DB_HOST: postgres
+      DB_PORT: 5432
+      POOL_MODE: transaction
+      MAX_CLIENT_CONN: 1000
+      DEFAULT_POOL_SIZE: 100
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - sf_network
 
+  # ──────────────────────────────────────────────────────────────────────
+  # Qdrant
+  # ──────────────────────────────────────────────────────────────────────
   qdrant:
     image: qdrant/qdrant:v1.9.0
     ports:
@@ -98,61 +204,197 @@ services:
       - "6334:6334"
     volumes:
       - qdrant_data:/qdrant/storage
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:6333/healthz || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+    networks:
+      - sf_network
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 4G
 
-  # ── Observability ─────────────────────────────────────
+  # ──────────────────────────────────────────────────────────────────────
+  # ScyllaDB  (high-throughput case/alert writes)
+  # ──────────────────────────────────────────────────────────────────────
+  scylladb:
+    image: scylladb/scylla:5.4
+    ports:
+      - "9042:9042"
+      - "10000:10000"
+    command: --smp 2 --memory 512M --overprovisioned 1 --developer-mode 1
+    volumes:
+      - scylla_data:/var/lib/scylla
+    # Minor fix: healthcheck so worker can depend on scylladb being ready
+    healthcheck:
+      test: ["CMD-SHELL", "cqlsh -e 'describe cluster' || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    restart: unless-stopped
+    networks:
+      - sf_network
+
+  # ──────────────────────────────────────────────────────────────────────
+  # Memgraph  (STIX2 / threat intelligence graph)
+  # ──────────────────────────────────────────────────────────────────────
+  memgraph:
+    image: memgraph/memgraph-mage:1.18-memgraph-2.16   # pinned — was :latest
+    ports:
+      - "7687:7687"
+      - "7444:7444"
+    volumes:
+      - memgraph_data:/var/lib/memgraph
+    # Minor fix: healthcheck so dependent services can wait for Bolt to open
+    healthcheck:
+      test: ["CMD-SHELL", "echo 'RETURN 1;' | mgconsole --no-history 2>/dev/null || exit 1"]
+      interval: 20s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+    networks:
+      - sf_network
+
+  # ──────────────────────────────────────────────────────────────────────
+  # Observability
+  # ──────────────────────────────────────────────────────────────────────
   prometheus:
-    image: prom/prometheus:latest
+    image: prom/prometheus:v2.50.1
     ports:
       - "9090:9090"
     volumes:
       - ./infra/prometheus.yml:/etc/prometheus/prometheus.yml
     extra_hosts:
       - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+    networks:
+      - sf_network
 
   grafana:
-    image: grafana/grafana:latest
+    image: grafana/grafana:10.4.0
     ports:
       - "3100:3000"
     environment:
-      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_SECURITY_ADMIN_PASSWORD: ${GF_ADMIN_PASSWORD:-admin}
+    depends_on:
+      - prometheus
     volumes:
       - grafana_data:/var/lib/grafana
       - ./infra/grafana/provisioning:/etc/grafana/provisioning
       - ./infra/grafana/dashboards:/var/lib/grafana/dashboards
+    restart: unless-stopped
+    networks:
+      - sf_network
 
-  # ── Application (uncomment for full Docker dev) ──────
-  # backend:
-  #   build:
-  #     context: ./backend
-  #     target: api
-  #   ports:
-  #     - "8000:8000"
-  #   env_file: .env
-  #   depends_on:
-  #     clickhouse: { condition: service_healthy }
-  #     redis:      { condition: service_healthy }
-  #     postgres:   { condition: service_healthy }
-  #     qdrant:     { condition: service_started }
-  #     kafka:      { condition: service_started }
-  #   healthcheck:
-  #     test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health"]
-  #     interval: 30s
-  #     timeout: 10s
-  #     retries: 3
+  # ──────────────────────────────────────────────────────────────────────
+  # Application tier  (profile: app)
+  # Start with:  docker compose --profile app up --build
+  # ──────────────────────────────────────────────────────────────────────
+  api:
+    profiles: [app]
+    build:
+      context: ./backend
+      target: api
+    ports:
+      - "8000:8000"
+    env_file: .env
+    environment:
+      <<: *app-env   # all shared env vars including the bug fixes
+    depends_on:
+      kafka:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      clickhouse:
+        condition: service_healthy
+      pgbouncer:
+        condition: service_started
+      qdrant:
+        condition: service_started
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/api/v1/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    restart: unless-stopped
+    networks:
+      - sf_network
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
 
-  # frontend:
-  #   build: ./frontend
-  #   ports:
-  #     - "3000:3000"
-  #   environment:
-  #     NEXT_PUBLIC_API_URL: http://backend:8000
-  #   depends_on:
-  #     - backend
+  worker:
+    profiles: [app]
+    build:
+      context: ./backend
+      target: worker
+    env_file: .env
+    environment:
+      <<: *app-env   # all shared env vars including the bug fixes
+    depends_on:
+      kafka:
+        condition: service_healthy
+      clickhouse:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      qdrant:
+        condition: service_started
+      postgres:
+        condition: service_healthy
+      # Minor fix: wait for ScyllaDB and Memgraph now that they have healthchecks
+      scylladb:
+        condition: service_healthy
+      memgraph:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - sf_network
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+
+  frontend:
+    profiles: [app]
+    build:
+      context: ./frontend
+    ports:
+      - "3000:3000"
+    env_file: .env
+    environment:
+      - BACKEND_API_URL=http://api:8000
+      - BACKEND_API_KEY=${JWT_SECRET_KEY}
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - sf_network
+
+networks:
+  sf_network:
+    driver: bridge
 
 volumes:
+  kafka_data:
   clickhouse_data:
   redis_data:
   postgres_data:
-  kafka_data:
   qdrant_data:
+  scylla_data:
+  memgraph_data:
   grafana_data:

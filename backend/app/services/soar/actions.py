@@ -626,6 +626,28 @@ class AWSSecurityProvider(ActionProvider):
 
 
 # ---------------------------------------------------------------------------
+# Container Provider  (delegates to ContainerExecutor)
+# ---------------------------------------------------------------------------
+class ContainerProvider(ActionProvider):
+    """Dispatch any action to an ephemeral Docker container.
+
+    The container manifest is resolved by capability via ManifestRegistry.
+    Supports an optional `manifest_name` key in the context dict to
+    target a specific manifest instead of the auto-resolved one.
+    """
+    name = "container"
+
+    async def execute(self, action_type: str, context: Dict[str, Any]) -> str:
+        from app.services.soar.container_executor import container_executor
+        manifest_name = context.pop("manifest_name", None)
+        return await container_executor.run(
+            capability=action_type,
+            context=context,
+            manifest_name=manifest_name,
+        )
+
+
+# ---------------------------------------------------------------------------
 # Registry
 # ---------------------------------------------------------------------------
 class ActionRegistry:
@@ -644,6 +666,7 @@ class ActionRegistry:
             "aws": AWSSecurityProvider(),
             "slack": SlackActionProvider(),
             "teams": TeamsActionProvider(),
+            "container": ContainerProvider(),
         }
 
     @classmethod

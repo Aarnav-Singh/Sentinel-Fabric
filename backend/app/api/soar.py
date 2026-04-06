@@ -3,10 +3,77 @@ from typing import List, Dict, Any
 from app.middleware.auth import require_analyst, require_admin, AuditLogger
 from app.services.soar.engine import ExecutionEngine, Playbook, Node
 from app.services.soar.actions import ActionRegistry
+from app.services.soar.action_manifest import ManifestRegistry
 from app.repositories.postgres import PostgresRepository
 from app.dependencies import get_app_postgres, get_app_engine
 
 router = APIRouter(prefix="/soar", tags=["SOAR"])
+
+
+@router.get("/manifests", response_model=Dict[str, Any])
+async def list_container_manifests(claims: dict = Depends(require_analyst)):
+    """List all registered containerised action manifests."""
+    manifests = [
+        {
+            "name": m.name,
+            "image": m.image,
+            "capabilities": m.capabilities,
+            "tags": m.tags,
+            "description": m.description,
+            "timeout_seconds": m.timeout_seconds,
+            "memory_mb": m.memory_mb,
+            "network_mode": m.network_mode,
+        }
+        for m in ManifestRegistry.all()
+    ]
+    return {"status": "success", "data": manifests}
+
+
+@router.post("/execute-container")
+async def execute_container_action(
+    payload: dict,
+    request: Request,
+    engine: ExecutionEngine = Depends(get_app_engine),
+    claims: dict = Depends(require_analyst),
+):
+    """
+    Execute a single containerised SOAR action on-demand.
+
+    Body:
+      capability: str   — e.g. "isolate_host"
+      context: dict     — action parameters (rendered by caller)
+      manifest_name: str | null  — optional, pin to a specific manifest
+    """
+    capability = payload.get("capability")
+    if not capability:
+        raise HTTPException(status_code=422, detail="'capability' is required")
+
+    context = payload.get("context", {})
+    manifest_name = payload.get("manifest_name")
+
+    if manifest_name:
+        context["manifest_name"] = manifest_name
+
+    AuditLogger.log(
+        "soar_container_action_triggered",
+        request=request,
+        claims=claims,
+        target=capability,
+        detail=f"manifest={manifest_name or 'auto'}",
+    )
+
+    # Build a single-node playbook and run it for consistent audit trail
+    node = Node(
+        id=f"on-demand-{capability}",
+        action_type=capability,
+        provider="container",
+        params=context,
+    )
+    pb = Playbook(id="on-demand", name=f"on-demand-{capability}", nodes=[node])
+    result = await engine.execute_playbook(pb)
+
+    status = result[0].get("status", "error") if result else "error"
+    return {"status": status, "results": result}
 
 
 @router.get("/providers", response_model=Dict[str, Any])

@@ -65,6 +65,25 @@ dependencies = [
 
     # ── Reporting (Export) ──
     "openpyxl>=3.1.0",
+
+    # ── Phase 1: Redis CEP (sliding-window sequence detection) ──
+    # No new packages — uses existing redis[hiredis] and aiokafka
+
+    # ── Phase 2: STIX2 Graph Layer ──
+    "stix2>=3.0.0",            # STIX2 object model and serialization
+    "neo4j>=5.0.0",            # Bolt driver — compatible with Memgraph
+
+    # ── Phase 3: Containerized SOAR Execution ──
+    "docker>=7.0.0",           # Docker SDK for Python (from_env() auto-detects socket)
+
+    # ── Phase 4: UQL Engine ──
+    "lark>=1.2.0",             # PEG/Earley parser for UQL grammar
+
+    # ── Phase 5: ScyllaDB (Cassandra-compatible, deferred to scale trigger) ──
+    "cassandra-driver>=3.29.0",  # CQL driver; works with ScyllaDB out of the box
+
+    # ── Phase 6: Collaborative Investigation ──
+    "pycrdt>=0.9.0",           # CRDT library for conflict-free concurrent annotations
 ]
 
 [project.optional-dependencies]

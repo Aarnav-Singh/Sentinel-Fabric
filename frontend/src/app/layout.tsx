@@ -5,6 +5,10 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { QueryProvider } from "@/components/providers/QueryProvider";
 import { EventStreamProvider } from "@/contexts/EventStreamContext";
 import { ToastProvider } from "@/components/ui/Toast";
+import { EntityProvider } from "@/contexts/EntityContext";
+import { EntityPanel } from "@/components/features/investigation/EntityPanel";
+import { CommandPaletteProvider } from "@/contexts/CommandPaletteContext";
+import { CommandPalette } from "@/components/ui/CommandPalette";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 const sora = Sora({ subsets: ["latin"], variable: "--font-sora" });
@@ -25,11 +29,17 @@ export default function RootLayout({
       <body className={`${inter.variable} ${sora.variable} ${jetbrainsMono.variable} font-sans antialiased h-full flex flex-col overflow-hidden selection:bg-sf-accent/30 text-sf-text bg-sf-bg`}>
         <QueryProvider>
           <ToastProvider>
-            <EventStreamProvider>
-              <AppLayout>
-                {children}
-              </AppLayout>
-            </EventStreamProvider>
+            <CommandPaletteProvider>
+              <EntityProvider>
+                <EventStreamProvider>
+                  <AppLayout>
+                    {children}
+                    <EntityPanel />
+                    <CommandPalette />
+                  </AppLayout>
+                </EventStreamProvider>
+              </EntityProvider>
+            </CommandPaletteProvider>
           </ToastProvider>
         </QueryProvider>
       </body>

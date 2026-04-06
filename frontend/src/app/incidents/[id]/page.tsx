@@ -1,6 +1,6 @@
 "use client";
 
-import { use } from "react";
+import { use, useState, useEffect } from "react";
 import useSWR from "swr";
 import Link from "next/link";
 import { 
@@ -16,8 +16,12 @@ import {
     ShieldOff,
     Search,
     Radar,
-    Target
+    Target,
+    Network,
+    Layers
 } from "lucide-react";
+import { CollaborationPanel } from "@/components/features/investigation/CollaborationPanel";
+import { ThreatGraph, type STIXNode, type STIXEdge } from "@/components/features/investigation/ThreatGraph";
 
 // The shape coming from our v1 findings API
 interface FindingDetails {
@@ -34,6 +38,7 @@ interface FindingDetails {
     }[];
     created_at: string;
     updated_at: string;
+    campaign_id?: string;
 }
 
 const fetcher = (url: string) => fetch(url).then((res) => {
@@ -46,12 +51,34 @@ export default function IncidentDetailPage({ params }: { params: { id: string } 
     const resolvedParams = "then" in params ? use(params) : params;
     const { id } = resolvedParams;
 
-    // Fetch from the proxy
+    const [activeTab, setActiveTab] = useState<"details" | "threat-intel">("details");
+    const [graphNodes, setGraphNodes] = useState<STIXNode[]>([]);
+    const [graphEdges, setGraphEdges] = useState<STIXEdge[]>([]);
+    const [graphLoading, setGraphLoading] = useState(false);
+
+    // Fetch from findings API
     const { data: finding, error, isLoading } = useSWR<FindingDetails>(
         `/api/proxy/api/v1/findings/${id}`,
         fetcher,
         { refreshInterval: 10000 }
     );
+
+    // Fetch STIX2 graph when switching to threat-intel tab
+    useEffect(() => {
+        if (activeTab !== "threat-intel" || !finding) return;
+        setGraphLoading(true);
+        const campaignId = finding.campaign_id || id;
+        fetch(`/api/proxy/api/v1/threat-graph/entity/${campaignId}/context`)
+            .then(r => r.ok ? r.json() : null)
+            .then(data => {
+                if (data) {
+                    setGraphNodes(data.nodes || []);
+                    setGraphEdges(data.edges || []);
+                }
+            })
+            .catch(() => {})
+            .finally(() => setGraphLoading(false));
+    }, [activeTab, finding, id]);
 
     if (isLoading) {
         return (
@@ -117,6 +144,29 @@ export default function IncidentDetailPage({ params }: { params: { id: string } 
                     </div>
                 </div>
                 <div className="flex items-center gap-6">
+                    {/* Tab Bar */}
+                    <div className="flex items-center gap-1 bg-sf-bg border border-sf-border rounded-lg p-1">
+                        <button
+                            onClick={() => setActiveTab("details")}
+                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-bold uppercase tracking-wider transition-all ${
+                                activeTab === "details"
+                                    ? "bg-sf-surface text-white shadow"
+                                    : "text-sf-muted hover:text-slate-300"
+                            }`}
+                        >
+                            <Layers className="w-3.5 h-3.5" /> Details
+                        </button>
+                        <button
+                            onClick={() => setActiveTab("threat-intel")}
+                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-bold uppercase tracking-wider transition-all ${
+                                activeTab === "threat-intel"
+                                    ? "bg-[var(--sf-accent)]/10 text-[var(--sf-accent)] border border-[var(--sf-accent)]/30 shadow"
+                                    : "text-sf-muted hover:text-slate-300"
+                            }`}
+                        >
+                            <Network className="w-3.5 h-3.5" /> Threat Intel
+                        </button>
+                    </div>
                     <div className="text-right hidden sm:block">
                         <div className="text-[10px] text-sf-muted font-bold uppercase tracking-widest mb-1">Risk Assessed</div>
                         <div className={`text-lg font-bold uppercase tracking-wide ${severityTextColor}`}>{finding.severity}</div>
@@ -136,7 +186,8 @@ export default function IncidentDetailPage({ params }: { params: { id: string } 
                 </div>
             </header>
 
-            {/* Grid Content Area */}
+            {/* ── Details Tab ── */}
+            {activeTab === "details" && (
             <div className="p-6 grid grid-cols-12 gap-6 max-w-screen-2xl mx-auto w-full">
                 {/* Left Column: Summary & Scope */}
                 <div className="col-span-12 xl:col-span-3 space-y-6">
@@ -315,42 +366,58 @@ export default function IncidentDetailPage({ params }: { params: { id: string } 
                         </div>
                     </div>
 
-                    {/* Notes & Activity Log */}
-                    <div className="sf-card p-5">
-                        <h3 className="text-[10px] font-bold uppercase tracking-widest text-sf-muted mb-4 flex items-center gap-2">
-                            Analyst Notes
-                        </h3>
-                        <div className="relative mb-6">
-                            <textarea className="w-full bg-sf-bg border border-sf-border/50 rounded-lg p-3 text-xs text-white focus:border-[var(--sf-accent)]/50 resize-none outline-none shadow-inner placeholder-slate-600 custom-scrollbar" placeholder="Add investigation notes..." rows={3}></textarea>
-                            <button className="absolute bottom-2 right-2 p-1.5 bg-sf-surface rounded border border-sf-border text-sf-muted hover:text-white hover:border-slate-500 transition-colors">
-                                <ChevronRight className="w-3 h-3" />
-                            </button>
-                        </div>
-                        <div className="space-y-4">
-                            <div className="flex items-start gap-3">
-                                <div className="w-7 h-7 rounded shrink-0 bg-sf-surface flex items-center justify-center text-[10px] font-bold text-sf-muted border border-sf-border">SYS</div>
-                                <div>
-                                    <div className="flex items-baseline justify-between mb-0.5">
-                                        <p className="text-[10px] text-white font-bold uppercase tracking-wider">Automated</p>
-                                        <p className="text-[9px] font-mono text-sf-muted">3:47 AM</p>
-                                    </div>
-                                    <p className="text-xs text-sf-muted font-medium">Alert bundled and incident instantiated.</p>
-                                </div>
-                            </div>
-                            <div className="flex items-start gap-3">
-                                <div className="w-7 h-7 rounded shrink-0 bg-[var(--sf-accent)]/20 flex items-center justify-center text-[10px] font-bold text-[var(--sf-accent)] border border-[var(--sf-accent)]/30">JS</div>
-                                <div>
-                                    <div className="flex items-baseline justify-between mb-0.5">
-                                        <p className="text-[10px] text-white font-bold uppercase tracking-wider">John Smith</p>
-                                        <p className="text-[9px] font-mono text-sf-muted">4:02 AM</p>
-                                    </div>
-                                    <p className="text-xs text-sf-muted font-medium">Initial review complete. Escalated severity due to VIP target.</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    {/* Live Collaboration Panel */}
+                    <CollaborationPanel
+                        incidentId={id}
+                        currentUserId="analyst@umbrix.dev"
+                        currentUserName="Analyst"
+                        className="w-full"
+                    />
                 </div>
             </div>
+            )} {/* end details tab */}
+
+            {/* ── Threat Intelligence Tab ── */}
+            {activeTab === "threat-intel" && (
+                <div className="p-6 max-w-screen-2xl mx-auto w-full flex flex-col gap-4">
+                    <div className="flex items-center gap-3 mb-2">
+                        <Network className="w-5 h-5 text-[var(--sf-accent)]" />
+                        <h3 className="text-sm font-bold text-white uppercase tracking-wider">STIX2 Threat Intelligence Graph</h3>
+                        <span className="text-[10px] text-sf-muted font-mono">
+                            {graphNodes.length} entities · {graphEdges.length} relationships
+                        </span>
+                    </div>
+
+                    {graphLoading && (
+                        <div className="flex items-center justify-center h-[400px] bg-sf-surface/30 rounded-xl border border-sf-border/50">
+                            <div className="flex flex-col items-center gap-3">
+                                <div className="w-8 h-8 border-2 border-[var(--sf-accent)] border-b-transparent rounded-full animate-spin" />
+                                <p className="text-xs text-sf-muted font-mono uppercase tracking-widest animate-pulse">Loading Threat Graph…</p>
+                            </div>
+                        </div>
+                    )}
+
+                    {!graphLoading && graphNodes.length === 0 && (
+                        <div className="flex flex-col items-center justify-center h-[400px] bg-sf-surface/30 rounded-xl border border-sf-border/50 border-dashed gap-4">
+                            <Network className="w-12 h-12 text-slate-700" />
+                            <div className="text-center">
+                                <p className="text-sm font-bold text-slate-400">No Threat Intelligence Data</p>
+                                <p className="text-xs text-sf-muted mt-1 max-w-xs">
+                                    No STIX2 entities are linked to this incident yet. Connect TAXII feeds or ingest threat bundles to populate this graph.
+                                </p>
+                            </div>
+                        </div>
+                    )}
+
+                    {!graphLoading && graphNodes.length > 0 && (
+                        <ThreatGraph
+                            nodes={graphNodes}
+                            edges={graphEdges}
+                            className="w-full"
+                        />
+                    )}
+                </div>
+            )}
         </div>
     );
 }

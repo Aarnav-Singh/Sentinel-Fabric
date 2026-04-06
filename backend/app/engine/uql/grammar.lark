@@ -1,0 +1,63 @@
+// UMBRIX Query Language (UQL) Grammar — Phase 3
+// Parsed with Lark (Earley parser).
+//
+// Example queries:
+//   ml_score > 0.8 and tactic = "lateral-movement"
+//   similar("cobalt strike beacon", threshold=0.85)
+//   sequence on source_ip [tactic = "discovery", tactic = "credential-access"] maxspan=15m
+//   source_type = "crowdstrike" and ml_score >= 0.6
+
+start: hunt_query
+
+hunt_query: filter_expr (_AND filter_expr)*
+
+filter_expr: ml_filter
+           | tactic_filter
+           | source_filter
+           | field_filter
+           | semantic_filter
+           | sequence_expr
+           | "(" filter_expr ")"
+
+// ML score comparison
+ml_filter: ML_SCORE COMPARATOR number
+
+// MITRE ATT&CK tactic
+tactic_filter: "tactic" "=" ESCAPED_STRING
+
+// Source type filter
+source_filter: "source_type" "=" ESCAPED_STRING
+
+// Generic field = value filter
+field_filter: FIELD_NAME COMPARATOR field_value
+
+// Qdrant semantic similarity search
+semantic_filter: "similar" "(" ESCAPED_STRING "," "threshold" "=" number ")"
+
+// Multi-event sequence with optional entity binding and time window
+sequence_expr: "sequence" (_ON FIELD_NAME)? "[" sequence_stages "]" (_MAXSPAN "=" duration)?
+
+sequence_stages: filter_expr ("," filter_expr)*
+
+// Duration: 15m, 1h, 24h, 600s
+duration: INT DURATION_UNIT
+
+// ── Terminals ────────────────────────────────────────────────────────────────
+COMPARATOR: ">=" | "<=" | "!=" | ">" | "<" | "="
+ML_SCORE: "ml_score"
+FIELD_NAME: /[a-zA-Z_][a-zA-Z0-9_.]+/
+INT: /[0-9]+/
+DURATION_UNIT: "s" | "m" | "h" | "d"
+
+field_value: ESCAPED_STRING | number | BOOLEAN
+BOOLEAN: "true" | "false"
+number: INT ("." INT)?
+
+_AND: /and/i
+_ON: /on/i
+_MAXSPAN: /maxspan/i
+
+// Whitespace ignored
+%import common.ESCAPED_STRING
+%import common.WS
+%ignore WS

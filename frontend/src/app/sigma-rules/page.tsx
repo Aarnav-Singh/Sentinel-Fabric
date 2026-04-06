@@ -116,14 +116,55 @@ export default function SigmaRulesPage() {
 
     return (
         <div className="flex-1 flex flex-col min-h-0 bg-sf-bg">
-            <header className="shrink-0 px-6 py-5 border-b border-sf-border bg-sf-surface/30">
-                <h1 className="text-xl font-medium tracking-wide text-white flex items-center gap-3">
-                    <FileCode2 className="w-5 h-5 text-sf-accent" />
-                    Sigma Rule Management
-                </h1>
-                <p className="text-sm text-sf-muted mt-1">
-                    Create and manage custom Sigma detection rules for the anomaly detection pipeline.
-                </p>
+            <header className="shrink-0 px-6 py-5 border-b border-sf-border bg-sf-surface/30 flex justify-between items-center">
+                <div>
+                    <h1 className="text-xl font-medium tracking-wide text-white flex items-center gap-3">
+                        <FileCode2 className="w-5 h-5 text-sf-accent" />
+                        Sigma Rule Management
+                    </h1>
+                    <p className="text-sm text-sf-muted mt-1">
+                        Create, manage, and distribute custom Sigma detection signatures.
+                    </p>
+                </div>
+                
+                <div className="flex items-center gap-3">
+                    <label className="flex items-center gap-2 px-3 py-1.5 border border-sf-border bg-sf-surface hover:bg-sf-surface/80 text-sf-text text-sm cursor-pointer rounded transition-colors">
+                        <span>Import Rules</span>
+                        <input 
+                            type="file" 
+                            accept=".zip,.yml,.yaml" 
+                            className="hidden" 
+                            onChange={async (e) => {
+                                if (!e.target.files?.length) return;
+                                const formData = new FormData();
+                                formData.append("file", e.target.files[0]);
+                                try {
+                                    const res = await fetch("/api/proxy/api/v1/sigma-rules/import", {
+                                        method: "POST",
+                                        body: formData
+                                    });
+                                    if (res.ok) {
+                                        alert("Rules imported successfully!");
+                                        mutate();
+                                    } else {
+                                        const err = await res.json();
+                                        alert("Import failed: " + (err.detail || 'Unknown error'));
+                                    }
+                                } catch (err: any) {
+                                    alert("Import error: " + err.message);
+                                }
+                                e.target.value = '';
+                            }}
+                        />
+                    </label>
+                    <a 
+                        href="/api/proxy/api/v1/sigma-rules/export"
+                        download
+                        className="flex items-center gap-2 px-3 py-1.5 bg-sf-accent text-sf-bg hover:bg-sf-accent/90 text-sm font-medium rounded transition-colors"
+                    >
+                        Export All ZIP
+                    </a>
+                </div>
             </header>
 
             <div className="flex-1 flex min-h-0">

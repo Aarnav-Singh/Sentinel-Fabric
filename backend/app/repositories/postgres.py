@@ -202,9 +202,33 @@ class ModelVersion(Base):
     trained_at: Mapped[Optional[str]] = mapped_column(DateTime, server_default=func.now())
 
 
+class HuntQuery(Base):
+    """Per-analyst UQL / NL hunt query history — Phase 3 (Bug 5 fix).
+
+    Stores every executed hunt with the translated UQL output so analysts
+    can replay, refine, or share queries. Partitioned logically by tenant.
+    """
+    __tablename__ = "hunt_queries"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    tenant_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    user_id: Mapped[str] = mapped_column(String(128), nullable=False)
+    query_text: Mapped[str] = mapped_column(Text, nullable=False)      # NL or UQL input
+    query_mode: Mapped[str] = mapped_column(String(16), nullable=False)  # 'uql' | 'nl' | 'nl_fallback'
+    uql_output: Mapped[Optional[str]] = mapped_column(Text, nullable=True)  # translated UQL (for nl mode)
+    result_count: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    executed_at: Mapped[Optional[str]] = mapped_column(DateTime, server_default=func.now())
+
+    __table_args__ = (
+        Index("idx_hunt_queries_user", "tenant_id", "user_id", "executed_at"),
+    )
+
+
 # ── Repository ───────────────────────────────────────────
 
-class PostgresRepository:
+from app.repositories.postgres_audit import CollaborationAuditMixin
+
+class PostgresRepository(CollaborationAuditMixin):
     """Async PostgreSQL repository for transactional metadata."""
 
     def __init__(self) -> None:
@@ -680,4 +704,59 @@ class PostgresRepository:
                 training_time_seconds=record.get("training_time_seconds"),
             ))
             await session.commit()
+
+    # ── Hunt Query History — Phase 3 ─────────────────────
+
+    async def save_hunt_query(
+        self,
+        tenant_id: str,
+        user_id: str,
+        query_text: str,
+        query_mode: str,
+        uql_output: Optional[str] = None,
+        result_count: Optional[int] = None,
+    ) -> str:
+        """Persist an executed hunt query. Returns the generated ID."""
+        import uuid
+        record_id = str(uuid.uuid4())
+        async with self._session() as session:
+            session.add(HuntQuery(
+                id=record_id,
+                tenant_id=tenant_id,
+                user_id=user_id,
+                query_text=query_text,
+                query_mode=query_mode,
+                uql_output=uql_output,
+                result_count=result_count,
+            ))
+            await session.commit()
+        return record_id
+
+    async def get_hunt_history(
+        self,
+        tenant_id: str,
+        user_id: str,
+        limit: int = 20,
+    ) -> list[dict]:
+        """Return the last N hunt queries for a specific analyst."""
+        async with self._session() as session:
+            result = await session.execute(
+                select(HuntQuery)
+                .where(HuntQuery.tenant_id == tenant_id)
+                .where(HuntQuery.user_id == user_id)
+                .order_by(HuntQuery.executed_at.desc())
+                .limit(limit)
+            )
+            rows = result.scalars().all()
+            return [
+                {
+                    "id": r.id,
+                    "query_text": r.query_text,
+                    "query_mode": r.query_mode,
+                    "uql_output": r.uql_output,
+                    "result_count": r.result_count,
+                    "executed_at": str(r.executed_at) if r.executed_at else None,
+                }
+                for r in rows
+            ]
 

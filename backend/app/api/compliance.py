@@ -1,9 +1,10 @@
 """Compliance API — SOC 2 Type II audit trail and status endpoints.
 
 Provides:
-  GET /api/v1/compliance/status       — SOC 2 compliance health report
-  GET /api/v1/compliance/audit-trail  — Query immutable audit logs (admin-only)
-  POST /api/v1/compliance/retention   — Trigger retention purge (admin-only)
+  GET /api/v1/compliance/status          — SOC 2 compliance health report
+  GET /api/v1/compliance/audit-trail     — Query immutable audit logs (admin-only)
+  POST /api/v1/compliance/retention      — Trigger retention purge (admin-only)
+  GET /api/v1/compliance/mitre-coverage  — MITRE ATT&CK coverage matrix (Addendum A2)
 """
 from __future__ import annotations
 
@@ -86,3 +87,35 @@ async def trigger_retention(
     service = _get_compliance_service()
     purged = await service.enforce_retention(retention_days=retention_days)
     return {"status": "completed", "purged_rows": purged, "retention_days": retention_days}
+
+
+@router.get("/mitre-coverage")
+async def mitre_coverage(
+    claims: dict = Depends(require_auth),
+):
+    """MITRE ATT&CK coverage matrix derived from active Sigma rules.
+
+    Returns per-tactic coverage breakdown and summary statistics suitable
+    for rendering a heat-map on the Compliance page (fixes audit issue M-07).
+
+    Example summary response::
+
+        {
+          "summary": {
+            "total_techniques": 196,
+            "covered_techniques": 47,
+            "coverage_pct": 24.0,
+            "total_sigma_rules": 38,
+            "total_tactics": 14,
+            "covered_tactics": 6
+          },
+          "by_tactic": { ... }
+        }
+    """
+    import asyncio
+    from app.services.mitre_coverage import compute_coverage
+
+    # compute_coverage is CPU-bound (YAML parsing) — run in thread pool
+    loop = asyncio.get_event_loop()
+    result = await loop.run_in_executor(None, compute_coverage)
+    return result

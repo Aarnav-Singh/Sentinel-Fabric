@@ -38,8 +38,9 @@ from app.ml.meta_learner import MetaLearner
 from app.services.alerting import AlertingEngine
 from app.middleware.metrics import (
     PIPELINE_EVENT_TOTAL, PIPELINE_STEP_LATENCY,
-    VAE_ANOMALY_SCORE, TEMPORAL_ANOMALY_SCORE, META_SCORE
+    ENSEMBLE_SCORE, VAE_ANOMALY_SCORE, TEMPORAL_ANOMALY_SCORE, ADVERSARIAL_SCORE, META_SCORE
 )
+from app.pipeline.redis_cep import RedisCEPEngine
 from typing import Any
 
 logger = structlog.get_logger(__name__)
@@ -87,6 +88,13 @@ class PipelineService:
         self._entity_resolver = EntityResolver(redis=redis)
         self._cve_enricher = CveEnricher(redis_store=redis)
         self._shodan_enricher = ShodanEnricher(redis_store=redis)
+
+        # Phase 1: Redis CEP — sequence detection across Kafka events
+        redis_raw = getattr(redis, "_client", None)
+        self._cep: RedisCEPEngine | None = (
+            RedisCEPEngine(redis_raw) if redis_raw else None
+        )
+        self._cep_producer: Any = None  # lazily set by main.py after Kafka starts
 
         # Agentic RAG Orchestrator
         from app.engine.rag_retriever import RagRetriever
@@ -240,8 +248,10 @@ class PipelineService:
             return max(0.0, min(float(v), 1.0))
 
         # Update ML metrics
+        ENSEMBLE_SCORE.set(_clamp(s1))
         VAE_ANOMALY_SCORE.set(_clamp(s2))
         TEMPORAL_ANOMALY_SCORE.set(_clamp(s4))
+        ADVERSARIAL_SCORE.set(_clamp(s5))
         META_SCORE.set(_clamp(meta_score))
 
         # Attach ML scores to the event
@@ -264,6 +274,26 @@ class PipelineService:
 
         # Step 2.5: Compliance Framework Mapping
         event.compliance_tags = self._compliance.map_event(event, sigma_matches)
+
+        # Step 2.7: Redis CEP — check for multi-event attack sequences
+        if self._cep is not None:
+            try:
+                fired_alerts = await self._cep.check_event(event)
+                for alert in fired_alerts:
+                    if self._cep_producer:
+                        import json as _json
+                        await self._cep_producer.send(
+                            "sentinel.sequences",
+                            value=_json.dumps(alert, default=str).encode("utf-8"),
+                        )
+                    logger.info(
+                        "cep_sequence_fired",
+                        pattern_id=alert.get("pattern_id"),
+                        entity=alert.get("entity_key"),
+                        severity=alert.get("severity"),
+                    )
+            except Exception as _cep_err:
+                logger.debug("cep_check_skipped", error=str(_cep_err))
 
         # Step 3: IOC feed lookup (use async feed-enriched path when available)
         if self._feed_manager:

@@ -1,5 +1,7 @@
 "use client";
 
+import { AlertOctagon, AlertTriangle, AlertCircle, Info, Hash } from "lucide-react";
+
 interface BadgeProps {
     label: string;
     severity?: "critical" | "high" | "medium" | "low" | "info";
@@ -21,13 +23,22 @@ export function Badge({ label, severity = "info", className = "", pulse = false 
         high: "shadow-[0_0_8px_rgba(249,115,22,0.3)]",
     };
 
+    const iconMap: Record<string, React.ReactNode> = {
+        critical: <AlertOctagon className="w-2.5 h-2.5 mr-1 shrink-0" />,
+        high: <AlertTriangle className="w-2.5 h-2.5 mr-1 shrink-0" />,
+        medium: <AlertCircle className="w-2.5 h-2.5 mr-1 shrink-0" />,
+        low: <Info className="w-2.5 h-2.5 mr-1 shrink-0" />,
+        info: <Hash className="w-2.5 h-2.5 mr-1 shrink-0" />,
+    };
+
     const shouldPulse = pulse || severity === "critical" || severity === "high";
     const glowClass = shouldPulse ? (glowMap[severity] || "") : "";
 
     return (
         <span
-            className={`inline-flex items-center text-[10px] font-mono tracking-wider leading-none px-1.5 py-0.5 rounded-sm border backdrop-blur-sm ${variants[severity]} ${glowClass} ${className}`}
+            className={`inline-flex items-center text-[10px] font-mono tracking-wider leading-none px-1.5 py-0.5 rounded-[2px] border backdrop-blur-sm ${variants[severity]} ${glowClass} ${className}`}
         >
+            {iconMap[severity]}
             {label}
         </span>
     );

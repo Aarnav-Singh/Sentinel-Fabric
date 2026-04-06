@@ -11,6 +11,8 @@ from app.repositories.clickhouse import ClickHouseRepository
 from app.repositories.redis_store import RedisStore
 from app.repositories.postgres import PostgresRepository
 from app.repositories.qdrant_store import QdrantRepository
+from app.repositories.scylla_repository import ScyllaRepository
+from app.intelligence.stix_graph import STIXGraphRepository
 from app.services.sse_broadcaster import SSEBroadcaster
 from app.services.pipeline import PipelineService
 from app.services.soar.engine import ExecutionEngine
@@ -24,6 +26,8 @@ _clickhouse: ClickHouseRepository | None = None
 _redis: RedisStore | None = None
 _postgres: PostgresRepository | None = None
 _qdrant: QdrantRepository | None = None
+_scylla: ScyllaRepository | None = None
+_stix: STIXGraphRepository | None = None
 _broadcaster: SSEBroadcaster | None = None
 _pipeline: PipelineService | None = None
 _ratelimiter: RateLimiter | None = None
@@ -35,13 +39,17 @@ def init_dependencies(
     redis: RedisStore,
     postgres: PostgresRepository,
     qdrant: QdrantRepository,
+    scylla: ScyllaRepository | None,
+    stix: STIXGraphRepository | None,
     broadcaster: SSEBroadcaster,
 ) -> None:
-    global _clickhouse, _redis, _postgres, _qdrant, _broadcaster, _pipeline, _engine
+    global _clickhouse, _redis, _postgres, _qdrant, _scylla, _stix, _broadcaster, _pipeline, _engine
     _clickhouse = ch
     _redis = redis
     _postgres = postgres
     _qdrant = qdrant
+    _scylla = scylla
+    _stix = stix
     _broadcaster = broadcaster
     
     from app.middleware.rate_limit import RateLimiter
@@ -71,7 +79,13 @@ def get_app_clickhouse() -> ClickHouseRepository:
     return _clickhouse
 
 
-def get_app_redis() -> RedisStore:
+def get_app_redis() -> RedisStore | None:
+    """Return the Redis store, or None if Redis is unavailable."""
+    return _redis
+
+
+def get_app_redis_strict() -> RedisStore:
+    """Return the Redis store; raises if not initialized (use for required deps)."""
     assert _redis is not None, "Redis not initialized"
     return _redis
 
@@ -85,6 +99,13 @@ def get_app_qdrant() -> QdrantRepository:
     assert _qdrant is not None, "Qdrant not initialized"
     return _qdrant
 
+def get_app_scylla() -> ScyllaRepository | None:
+    # Optional dependency: can return None
+    return _scylla
+
+def get_app_stix() -> STIXGraphRepository | None:
+    # Optional dependency: can return None
+    return _stix
 
 def get_app_broadcaster() -> SSEBroadcaster:
     assert _broadcaster is not None, "SSE broadcaster not initialized"

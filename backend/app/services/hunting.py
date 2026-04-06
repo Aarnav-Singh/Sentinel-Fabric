@@ -69,6 +69,7 @@ class ThreatHuntingAgent:
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from app.services.threat_intel import scheduled_intel_sync
 from app.services.compliance_digest import run_compliance_digest_job
+from app.intelligence.taxii_scheduler import run_taxii_sync
 
 hunter_scheduler = AsyncIOScheduler()
 
@@ -91,6 +92,9 @@ def start_hunter_scheduler():
     
     # Run every day at 8:00 AM for compliance reporting
     hunter_scheduler.add_job(run_compliance_digest_job, 'cron', hour=8, minute=0, id='daily_compliance_digest', replace_existing=True)
+    
+    # Run every 6 hours for TAXII feed pulling
+    hunter_scheduler.add_job(run_taxii_sync, 'interval', hours=6, id='taxii_sync_job', replace_existing=True)
     
     hunter_scheduler.start()
     logger.info("hunter_scheduler_started")

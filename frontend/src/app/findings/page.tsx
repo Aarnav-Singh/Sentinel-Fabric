@@ -1,20 +1,25 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Target, ExternalLink, Database, Clock, ShieldAlert, Users, Server, UserPlus, Zap, Filter, Radio, Brain, Bug } from 'lucide-react';
 import useSWR from 'swr';
 import { FadeIn, SlideIn, ShimmerSkeleton, AnimatedNumber, PanelCard } from '@/components/ui/MotionWrappers';
 import { useToast } from '@/components/ui/Toast';
 import { DataGrid } from '@/components/ui/DataGrid';
+import { EntityLink } from '@/components/ui/EntityLink';
+import { MlScoreBadge } from '@/components/ui/MlScoreBadge';
+import { DataFreshness } from '@/components/ui/DataFreshness';
+import { Badge } from '@/components/ui/Badge';
 
 const fetcher = (url: string) => fetch(url).then(r => r.json());
 
 import { FindingHistoryModal } from '@/components/features/findings/FindingHistoryModal';
+import { QuickActions } from '@/components/features/actions/QuickActions';
 
 // ─── Types ───────────────────────────────────────────────
 interface CveContext { cve_id: string; cvss_score?: number; severity?: string; description?: string; patch_available?: boolean; }
 interface TriageResult { severity: string; confidence: number; summary: string; recommended_action: string; tools_used: string[]; }
-interface Finding { id: string; title: string; description: string; severity: 'critical' | 'high' | 'medium' | 'low'; source?: string; status: 'open' | 'approved' | 'dismissed' | 'escalated' | 'new'; created_at?: string; ip?: string; domain?: string; linked_techniques?: string[]; cve_context?: CveContext[]; triage_result?: TriageResult; }
+interface Finding { id: string; title: string; description: string; severity: 'critical' | 'high' | 'medium' | 'low'; source?: string; status: 'open' | 'approved' | 'dismissed' | 'escalated' | 'new'; created_at?: string; ip?: string; domain?: string; linked_techniques?: string[]; cve_context?: CveContext[]; triage_result?: TriageResult; ml_score?: number; }
 interface FindingsResponse { findings?: Finding[]; }
 
 // ─── Helpers ─────────────────────────────────────────────
@@ -66,9 +71,14 @@ export default function FindingsPage() {
   const [triagePending, setTriagePending] = useState<Record<string, boolean>>({});
   const [selectedFindingId, setSelectedFindingId] = useState<string | null>(null);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState(Date.now());
   const { toast } = useToast();
 
   const { data, isLoading, mutate } = useSWR<FindingsResponse | Finding[]>('/api/proxy/api/v1/findings', fetcher, { refreshInterval: 10000 });
+
+  useEffect(() => {
+      if (data) setLastUpdated(Date.now());
+  }, [data]);
 
   let findings: Finding[] = [];
   if (data) {
@@ -106,6 +116,9 @@ export default function FindingsPage() {
 
   const sourceIconMap: Record<string, React.ElementType> = { endpoint: Database, network: ShieldAlert, identity: Users, cloud: Server };
 
+  // mock ML score based on severity if it's missing just so we have data
+  const getMlScore = (f: Finding) => f.ml_score !== undefined ? f.ml_score : (f.severity === 'critical' ? 0.95 : f.severity === 'high' ? 0.75 : f.severity === 'medium' ? 0.5 : 0.2);
+
   return (
     <div className="flex-1 overflow-auto custom-scrollbar p-6 bg-sf-bg flex min-h-0">
       <div className="flex flex-col xl:flex-row gap-6 w-full h-full max-w-[1600px] mx-auto min-h-0">
@@ -114,8 +127,9 @@ export default function FindingsPage() {
         <div className="flex-[2] flex flex-col min-h-0 min-w-0">
             <PanelCard className="flex flex-col h-full min-h-0">
                 <div className="px-4 py-3 border-b border-sf-border bg-sf-surface flex items-center justify-between shrink-0">
-                    <div>
-                        <h2 className="text-[10px] font-mono tracking-widest text-sf-muted uppercase">Threat Vectors</h2>
+                    <div className="flex items-center flex-1">
+                        <h2 className="text-[10px] font-mono tracking-widest text-sf-muted uppercase mr-4">Threat Vectors</h2>
+                        <DataFreshness lastUpdated={lastUpdated} refreshInterval={10} showProgressBar={false} />
                     </div>
                     <div className="flex gap-2 text-[10px] uppercase font-mono tracking-widest text-sf-text">
                         <select className="bg-sf-bg border border-sf-border px-2 py-1 outline-none" value={severityFilter} onChange={e => setSeverityFilter(e.target.value)}>
@@ -159,8 +173,8 @@ export default function FindingsPage() {
                                     header: "!", 
                                     key: "severity", 
                                     render: (val, row) => (
-                                        <div className={`w-6 text-center text-[9px] font-bold ${row.status === 'dismissed' || row.status === 'approved' ? 'text-sf-disabled border-sf-disabled' : SEVERITY_MAP[val as keyof typeof SEVERITY_MAP].text} border py-0.5`}>
-                                            {SEVERITY_MAP[val as keyof typeof SEVERITY_MAP].label}
+                                        <div className={row.status === 'dismissed' || row.status === 'approved' ? 'opacity-50 grayscale' : ''}>
+                                            <Badge label={SEVERITY_MAP[val as keyof typeof SEVERITY_MAP].label} severity={val as any} />
                                         </div>
                                     ) 
                                 },
@@ -183,9 +197,28 @@ export default function FindingsPage() {
                                     )
                                 },
                                 {
+                                    header: "CONF",
+                                    key: "ml_score",
+                                    render: (_, row) => <MlScoreBadge score={getMlScore(row)} />
+                                },
+                                {
                                     header: "IP/DOMAIN",
                                     key: "ip",
-                                    render: (val, row) => <span className="text-[10px] font-mono text-sf-muted">{val || row.domain || '-'}</span>
+                                    render: (val, row) => {
+                                        if (val) return (
+                                            <div className="flex items-center gap-2">
+                                                <EntityLink type="ip" value={val} className="text-[10px]" />
+                                                <div className="opacity-0 group-hover:opacity-100 transition-opacity"><QuickActions entityType="ip" entityId={val} /></div>
+                                            </div>
+                                        );
+                                        if (row.domain) return (
+                                            <div className="flex items-center gap-2">
+                                                <EntityLink type="host" value={row.domain} className="text-[10px]" />
+                                                <div className="opacity-0 group-hover:opacity-100 transition-opacity"><QuickActions entityType="host" entityId={row.domain} /></div>
+                                            </div>
+                                        );
+                                        return <span className="text-[10px] font-mono text-sf-muted">-</span>;
+                                    }
                                 },
                                 {
                                     header: "STATUS",
@@ -219,14 +252,17 @@ export default function FindingsPage() {
                                                         )}
                                                         <button 
                                                             className="px-2 py-1 bg-sf-surface border border-sf-border hover:bg-sf-safe hover:text-black hover:border-sf-safe text-[9px] text-sf-safe transition-colors font-bold uppercase disabled:opacity-50"
-                                                            onClick={() => handleAction(row.id, 'approve')}
+                                                            onClick={(e) => { e.stopPropagation(); handleAction(row.id, 'approve'); }}
                                                             disabled={!!verdictPending[row.id]}
                                                         >A</button>
                                                          <button 
                                                             className="px-2 py-1 bg-sf-surface border border-sf-border hover:bg-sf-disabled hover:text-black hover:border-sf-disabled text-[9px] text-sf-muted transition-colors font-bold uppercase disabled:opacity-50"
-                                                            onClick={() => handleAction(row.id, 'dismiss')}
+                                                            onClick={(e) => { e.stopPropagation(); handleAction(row.id, 'dismiss'); }}
                                                             disabled={!!verdictPending[row.id]}
                                                         >D</button>
+                                                        <div className="opacity-0 group-hover:opacity-100 transition-opacity border-l border-sf-border pl-1 ml-1 flex items-center">
+                                                            <QuickActions entityType="finding" entityId={row.id} />
+                                                        </div>
                                                            <button 
                                                             className="px-2 py-1 bg-sf-surface border border-sf-critical text-[9px] text-sf-critical transition-colors hover:bg-sf-critical hover:text-black font-bold uppercase disabled:opacity-50"
                                                             onClick={() => handleAction(row.id, 'escalate')}

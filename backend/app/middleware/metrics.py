@@ -33,6 +33,11 @@ PIPELINE_STEP_LATENCY = Histogram(
 
 from prometheus_client import Gauge
 
+ENSEMBLE_SCORE = Gauge(
+    "ensemble_score_current",
+    "Latest Ensemble score seen by the pipeline"
+)
+
 VAE_ANOMALY_SCORE = Gauge(
     "vae_anomaly_score_current",
     "Latest VAE anomaly score seen by the pipeline"
@@ -41,6 +46,11 @@ VAE_ANOMALY_SCORE = Gauge(
 TEMPORAL_ANOMALY_SCORE = Gauge(
     "temporal_anomaly_score_current",
     "Latest Temporal anomaly score seen by the pipeline"
+)
+
+ADVERSARIAL_SCORE = Gauge(
+    "adversarial_score_current",
+    "Latest Adversarial score seen by the pipeline"
 )
 
 META_SCORE = Gauge(

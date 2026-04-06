@@ -158,6 +158,43 @@ class Settings(BaseSettings):
     vault_mount_point: str = "secret"
     vault_rotation_interval: int = 900  # seconds
 
+    # ── Phase 1: Redis CEP ───────────────────────────────
+    cep_sequence_topic: str = "sentinel.sequences"
+    cep_enabled: bool = True
+
+    # ── Phase 2: STIX2 Graph Layer ──────────────────────
+    memgraph_uri: str = "bolt://localhost:7687"
+    memgraph_user: str = ""
+    memgraph_password: str = ""
+    stix2_taxii_feeds: list[str] = []   # TAXII 2.1 feed URLs to auto-pull
+    stix2_embed_enabled: bool = False   # Set True when Anthropic key configured
+    stix2_pull_interval_hours: int = 6
+
+    # ── Phase 3: Containerized SOAR ─────────────────────
+    soar_container_executor_enabled: bool = False  # Requires Docker socket
+    soar_action_image_prefix: str = "umbrix/action"
+    soar_container_timeout_seconds: int = 120
+
+    # ── Phase 4: UQL Engine ─────────────────────────────
+    uql_nl_translation_enabled: bool = True   # LLM natural-language → UQL
+    uql_cache_ttl_seconds: int = 300
+
+    # ── Phase 5: ScyllaDB (deferred) ────────────────────
+    scylla_contact_points: list[str] = ["localhost"]
+    scylla_keyspace: str = "sentinel"
+    scylla_enabled: bool = False
+
+    # ── Phase 6: Collaborative Investigation ────────────
+    collab_presence_ttl_seconds: int = 300
+    collab_ai_participant_enabled: bool = False  # LangGraph AI analyst participant
+
+    # ── Addendum A3: Wazuh Integration ──────────────────
+    wazuh_url: str = ""         # e.g. "https://wazuh-manager:55000"
+    wazuh_user: str = ""
+    wazuh_password: str = ""
+    wazuh_poll_interval_seconds: int = 60
+    wazuh_kafka_topic: str = "sentinel.wazuh"
+
     def model_post_init(self, __context) -> None:
         """Validate security invariants and optionally load from Vault."""
         _INSECURE_SECRETS = {

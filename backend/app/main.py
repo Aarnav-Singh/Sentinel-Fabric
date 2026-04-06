@@ -25,7 +25,7 @@ from app.middleware.request_id import RequestIDMiddleware
 from app.middleware.tenant_isolation import TenantIsolationMiddleware
 
 from app.api import ingest, health, campaigns, posture, simulation, agents, soar, collaboration, chatops
-from app.api import pipeline_status, events_feed, findings, reporting, settings as settings_api, sigma_rules, vault
+from app.api import pipeline_status, events_feed, findings, reporting, settings as settings_api, sigma_rules, vault, cases, threat_graph
 from app.api.auth import router as auth_router
 from app.services.hunting import start_hunter_scheduler
 from app.services.compliance_digest import run_compliance_digest_job
@@ -61,11 +61,15 @@ async def lifespan(app: FastAPI):
     from app.repositories.redis_store import RedisStore
     from app.repositories.postgres import PostgresRepository, UserRecord
     from app.repositories.qdrant_store import QdrantRepository
+    from app.repositories.scylla_repository import ScyllaRepository
+    from app.intelligence.stix_graph import STIXGraphRepository
 
     ch: ClickHouseRepository | None = None
     redis: RedisStore | None = None
     postgres: PostgresRepository | None = None
     qdrant: QdrantRepository | None = None
+    scylla: ScyllaRepository | None = None
+    stix: STIXGraphRepository | None = None
 
     # Fast port probe to detect if Docker is actually there
     async def _port_open(host, port):
@@ -103,6 +107,34 @@ async def lifespan(app: FastAPI):
     # 4. Qdrant
     qdrant = QdrantRepository()
     qdrant_ok = await _connect_or_fallback(qdrant, "qdrant", settings.qdrant_host, settings.qdrant_port)
+
+    # 5. ScyllaDB (Optional)
+    # config.py defines scylla_contact_points: list[str] — NOT scylla_host
+    scylla_contact_points = settings.scylla_contact_points
+    scylla_port = getattr(settings, 'scylla_port', 9042)
+    scylla = ScyllaRepository(contact_points=scylla_contact_points, port=scylla_port)
+    # Use loop run_in_executor since cassandra-driver connect is synchronous
+    try:
+        await asyncio.wait_for(
+            asyncio.get_event_loop().run_in_executor(None, scylla.connect), 
+            timeout=5.0
+        )
+        logger.info("scylla_connected")
+    except Exception as e:
+        logger.warning("scylla_unavailable_falling_back_to_postgres", error=str(e))
+        scylla = None
+
+    # 6. Memgraph (Optional STIX2 graph)
+    memgraph_uri = getattr(settings, 'memgraph_uri', "bolt://localhost:7687")
+    # Pass qdrant so STIX upserts also embed entities for semantic search
+    stix = STIXGraphRepository(uri=memgraph_uri, user=settings.memgraph_user, password=settings.memgraph_password, qdrant=qdrant)
+    try:
+        await asyncio.wait_for(stix.connect(), timeout=5.0)
+        await stix.initialize_schema()
+        logger.info("memgraph_stix2_initialized")
+    except Exception as e:
+        logger.warning("memgraph_unavailable", error=str(e))
+        stix = None
 
     if pg_ok:
         import bcrypt
@@ -167,14 +199,18 @@ async def lifespan(app: FastAPI):
                 created_at=datetime.utcnow()
             ))
 
-    # 2. Initialize orchestration services
+    # 5. Initialize SSE Broadcaster
     broadcaster = SSEBroadcaster()
+
+    # Pass deps to global container
     init_dependencies(
         ch=ch,
         redis=redis,
         postgres=postgres,
         qdrant=qdrant,
-        broadcaster=broadcaster,
+        scylla=scylla,
+        stix=stix,
+        broadcaster=broadcaster
     )
 
     # Start Vault background polling for runtime secret rotation
@@ -233,6 +269,36 @@ async def lifespan(app: FastAPI):
 
             asyncio.create_task(_safe_kafka_consumer())
             logger.info("kafka_consumer_task_scheduled")
+
+            # Phase 1: Wire CEP Kafka producer into pipeline and start CEP consumer
+            async def _start_cep_infrastructure():
+                """Give Kafka 2s to stabilise then wire CEP producer + consumer."""
+                await asyncio.sleep(2)
+                try:
+                    from aiokafka import AIOKafkaProducer
+                    import json as _json
+                    pipeline = get_app_pipeline()
+
+                    cep_producer = AIOKafkaProducer(
+                        bootstrap_servers=settings.kafka_bootstrap_servers,
+                        value_serializer=lambda v: v,
+                    )
+                    await cep_producer.start()
+                    pipeline._cep_producer = cep_producer
+                    logger.info("cep_producer_wired")
+
+                    from app.consumers.cep_consumer import CEPConsumer
+                    cep_consumer = CEPConsumer(
+                        pipeline=pipeline,
+                        kafka_bootstrap=settings.kafka_bootstrap_servers,
+                    )
+                    await cep_consumer.start()
+                    asyncio.create_task(cep_consumer.run())
+                    logger.info("cep_consumer_task_scheduled")
+                except Exception as e:
+                    logger.warning("cep_infrastructure_start_failed", error=str(e))
+
+            asyncio.create_task(_start_cep_infrastructure())
         else:
             logger.warning("kafka_port_closed_skipping_consumer")
     else:
@@ -261,6 +327,7 @@ def create_app() -> FastAPI:
         {"name": "collaboration", "description": "Incident annotations, tagging, and team collaboration"},
         {"name": "simulation", "description": "Attack simulation and red team tooling"},
         {"name": "compliance", "description": "SOC 2 Type II audit trail and compliance status"},
+        {"name": "threat-hunt", "description": "UQL threat hunting — ML-aware query language and natural-language interpretation"},
     ]
 
     app = FastAPI(
@@ -338,6 +405,7 @@ def create_app() -> FastAPI:
     app.include_router(soar.router, prefix="/api/v1")
     app.include_router(vault.router, prefix="/api/v1")
     app.include_router(collaboration.router, prefix="/api/v1")
+    app.include_router(collaboration.rest_router)   # HTTP annotation + presence endpoints
     app.include_router(chatops.router, prefix="/api/v1")
     
     # Compliance API (SOC 2 audit trail + status)
@@ -355,6 +423,19 @@ def create_app() -> FastAPI:
     # Search API (omnibar search)
     from app.api.search import router as search_router
     app.include_router(search_router, prefix="/api/v1")
+
+    # Threat Hunt API — Phase 3 (UQL Engine)
+    from app.api.hunt import router as hunt_router
+    from app.api.hunt_history import router as hunt_history_router
+    from app.api.cases import router as cases_router
+    app.include_router(hunt_router, prefix="/api/v1")
+    app.include_router(hunt_history_router, prefix="/api/v1")
+    app.include_router(cases_router, prefix="/api/v1")
+    app.include_router(threat_graph.router)
+
+    # Grouped Events API (CEP sequence aggregation — AttackPatternCard)
+    from app.api.events_grouped import router as events_grouped_router
+    app.include_router(events_grouped_router, prefix="/api/v1")
 
     # Tenant-scoped SSE stream
     @app.get("/api/v1/events/stream")

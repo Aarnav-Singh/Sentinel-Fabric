@@ -104,6 +104,12 @@
   }
 }
 
+/* ─── Animations ─────────────────────────────────────────── */
+@keyframes sf-shimmer-sweep {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
 /* ─── Scrollbar ──────────────────────────────────────────── */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: var(--sf-bg); border-left: 1px solid var(--sf-border); }

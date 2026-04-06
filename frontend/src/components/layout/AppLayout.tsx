@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { Menu, X, Settings, Zap, FileText, Search, Bell, Shield, Network, LayoutDashboard, Crosshair, Fingerprint, BookOpen, Activity, ShieldCheck, Target, Server, Lock } from "lucide-react";
 import { useEventStream } from "@/contexts/EventStreamContext";
 import { motion, AnimatePresence } from "framer-motion";
+import { DataFreshness } from "@/components/ui/DataFreshness";
 
 
 
@@ -36,6 +37,13 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     const [notificationsOpen, setNotificationsOpen] = useState(false);
     const pathname = usePathname();
     const { eventsRate, pipelineStatus } = useEventStream();
+    const [lastRefreshed, setLastRefreshed] = useState<number>(0);
+
+    useEffect(() => {
+        setLastRefreshed(Date.now());
+        const interval = setInterval(() => setLastRefreshed(Date.now()), 15000);
+        return () => clearInterval(interval);
+    }, []);
 
     if (pathname === "/") {
         return <>{children}</>;
@@ -87,6 +95,10 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                 </div>
 
                 <div className="flex items-center gap-4 shrink-0">
+                    <div className="hidden sm:block">
+                        <DataFreshness lastUpdated={lastRefreshed} refreshInterval={15} showProgressBar />
+                    </div>
+
                     <div className="hidden lg:flex items-center gap-4 px-3 py-1 bg-sf-bg border border-sf-border">
                         <div className="flex items-center gap-2">
                             <div className={`w-1.5 h-1.5 ${pipelineStatus?.pipeline_active ? 'bg-sf-safe' : 'bg-sf-muted'}`} />

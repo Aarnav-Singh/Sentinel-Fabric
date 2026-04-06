@@ -13,6 +13,7 @@ from typing import Dict, Any, List, Optional
 from jinja2 import Template
 
 from app.services.soar.actions import ActionProvider, PaloAltoProvider, CrowdStrikeProvider, ActionRegistry
+from app.services.soar.action_manifest import ManifestRegistry
 from app.services.sse_broadcaster import broadcaster
 from pydantic import BaseModel
 
@@ -63,7 +64,12 @@ class ExecutionEngine:
         self._postgres = repo
 
     async def execute_action(self, action_type: str, provider_name: str, context: Dict[str, Any]) -> str:
-        """Executes an action via the specified provider with retries."""
+        """Executes an action via the specified provider with retries.
+        
+        Special handling for 'container' provider:
+          status codes prefixed 'error_' (e.g. error_image_not_found, error_timeout)
+          are treated as hard failures and stop the playbook.
+        """
         if provider_name == "builtin" and action_type == "conditional":
             # the wrapper logic handles conditionals, so just return
             return "completed"
@@ -221,3 +227,17 @@ class ExecutionEngine:
         # Resume logic uses standard execution on subset
         subset_pb = Playbook(id=playbook.id, name=f"{playbook.name}_resumed", nodes=remaining_nodes)
         return await self.execute_playbook(subset_pb, event_context)
+
+    def list_container_manifests(self) -> List[Dict[str, Any]]:
+        """Return a serialisable summary of all registered containerised action manifests."""
+        return [
+            {
+                "name": m.name,
+                "image": m.image,
+                "capabilities": m.capabilities,
+                "tags": m.tags,
+                "description": m.description,
+                "timeout_seconds": m.timeout_seconds,
+            }
+            for m in ManifestRegistry.all()
+        ]
