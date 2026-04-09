@@ -6,9 +6,16 @@ from typing import List, Dict, Any, Optional
 import uuid
 from datetime import datetime
 
-from cassandra.cluster import Cluster
-from cassandra.auth import PlainTextAuthProvider
-from cassandra.query import dict_factory
+try:
+    from cassandra.cluster import Cluster
+    from cassandra.auth import PlainTextAuthProvider
+    from cassandra.query import dict_factory
+    HAS_CASSANDRA = True
+except ImportError:
+    HAS_CASSANDRA = False
+    Cluster = None
+    PlainTextAuthProvider = None
+    dict_factory = None
 
 logger = logging.getLogger(__name__)
 
@@ -21,6 +28,10 @@ class ScyllaRepository:
 
     def connect(self):
         """Connect to ScyllaDB cluster and ensure keyspace/tables exist."""
+        if not HAS_CASSANDRA:
+            logger.warning("cassandra-driver not installed. ScyllaRepository is in degraded mode.")
+            return
+
         try:
             self.cluster = Cluster(contact_points=self.contact_points, port=self.port)
             self.session = self.cluster.connect()
@@ -71,6 +82,9 @@ class ScyllaRepository:
             self.cluster.shutdown()
 
     def write_case(self, tenant_id: str, case_data: Dict[str, Any]) -> uuid.UUID:
+        if not self.session:
+            return uuid.UUID(case_data.get('case_id', str(uuid.uuid4())))
+        
         case_id = case_data.get('case_id')
         if isinstance(case_id, str):
             case_id = uuid.UUID(case_id)
@@ -95,6 +109,9 @@ class ScyllaRepository:
         return case_id
 
     def write_alert(self, tenant_id: str, alert_data: Dict[str, Any]) -> uuid.UUID:
+        if not self.session:
+            return uuid.UUID(alert_data.get('alert_id', str(uuid.uuid4())))
+
         alert_id = alert_data.get('alert_id')
         if isinstance(alert_id, str):
             alert_id = uuid.UUID(alert_id)
@@ -119,11 +136,15 @@ class ScyllaRepository:
         return alert_id
 
     def get_cases(self, tenant_id: str, limit: int = 50) -> List[Dict[str, Any]]:
+        if not self.session:
+            return []
         query = "SELECT * FROM cases WHERE tenant_id = %s LIMIT %s"
         result = self.session.execute(query, (tenant_id, limit))
         return list(result)
 
     def get_alerts(self, tenant_id: str, limit: int = 100) -> List[Dict[str, Any]]:
+        if not self.session:
+            return []
         query = "SELECT * FROM alerts WHERE tenant_id = %s LIMIT %s"
         result = self.session.execute(query, (tenant_id, limit))
         return list(result)

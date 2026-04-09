@@ -1,0 +1,54 @@
+"""Narrative generation API — AI-powered event summarization."""
+from __future__ import annotations
+from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
+from app.dependencies import get_app_clickhouse
+from app.engine.narrative import NarrativeEngine
+from app.middleware.auth import require_analyst
+
+router = APIRouter(prefix="/narrative", tags=["intelligence"])
+_engine = NarrativeEngine()
+
+class NarrativeRequest(BaseModel):
+    event_ids: list[str]
+    context: str = ""
+
+@router.post("/generate")
+async def generate_narrative(
+    body: NarrativeRequest,
+    claims: dict = Depends(require_analyst),
+    ch=Depends(get_app_clickhouse),
+):
+    if not body.event_ids:
+        raise HTTPException(status_code=400, detail="event_ids must not be empty")
+    tenant_id = claims.get("tenant_id", "default")
+    # Limit to 20 event IDs max
+    ids = body.event_ids[:20]
+    placeholders = ", ".join(f"'{eid}'" for eid in ids)
+    
+    # Query ClickHouse for the events
+    rows = await ch.client.fetch(
+        f"SELECT * FROM sentinel.events "
+        f"WHERE id IN ({placeholders}) AND tenant_id = '{tenant_id}' LIMIT 20"
+    )
+    
+    if not rows:
+        return {"narrative": "No matching events found.", "event_count": 0}
+        
+    narratives = []
+    from app.schemas.canonical_event import CanonicalEvent
+    from pydantic import TypeAdapter
+    
+    adapter = TypeAdapter(CanonicalEvent)
+    
+    for row in rows:
+        # Convert ClickHouse row to dict
+        event_dict = dict(row)
+        # Parse into CanonicalEvent for the engine
+        try:
+            event_obj = adapter.validate_python(event_dict)
+            narratives.append(_engine.generate(event_obj))
+        except Exception as e:
+            narratives.append(f"Error parsing event {event_dict.get('id')}: {str(e)}")
+            
+    return {"narrative": "\n\n".join(narratives), "event_count": len(rows)}

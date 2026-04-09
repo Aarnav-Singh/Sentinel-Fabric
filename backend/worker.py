@@ -51,12 +51,23 @@ async def main():
 
     # To run this, KAFKA_BOOTSTRAP_SERVERS must be defined in settings
     kafka_servers = getattr(settings, 'kafka_bootstrap_servers', 'localhost:9092')
+
+    # Build SASL kwargs for cloud Kafka (e.g. Upstash)
+    kafka_kwargs = {}
+    if settings.kafka_security_protocol != "PLAINTEXT":
+        kafka_kwargs.update({
+            "security_protocol": settings.kafka_security_protocol,
+            "sasl_mechanism": settings.kafka_sasl_mechanism,
+            "sasl_plain_username": settings.kafka_sasl_username,
+            "sasl_plain_password": settings.kafka_sasl_password,
+        })
     
     consumer = AIOKafkaConsumer(
         'raw_events_topic',
         bootstrap_servers=kafka_servers,
         group_id="sentinel_pipeline_group",
-        value_deserializer=lambda m: json.loads(m.decode('utf-8'))
+        value_deserializer=lambda m: json.loads(m.decode('utf-8')),
+        **kafka_kwargs,
     )
     
     await consumer.start()

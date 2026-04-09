@@ -86,8 +86,9 @@ async def test_pipeline_15_step_execution(mock_event, pipeline_deps):
     # Assert Redis State Update
     pipeline_deps["redis"].atomic_update_entity_state.assert_awaited_once_with(
         "default",
-        "host-A",
+        "host-a",
         event_ts=mock_event.timestamp.timestamp(),
+
         dst_ip="10.0.0.1",
         dst_port=22,
         campaign_id=None

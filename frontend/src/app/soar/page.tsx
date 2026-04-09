@@ -33,7 +33,7 @@ export default function SoarPage() {
         <div className="flex-1 flex flex-col h-full overflow-y-auto custom-scrollbar p-8">
             <header className="mb-8 flex items-center justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold text-white tracking-tight flex items-center gap-3">
+                    <h1 className="text-3xl font-bold font-mono text-white tracking-tight flex items-center gap-3">
                         <Zap className="w-8 h-8 text-sf-accent" />
                         SOAR Actions
                     </h1>

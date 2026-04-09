@@ -19,7 +19,8 @@ import { QuickActions } from '@/components/features/actions/QuickActions';
 // ─── Types ───────────────────────────────────────────────
 interface CveContext { cve_id: string; cvss_score?: number; severity?: string; description?: string; patch_available?: boolean; }
 interface TriageResult { severity: string; confidence: number; summary: string; recommended_action: string; tools_used: string[]; }
-interface Finding { id: string; title: string; description: string; severity: 'critical' | 'high' | 'medium' | 'low'; source?: string; status: 'open' | 'approved' | 'dismissed' | 'escalated' | 'new'; created_at?: string; ip?: string; domain?: string; linked_techniques?: string[]; cve_context?: CveContext[]; triage_result?: TriageResult; ml_score?: number; }
+interface Finding { id: string; title: string; description: string; severity: 'critical' | 'high' | 'medium' | 'low'; source?: string; status: 'open' | 'approved' | 'dismissed' | 'escalated' | 'new'; created_at?: string; ip?: string; domain?: string; linked_techniques?: string[]; cve_context?: CveContext[]; triage_result?: TriageResult; ml_score?: number; auto_triage_json?: string; }
+
 interface FindingsResponse { findings?: Finding[]; }
 
 // ─── Helpers ─────────────────────────────────────────────
@@ -128,7 +129,8 @@ export default function FindingsPage() {
             <PanelCard className="flex flex-col h-full min-h-0">
                 <div className="px-4 py-3 border-b border-sf-border bg-sf-surface flex items-center justify-between shrink-0">
                     <div className="flex items-center flex-1">
-                        <h2 className="text-[10px] font-mono tracking-widest text-sf-muted uppercase mr-4">Threat Vectors</h2>
+                        <h2 className="text-[10px] font-mono tracking-widest text-sf-muted uppercase mr-4">Review Queue</h2>
+
                         <DataFreshness lastUpdated={lastUpdated} refreshInterval={10} showProgressBar={false} />
                     </div>
                     <div className="flex gap-2 text-[10px] uppercase font-mono tracking-widest text-sf-text">
@@ -202,6 +204,26 @@ export default function FindingsPage() {
                                     render: (_, row) => <MlScoreBadge score={getMlScore(row)} />
                                 },
                                 {
+                                    header: "SYSTEM VERDICT",
+                                    key: "auto_triage_json" as any,
+                                    render: (val, row) => {
+                                        if (!val) return <span className="text-[9px] text-sf-muted font-mono">PENDING</span>;
+                                        try {
+                                            const res = JSON.parse(val);
+                                            const confidence = res.confidence || 0;
+                                            return (
+                                                <div className="flex flex-col gap-0.5">
+                                                    <span className={`text-[10px] font-bold uppercase ${res.severity === 'Critical' ? 'text-sf-critical' : 'text-sf-text'}`}>
+                                                        {res.severity} ({Math.round(confidence * 100)}%)
+                                                    </span>
+                                                    <span className="text-[8px] text-sf-muted truncate max-w-[150px]" title={res.reasoning}>{res.reasoning}</span>
+                                                </div>
+                                            );
+                                        } catch { return <span className="text-[9px] text-sf-muted font-mono">ERROR</span>; }
+                                    }
+                                },
+
+                                {
                                     header: "IP/DOMAIN",
                                     key: "ip",
                                     render: (val, row) => {
@@ -235,38 +257,20 @@ export default function FindingsPage() {
                                             <div className="flex gap-1 justify-end">
                                                 {!isResolved && (
                                                     <>
-                                                        {!triageResults[row.id] && !row.triage_result && (
-                                                            <button 
-                                                                className="px-2 py-1 bg-sf-surface border border-sf-border text-[9px] text-sf-text hover:bg-sf-border transition-colors font-bold uppercase disabled:opacity-50"
-                                                                onClick={() => {
-                                                                    setTriagePending(p => ({ ...p, [row.id]: true }));
-                                                                    triggerAiTriage(row.id).then(r => {
-                                                                        if (r) setTriageResults(p => ({ ...p, [row.id]: r }));
-                                                                        setTriagePending(p => { const n = { ...p }; delete n[row.id]; return n; });
-                                                                    });
-                                                                }}
-                                                                disabled={triagePending[row.id]}
-                                                            >
-                                                                {triagePending[row.id] ? '...' : 'AI'}
-                                                            </button>
-                                                        )}
                                                         <button 
-                                                            className="px-2 py-1 bg-sf-surface border border-sf-border hover:bg-sf-safe hover:text-black hover:border-sf-safe text-[9px] text-sf-safe transition-colors font-bold uppercase disabled:opacity-50"
+                                                            className="px-2 py-1 bg-sf-surface border border-sf-safe hover:bg-sf-safe hover:text-black text-[9px] text-sf-safe transition-colors font-bold uppercase"
                                                             onClick={(e) => { e.stopPropagation(); handleAction(row.id, 'approve'); }}
-                                                            disabled={!!verdictPending[row.id]}
-                                                        >A</button>
+                                                            title="Confirm (True Positive)"
+                                                        >CONFIRM</button>
                                                          <button 
-                                                            className="px-2 py-1 bg-sf-surface border border-sf-border hover:bg-sf-disabled hover:text-black hover:border-sf-disabled text-[9px] text-sf-muted transition-colors font-bold uppercase disabled:opacity-50"
+                                                            className="px-2 py-1 bg-sf-surface border border-sf-border hover:bg-sf-disabled hover:text-black text-[9px] text-sf-muted transition-colors font-bold uppercase"
                                                             onClick={(e) => { e.stopPropagation(); handleAction(row.id, 'dismiss'); }}
-                                                            disabled={!!verdictPending[row.id]}
-                                                        >D</button>
-                                                        <div className="opacity-0 group-hover:opacity-100 transition-opacity border-l border-sf-border pl-1 ml-1 flex items-center">
-                                                            <QuickActions entityType="finding" entityId={row.id} />
-                                                        </div>
-                                                           <button 
-                                                            className="px-2 py-1 bg-sf-surface border border-sf-critical text-[9px] text-sf-critical transition-colors hover:bg-sf-critical hover:text-black font-bold uppercase disabled:opacity-50"
-                                                            onClick={() => handleAction(row.id, 'escalate')}
-                                                            disabled={!!verdictPending[row.id]}
+                                                            title="Override (False Positive)"
+                                                        >OVERRIDE</button>
+                                                            <button 
+                                                            className="px-2 py-1 bg-sf-surface border border-sf-critical text-[9px] text-sf-critical transition-colors hover:bg-sf-critical hover:text-black font-bold uppercase"
+                                                            onClick={(e) => { e.stopPropagation(); handleAction(row.id, 'escalate'); }}
+                                                            title="Escalate"
                                                         >ESC</button>
                                                     </>
                                                 )}
@@ -274,6 +278,7 @@ export default function FindingsPage() {
                                         );
                                     }
                                 }
+
                             ]}
                         />
                     </div>

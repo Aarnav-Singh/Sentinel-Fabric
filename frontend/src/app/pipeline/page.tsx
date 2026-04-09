@@ -203,8 +203,8 @@ export default function MLPipelinePage() {
                             vectorEffect="non-scaling-stroke"
                             d={`M ${conn.from.x} ${conn.from.y} L ${conn.to.x} ${conn.to.y}`}
                             fill="none"
-                            stroke={isPulsing ? 'var(--sf-accent)' : 'var(--sf-border)'}
-                            strokeWidth={isPulsing ? 1.5 : 0.5}
+                            stroke={isPulsing ? 'rgba(13,148,136,0.8)' : 'rgba(255,255,255,0.3)'}
+                            strokeWidth={isPulsing ? 1.5 : 1.5}
                             className="transition-colors duration-100"
                         />
                         );

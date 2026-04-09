@@ -1,13 +1,62 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
-// This is a placeholder hook for fetching entity details.
-// Once backend endpoints are established, replace with SWR or React Query hooks.
+interface EntityEvent {
+  time?: number | string;
+  timestamp?: string;
+  message?: string;
+  severity?: string;
+  action?: string;
+  meta_score?: number;
+  source_type?: string;
+}
+
+interface SigmaMatch {
+  ruleId: string;
+  name: string;
+  severity: string;
+  hits?: number;
+}
+
+interface SimilarEntity {
+  id: string;
+  value: string;
+  score: number;
+}
+
+interface RiskTrendPoint {
+  day: string;
+  score: number;
+}
+
+interface EntityDetailsData {
+  type: string;
+  value: string;
+  firstSeen: string | null;
+  lastSeen: string | null;
+  frequency: number;
+  relatedEvents: number;
+  riskScore: number;
+  recentEvents: EntityEvent[];
+  riskTrend: RiskTrendPoint[];
+  sigmaMatches: SigmaMatch[];
+  qdrantSimilar: SimilarEntity[];
+  findings: any[];
+}
+
+/**
+ * Fetches real entity details from the backend API.
+ *
+ * Data sources (aggregated on the backend):
+ *   - ClickHouse → event frequency, first/last seen, recent events, risk trend
+ *   - Qdrant     → similar entities via behavioral DNA vector search
+ *   - PostgreSQL → associated findings (analyst verdicts)
+ */
 export function useEntityDetails(type: string | null, value: string | null) {
-  const [data, setData] = useState<any>(null);
+  const [data, setData] = useState<EntityDetailsData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  const fetchDetails = useCallback(async () => {
     if (!type || !value) {
       setData(null);
       return;
@@ -16,39 +65,67 @@ export function useEntityDetails(type: string | null, value: string | null) {
     setLoading(true);
     setError(null);
 
-    // Mock an API fetch:
-    const fetchTimer = setTimeout(() => {
-      setData({
-        type,
-        value,
-        firstSeen: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-        lastSeen: new Date().toISOString(),
-        frequency: Math.floor(Math.random() * 500) + 1,
-        relatedEvents: Math.floor(Math.random() * 20) + 1,
-        riskScore: Math.random(),
-        recentEvents: [
-          { time: Date.now() - 1000 * 60 * 5, message: `Log: Access attempt registered from ${value}`, severity: 'info' },
-          { time: Date.now() - 1000 * 60 * 60, message: `Auth: Unusual pattern detected`, severity: 'medium' },
-          { time: Date.now() - 1000 * 60 * 120, message: `Firewall: Blocked connection`, severity: 'high' }
-        ],
-        riskTrend: Array.from({ length: 7 }, (_, i) => ({
-             day: `Day ${i + 1}`,
-             score: Math.random() * 100
-        })),
-        sigmaMatches: [
-          { ruleId: 'SIG-1049', name: 'Suspicious Execution Indicator', severity: 'high' },
-          { ruleId: 'SIG-2911', name: 'Potential Lateral Movement', severity: 'critical' }
-        ],
-        qdrantSimilar: [
-          { id: `sim-1`, value: type === 'ip' ? '192.168.1.104' : 'admin_backup', score: 0.94 },
-          { id: `sim-2`, value: type === 'ip' ? '10.0.0.5' : 'sysadmin', score: 0.88 }
-        ]
-      });
-      setLoading(false);
-    }, 600);
+    try {
+      const encodedValue = encodeURIComponent(value);
+      const resp = await fetch(
+        `/api/proxy/api/v1/entities/${type}/${encodedValue}?hours=168&limit=10`,
+      );
 
-    return () => clearTimeout(fetchTimer);
+      if (!resp.ok) {
+        throw new Error(`HTTP ${resp.status}: ${resp.statusText}`);
+      }
+
+      const json = await resp.json();
+
+      // Normalize recentEvents to have a consistent `time` field
+      const recentEvents = (json.recentEvents || []).map((evt: any) => ({
+        ...evt,
+        time: evt.time || evt.timestamp || Date.now(),
+        message: evt.message || evt.action || '—',
+        severity: evt.severity || 'info',
+      }));
+
+      setData({
+        type: json.type || type,
+        value: json.value || value,
+        firstSeen: json.firstSeen || null,
+        lastSeen: json.lastSeen || null,
+        frequency: json.frequency ?? 0,
+        relatedEvents: json.relatedEvents ?? json.frequency ?? 0,
+        riskScore: json.riskScore ?? 0,
+        recentEvents,
+        riskTrend: json.riskTrend || [],
+        sigmaMatches: json.sigmaMatches || [],
+        qdrantSimilar: json.qdrantSimilar || [],
+        findings: json.findings || [],
+      });
+    } catch (err: any) {
+      console.error('[useEntityDetails] fetch failed, falling back to empty state', err);
+      setError(err.message || 'Failed to fetch entity details');
+
+      // Provide empty data structure so the panel still renders
+      setData({
+        type: type,
+        value: value,
+        firstSeen: null,
+        lastSeen: null,
+        frequency: 0,
+        relatedEvents: 0,
+        riskScore: 0,
+        recentEvents: [],
+        riskTrend: [],
+        sigmaMatches: [],
+        qdrantSimilar: [],
+        findings: [],
+      });
+    } finally {
+      setLoading(false);
+    }
   }, [type, value]);
+
+  useEffect(() => {
+    fetchDetails();
+  }, [fetchDetails]);
 
   return { data, loading, error };
 }

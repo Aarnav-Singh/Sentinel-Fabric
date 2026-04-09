@@ -25,6 +25,30 @@ class Base(DeclarativeBase):
     pass
 
 
+class TenantRecord(Base):
+    __tablename__ = "tenants"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)  # Using tenant_id logic from users
+    name: Mapped[str] = mapped_column(String(128), nullable=False)
+    status: Mapped[str] = mapped_column(String(32), default="active")
+    created_at: Mapped[Optional[str]] = mapped_column(DateTime, server_default=func.now())
+
+
+class CEPRuleRecord(Base):
+    __tablename__ = "cep_rules"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    tenant_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    name: Mapped[str] = mapped_column(String(128), nullable=False)
+    description: Mapped[str] = mapped_column(String(1024), nullable=False)
+    stages_json: Mapped[str] = mapped_column(String(4096), nullable=False)  # JSON logic
+    max_span_seconds: Mapped[int] = mapped_column(Integer, nullable=False)
+    severity: Mapped[str] = mapped_column(String(32), default="HIGH")
+    mitre_tactic: Mapped[str] = mapped_column(String(32), default="")
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[Optional[str]] = mapped_column(DateTime, server_default=func.now())
+
+
 class ConnectorRecord(Base):
     __tablename__ = "connectors"
 
@@ -61,9 +85,10 @@ class AnalystVerdict(Base):
     tenant_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
     event_id: Mapped[str] = mapped_column(String(36), nullable=False)
     campaign_id: Mapped[Optional[str]] = mapped_column(String(64))
-    verdict: Mapped[str] = mapped_column(String(16), nullable=False)  # true_positive, false_positive
+    verdict: Mapped[str] = mapped_column(String(16), nullable=False)  # true_positive, false_positive, escalated
     analyst_id: Mapped[str] = mapped_column(String(36), nullable=False)
     notes: Mapped[Optional[str]] = mapped_column(String(2048))
+    entity_value: Mapped[Optional[str]] = mapped_column(String(256), index=True)  # src_ip, hostname, etc.
     created_at: Mapped[Optional[str]] = mapped_column(DateTime, server_default=func.now())
 
 
@@ -223,6 +248,29 @@ class HuntQuery(Base):
     )
 
 
+
+class CampaignState(Base):
+    """Persistent campaign state — survives Redis restarts.
+
+    Redis remains the hot-path cache for sub-ms reads. Postgres
+    is the system of record that guarantees no campaign data loss
+    on service restart or Redis eviction.
+    """
+    __tablename__ = "campaign_state"
+
+    campaign_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    tenant_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    severity: Mapped[str] = mapped_column(String(16), default="medium")
+    stage: Mapped[str] = mapped_column(String(64), default="initial_access")
+    active: Mapped[bool] = mapped_column(Boolean, default=True)
+    affected_assets: Mapped[int] = mapped_column(Integer, default=0)
+    meta_score: Mapped[float] = mapped_column(Float, default=0.0)
+    metadata_json: Mapped[Optional[str]] = mapped_column(Text)  # Full campaign metadata blob
+    created_at: Mapped[Optional[str]] = mapped_column(DateTime, server_default=func.now())
+    updated_at: Mapped[Optional[str]] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now())
+
+
+
 # ── Repository ───────────────────────────────────────────
 
 from app.repositories.postgres_audit import CollaborationAuditMixin
@@ -289,6 +337,50 @@ class PostgresRepository(CollaborationAuditMixin):
         async with self._session() as session:
             session.add(connector)
             await session.commit()
+
+    # ── Tenants (Phase 3) ────────────────────────────────
+
+    async def create_tenant(self, tenant: TenantRecord) -> None:
+        async with self._session() as session:
+            session.add(tenant)
+            await session.commit()
+
+    async def get_tenant(self, tenant_id: str) -> Optional[TenantRecord]:
+        async with self._session() as session:
+            result = await session.execute(
+                select(TenantRecord).where(TenantRecord.id == tenant_id)
+            )
+            return result.scalar_one_or_none()
+            
+    async def list_tenants_from_db(self) -> list[TenantRecord]:
+        async with self._session() as session:
+            result = await session.execute(select(TenantRecord))
+            return list(result.scalars().all())
+
+    # ── CEP Rules (Phase 3) ──────────────────────────────
+
+    async def save_cep_rule(self, rule: CEPRuleRecord) -> None:
+        async with self._session() as session:
+            session.add(rule)
+            await session.commit()
+
+    async def list_cep_rules(self, tenant_id: str) -> list[CEPRuleRecord]:
+        async with self._session() as session:
+            result = await session.execute(
+                select(CEPRuleRecord).where(CEPRuleRecord.tenant_id == tenant_id)
+            )
+            return list(result.scalars().all())
+
+    async def delete_cep_rule(self, rule_id: str, tenant_id: str) -> bool:
+        from sqlalchemy import delete
+        async with self._session() as session:
+            stmt = delete(CEPRuleRecord).where(
+                CEPRuleRecord.id == rule_id,
+                CEPRuleRecord.tenant_id == tenant_id
+            )
+            result = await session.execute(stmt)
+            await session.commit()
+            return result.rowcount > 0
 
     # ── Users ────────────────────────────────────────────
 
@@ -418,7 +510,114 @@ class PostgresRepository(CollaborationAuditMixin):
             result = await session.execute(sql, {"tenant_id": tenant_id, "query": query, "limit": limit})
             return [dict(row) for row in result.mappings().all()]
 
+    async def search_verdicts_by_entity(self, tenant_id: str, entity_value: str, limit: int = 5) -> list[dict]:
+        """Fetch historical verdicts for a specific entity asset or indicator.
+
+        Uses the indexed entity_value column for precise matching.
+        Falls back to ILIKE on notes if no entity_value matches are found
+        (backward compatibility with pre-migration verdicts).
+        """
+        # Primary: exact match on indexed entity_value column
+        sql_exact = text("""
+            SELECT id, event_id, campaign_id, verdict, analyst_id, notes, entity_value, created_at
+            FROM analyst_verdicts
+            WHERE tenant_id = :tenant_id
+              AND entity_value = :entity_value
+            ORDER BY created_at DESC
+            LIMIT :limit
+        """)
+        async with self._session() as session:
+            result = await session.execute(sql_exact, {
+                "tenant_id": tenant_id,
+                "entity_value": entity_value,
+                "limit": limit,
+            })
+            rows = [dict(row) for row in result.mappings().all()]
+            if rows:
+                return rows
+
+        # Fallback: ILIKE on notes for legacy verdicts without entity_value
+        sql_fallback = text("""
+            SELECT id, event_id, campaign_id, verdict, analyst_id, notes, entity_value, created_at
+            FROM analyst_verdicts
+            WHERE tenant_id = :tenant_id
+              AND notes ILIKE :query
+            ORDER BY created_at DESC
+            LIMIT :limit
+        """)
+        async with self._session() as session:
+            result = await session.execute(sql_fallback, {
+                "tenant_id": tenant_id,
+                "query": f"%{entity_value}%",
+                "limit": limit,
+            })
+            return [dict(row) for row in result.mappings().all()]
+
+    # ── Campaign Durability ──────────────────────────────
+
+    async def save_campaign_state(
+        self,
+        tenant_id: str,
+        campaign_id: str,
+        severity: str = "medium",
+        stage: str = "initial_access",
+        active: bool = True,
+        affected_assets: int = 0,
+        meta_score: float = 0.0,
+        metadata_json: str | None = None,
+    ) -> None:
+        """Upsert campaign state to Postgres (system of record)."""
+        async with self._session() as session:
+            result = await session.execute(
+                select(CampaignState).where(CampaignState.campaign_id == campaign_id)
+            )
+            row = result.scalar_one_or_none()
+            if row:
+                row.severity = severity
+                row.stage = stage
+                row.active = active
+                row.affected_assets = affected_assets
+                row.meta_score = meta_score
+                if metadata_json is not None:
+                    row.metadata_json = metadata_json
+            else:
+                session.add(CampaignState(
+                    campaign_id=campaign_id,
+                    tenant_id=tenant_id,
+                    severity=severity,
+                    stage=stage,
+                    active=active,
+                    affected_assets=affected_assets,
+                    meta_score=meta_score,
+                    metadata_json=metadata_json,
+                ))
+            await session.commit()
+
+    async def get_active_campaigns(self, tenant_id: str) -> list[dict]:
+        """Return all active campaigns from Postgres."""
+        async with self._session() as session:
+            result = await session.execute(
+                select(CampaignState)
+                .where(CampaignState.tenant_id == tenant_id)
+                .where(CampaignState.active == True)
+                .order_by(CampaignState.updated_at.desc())
+            )
+            rows = result.scalars().all()
+            return [
+                {
+                    "id": r.campaign_id,
+                    "severity": r.severity,
+                    "stage": r.stage,
+                    "active": r.active,
+                    "affected_assets": r.affected_assets,
+                    "meta_score": r.meta_score,
+                    "created_at": str(r.created_at) if r.created_at else None,
+                }
+                for r in rows
+            ]
+
     # ── Graph Database (Entity Edges) ────────────────────
+
 
     async def save_entity_edge(self, edge: EntityEdge) -> None:
         async with self._session() as session:
@@ -576,6 +775,48 @@ class PostgresRepository(CollaborationAuditMixin):
         async with self._session() as session:
             session.add(annotation)
             await session.commit()
+
+    async def get_incident_annotations(
+        self, incident_id: str, limit: int = 50
+    ) -> list[dict]:
+        async with self._session() as session:
+            result = await session.execute(
+                select(IncidentAnnotation)
+                .where(IncidentAnnotation.incident_id == incident_id)
+                .order_by(IncidentAnnotation.created_at.desc())
+                .limit(limit)
+            )
+            return [
+                {
+                    "id": str(r.id),
+                    "incident_id": r.incident_id,
+                    "user_id": r.user_id,
+                    "content": r.content,
+                    "annotation_type": r.annotation_type,
+                    "created_at": r.created_at.isoformat() if r.created_at else None,
+                }
+                for r in result.scalars().all()
+            ]
+
+    async def get_incident_timeline(self, incident_id: str) -> list[dict]:
+        """Return annotations ascending for timeline display."""
+        async with self._session() as session:
+            result = await session.execute(
+                select(IncidentAnnotation)
+                .where(IncidentAnnotation.incident_id == incident_id)
+                .order_by(IncidentAnnotation.created_at.asc())
+            )
+            return [
+                {
+                    "id": str(r.id),
+                    "incident_id": r.incident_id,
+                    "user_id": r.user_id,
+                    "content": r.content,
+                    "annotation_type": r.annotation_type,
+                    "created_at": r.created_at.isoformat() if r.created_at else None,
+                }
+                for r in result.scalars().all()
+            ]
 
     # ── Reporting ────────────────────────────────────────
 

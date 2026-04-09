@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Search, Activity, Terminal, Zap, Cpu } from "lucide-react";
+import { Search, Activity, Terminal, Zap, Cpu, Maximize2 } from "lucide-react";
 import { PanelCard } from "@/components/ui/MotionWrappers";
 import { DataGrid } from "@/components/ui/DataGrid";
 import { MitreHeatmap } from "@/components/features/compliance/MitreHeatmap";
@@ -84,7 +84,7 @@ function UQLEditor({ value, onChange, onRun }: UQLEditorProps) {
 
 // ── HunterMode Component ───────────────────────────────────────────────────────
 
-export function HunterMode({ liveFeed, eventsRate }: DashboardModeProps) {
+export function HunterMode({ liveFeed, eventsRate, setMaximizedWidget }: DashboardModeProps) {
     const [query, setQuery] = useState('');
     const [similarityQuery, setSimilarityQuery] = useState('');
     const [results, setResults] = useState<any[]>([]);
@@ -175,10 +175,16 @@ export function HunterMode({ liveFeed, eventsRate }: DashboardModeProps) {
             <div className="flex-1 flex gap-4 min-h-0">
                 {/* MITRE heatmap */}
                 <PanelCard className="flex-1 relative overflow-hidden flex flex-col p-4 bg-sf-bg">
-                    <div className="mb-4 shrink-0">
+                    <div className="mb-4 shrink-0 flex justify-between items-center">
                         <h2 className="text-[10px] text-sf-muted font-mono tracking-widest uppercase">
                             MITRE ATT&CK Enterprise Coverage
                         </h2>
+                        <button 
+                            onClick={() => setMaximizedWidget('map')} 
+                            className="text-sf-muted hover:text-white transition-colors bg-sf-bg/80 backdrop-blur border border-sf-border p-1.5 rounded hover:bg-sf-surface"
+                        >
+                            <Maximize2 className="w-3.5 h-3.5" />
+                        </button>
                     </div>
                     <div className="flex-1 w-full overflow-hidden relative">
                         <MitreHeatmap />

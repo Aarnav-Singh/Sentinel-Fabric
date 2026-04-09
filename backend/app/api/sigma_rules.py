@@ -17,7 +17,7 @@ import zipfile
 from pathlib import Path
 from typing import Dict, Any, Optional
 import yaml
-from app.api.auth import require_admin, require_analyst, AuditLogger
+from app.middleware.auth import require_admin, require_analyst, AuditLogger
 from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile, File, status
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel

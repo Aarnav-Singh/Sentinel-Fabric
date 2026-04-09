@@ -41,7 +41,11 @@ class AlertingEngine:
         
         Typically dispatches if meta_score > 0.8 OR critical severity.
         """
+        if getattr(event, "is_synthetic", False):
+            return
+
         score = 0.0
+
         if event.ml_scores and event.ml_scores.meta_score is not None:
             score = event.ml_scores.meta_score
             

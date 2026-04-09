@@ -103,7 +103,8 @@ class AgenticRagOrchestrator:
         
         logger.debug("agentic_rag_native_search", tenant_id=tenant_id, query=query)
         events = await self.retriever.get_historical_context(tenant_id, query, limit=5)
-        notes = await self.retriever.get_analyst_notes_context(tenant_id, query, limit=3)
+        notes = await self.retriever.get_analyst_notes_context(tenant_id, query, event=state["event"], limit=3)
+
         
         return {
             "historical_events": events,

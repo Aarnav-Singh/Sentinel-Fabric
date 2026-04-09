@@ -74,8 +74,20 @@ async function handleProxyRequest(request: NextRequest, pathArray: string[]) {
         }
 
         return NextResponse.json(body, { status: response.status });
-    } catch (error) {
+    } catch (error: any) {
         console.error("[Proxy] Error routing request:", error);
-        return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+        
+        // Handle connection refused or aborts explicitly for cleaner logs/UI
+        if (error.code === 'ECONNREFUSED') {
+            return NextResponse.json(
+                { error: "Backend service unreachable. Ensure FastAPI is running on port 8000." },
+                { status: 503 }
+            );
+        }
+
+        return NextResponse.json(
+            { error: "Internal Proxy Error", detail: error.message },
+            { status: 500 }
+        );
     }
 }

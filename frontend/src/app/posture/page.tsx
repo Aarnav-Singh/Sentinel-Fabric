@@ -6,6 +6,7 @@ import useSWR from 'swr';
 import { PanelCard, AnimatedNumber, StaggerChildren } from '@/components/ui/MotionWrappers';
 import { DataGrid } from '@/components/ui/DataGrid';
 import { Sparkline } from '@/components/ui/Sparkline';
+import { Skeleton } from '@/components/ui/Skeleton';
 
 const fetcher = (url: string) => fetch(url).then(r => r.json());
 
@@ -51,6 +52,8 @@ export default function PosturePage() {
   const { data: remediationData, isLoading: remediationLoading } = useSWR<RemediationResponse>('/api/proxy/api/v1/posture/remediation', fetcher, { refreshInterval: 10000, keepPreviousData: true });
   const { data: historyData, isLoading: historyLoading } = useSWR<HistoryResponse>('/api/proxy/api/v1/posture/history', fetcher, { refreshInterval: 60000, keepPreviousData: true });
 
+  const isInitialLoading = scoreLoading && !scoreData && domainsLoading && !domainsData;
+
   const score = scoreData ?? { composite: 71, domains: {}, last_evaluated: 0 };
   const domains = domainsData?.domains ?? [
       { id: "1", name: "IAM", weight: 0.2, score: 92, description: "", top_findings: [], trend: "up" },
@@ -86,41 +89,61 @@ export default function PosturePage() {
       {/* ── Hero: Composite Score + 30-day Sparkline ── */}
       <div className="flex flex-col md:flex-row gap-6">
         <PanelCard className="flex-1 p-6 flex flex-col justify-between overflow-hidden relative group">
-          <div className="absolute top-0 right-0 p-3 opacity-20 pointer-events-none">
-             <div className={`text-9xl font-display leading-none tracking-tighter ${scoreColor}`}>{Math.round(compositeScore)}</div>
-          </div>
-          <div>
-            <h2 className="text-[10px] font-mono tracking-widest text-sf-muted uppercase">Global Posture Score</h2>
-            <div className={`text-6xl font-mono mt-2 ${scoreColor}`}>
-                <AnimatedNumber value={Math.round(compositeScore)} />
+          {isInitialLoading ? (
+            <div className="space-y-4">
+              <Skeleton className="h-4 w-32" />
+              <Skeleton className="h-16 w-24" />
+              <Skeleton className="h-8 w-full mt-4" />
             </div>
-          </div>
-          <div className="w-full h-8 mt-6">
-              <Sparkline data={historyPoints.map(p => p.score)} width={300} height={32} color={compositeScore > 80 ? "var(--sf-safe)" : compositeScore > 60 ? "var(--sf-warning)" : "var(--sf-critical)"} />
-          </div>
+          ) : (
+            <>
+              <div className="absolute top-0 right-0 p-3 opacity-20 pointer-events-none">
+                <div className={`text-9xl font-display leading-none tracking-tighter ${scoreColor}`}>{Math.round(compositeScore)}</div>
+              </div>
+              <div>
+                <h2 className="text-[10px] font-mono tracking-widest text-sf-muted uppercase">Global Posture Score</h2>
+                <div className={`text-6xl font-mono mt-2 ${scoreColor}`}>
+                    <AnimatedNumber value={Math.round(compositeScore)} />
+                </div>
+              </div>
+              <div className="w-full h-8 mt-6">
+                  <Sparkline data={historyPoints.map(p => p.score)} width={300} height={32} color={compositeScore > 80 ? "var(--sf-safe)" : compositeScore > 60 ? "var(--sf-warning)" : "var(--sf-critical)"} />
+              </div>
+            </>
+          )}
         </PanelCard>
 
         {/* ── Domain Cards ── */}
         <div className="flex-[2] grid grid-cols-2 lg:grid-cols-5 gap-4">
           <StaggerChildren staggerDelay={0.05} className="col-span-full grid grid-cols-2 lg:grid-cols-5 gap-4">
-              {domains.map(domain => {
-                  const domainScore = domain.score ?? 0;
-                  const ringColor = domainScore > 80 ? 'var(--sf-safe)' : domainScore > 60 ? 'var(--sf-warning)' : 'var(--sf-critical)';
-                  return (
-                      <PanelCard key={domain.id} className="p-3 flex flex-col justify-between">
-                          <div className="flex items-center justify-between">
-                              <span className="text-[10px] font-mono font-bold uppercase text-sf-muted">{domain.name}</span>
-                              <TrendIcon trend={domain.trend} />
-                          </div>
-                          <div className="text-3xl font-mono text-sf-text my-2" style={{ color: ringColor }}>
-                              {Math.round(domainScore)}
-                          </div>
-                           <div className="w-full h-1 bg-sf-surface border border-sf-border relative">
-                              <div className="absolute top-0 left-0 h-full transition-all" style={{ width: `${domainScore}%`, backgroundColor: ringColor }} />
-                          </div>
-                      </PanelCard>
-                  );
-              })}
+              {isInitialLoading ? (
+                Array.from({ length: 5 }).map((_, i) => (
+                  <PanelCard key={i} className="p-3 flex flex-col gap-4">
+                    <Skeleton className="h-3 w-12" />
+                    <Skeleton className="h-8 w-10" />
+                    <Skeleton className="h-1 w-full" />
+                  </PanelCard>
+                ))
+              ) : (
+                domains.map(domain => {
+                    const domainScore = domain.score ?? 0;
+                    const ringColor = domainScore > 80 ? 'var(--sf-safe)' : domainScore > 60 ? 'var(--sf-warning)' : 'var(--sf-critical)';
+                    return (
+                        <PanelCard key={domain.id} className="p-3 flex flex-col justify-between">
+                            <div className="flex items-center justify-between">
+                                <span className="text-[10px] font-mono font-bold uppercase text-sf-muted">{domain.name}</span>
+                                <TrendIcon trend={domain.trend} />
+                            </div>
+                            <div className="text-3xl font-mono text-sf-text my-2" style={{ color: ringColor }}>
+                                {Math.round(domainScore)}
+                            </div>
+                             <div className="w-full h-1 bg-sf-surface border border-sf-border relative">
+                                <div className="absolute top-0 left-0 h-full transition-all" style={{ width: `${domainScore}%`, backgroundColor: ringColor }} />
+                            </div>
+                        </PanelCard>
+                    );
+                })
+              )}
           </StaggerChildren>
         </div>
       </div>

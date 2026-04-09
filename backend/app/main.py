@@ -24,7 +24,7 @@ from app.middleware.request_id import RequestIDMiddleware
 from app.middleware.tenant_isolation import TenantIsolationMiddleware
 
 from app.api import ingest, health, campaigns, posture, simulation, agents, soar, collaboration, chatops
-from app.api import pipeline_status, events_feed, findings, reporting, settings as settings_api, sigma_rules, vault, cases, threat_graph
+from app.api import pipeline_status, events_feed, findings, reporting, settings as settings_api, sigma_rules, vault, cases, threat_graph, cep_rules
 from app.api.auth import router as auth_router
 from app.services.hunting import start_hunter_scheduler
 
@@ -222,7 +222,7 @@ async def lifespan(app: FastAPI):
                 if not hasattr(redis, "_client") or not redis._client:
                     return
                 pubsub = redis._client.pubsub()
-                await pubsub.subscribe("live_events")
+                await pubsub.subscribe("live_events", "cep_rules_updated")
                 
                 from app.dependencies import get_app_broadcaster
                 app_broadcaster = get_app_broadcaster()
@@ -230,11 +230,19 @@ async def lifespan(app: FastAPI):
                 async for message in pubsub.listen():
                     if message["type"] == "message":
                         try:
+                            channel = message["channel"].decode("utf-8")
                             payload = message["data"].decode("utf-8")
-                            payload_dict = json.loads(payload)
-                            await app_broadcaster.broadcast(payload_dict)
+                            if channel == "live_events":
+                                payload_dict = json.loads(payload)
+                                await app_broadcaster.broadcast(payload_dict)
+                            elif channel == "cep_rules_updated":
+                                # Payload is the tenant_id string
+                                pipeline = get_app_pipeline()
+                                if pipeline._cep:
+                                    pipeline._cep.invalidate_tenant(payload)
+                                    logger.info("cep_rules_cache_invalidated", tenant_id=payload)
                         except Exception as e:
-                            logger.debug("redis_sse_forward_error", error=str(e))
+                            logger.debug("redis_pubsub_forward_error", channel=channel, error=str(e))
             except Exception as e:
                 logger.error("redis_pubsub_listener_failed", error=str(e))
 
@@ -251,12 +259,39 @@ async def lifespan(app: FastAPI):
             from app.services.compliance import start_compliance_scheduler
             start_compliance_scheduler()
 
+            # TAXII threat intel feed sync scheduler
+            from app.intelligence.taxii_scheduler import run_taxii_sync
+            if settings.stix2_taxii_feeds:
+                async def _taxii_loop() -> None:
+                    while True:
+                        try:
+                            await run_taxii_sync()
+                        except Exception as _e:
+                            logger.warning("taxii_sync_error", error=str(_e))
+                        await asyncio.sleep(settings.stix2_pull_interval_hours * 3600)
+                asyncio.create_task(_taxii_loop())
+                logger.info("taxii_scheduler_started", feeds=len(settings.stix2_taxii_feeds))
+
             # Agent Lightning model retraining scheduler (Phase 34C)
             from app.services.model_retrainer import schedule_retraining
             schedule_retraining(postgres=postgres, ensemble=get_app_pipeline()._ensemble)
         
-        # Check Kafka port (9092) first
-        if await _port_open("localhost", 9092):
+        # For cloud Kafka (Upstash/SASL), skip the localhost port probe entirely.
+        # For local Docker, probe localhost:9092 as before.
+        cloud_kafka = settings.kafka_security_protocol != "PLAINTEXT"
+        kafka_reachable = cloud_kafka or await _port_open("localhost", 9092)
+
+        # Build shared SASL kwargs used by every Kafka client in this process.
+        kafka_sasl_kwargs: dict = {}
+        if cloud_kafka:
+            kafka_sasl_kwargs = {
+                "security_protocol": settings.kafka_security_protocol,
+                "sasl_mechanism": settings.kafka_sasl_mechanism,
+                "sasl_plain_username": settings.kafka_sasl_username,
+                "sasl_plain_password": settings.kafka_sasl_password,
+            }
+
+        if kafka_reachable:
             async def _safe_kafka_consumer():
                 """Run Kafka consumer with retry; never crash the server."""
                 try:
@@ -275,12 +310,12 @@ async def lifespan(app: FastAPI):
                 await asyncio.sleep(2)
                 try:
                     from aiokafka import AIOKafkaProducer
-                    import json as _json
                     pipeline = get_app_pipeline()
 
                     cep_producer = AIOKafkaProducer(
                         bootstrap_servers=settings.kafka_bootstrap_servers,
                         value_serializer=lambda v: v,
+                        **kafka_sasl_kwargs,
                     )
                     await cep_producer.start()
                     pipeline._cep_producer = cep_producer
@@ -290,6 +325,7 @@ async def lifespan(app: FastAPI):
                     cep_consumer = CEPConsumer(
                         pipeline=pipeline,
                         kafka_bootstrap=settings.kafka_bootstrap_servers,
+                        kafka_sasl_kwargs=kafka_sasl_kwargs,
                     )
                     await cep_consumer.start()
                     asyncio.create_task(cep_consumer.run())
@@ -302,6 +338,27 @@ async def lifespan(app: FastAPI):
             logger.warning("kafka_port_closed_skipping_consumer")
     else:
         logger.warning("using_in_memory_fallbacks_some_features_disabled")
+
+    # ── Triage Queue Worker ────────────────────────────────
+    # Non-blocking background worker for LLM auto-triage.
+    # Recovers stale items from crashed workers on startup.
+    if redis_ok:
+        pipeline = get_app_pipeline()
+        triage_queue = pipeline._triage_queue
+
+        # Recover events stuck in processing from a previous crash
+        recovered = await triage_queue.recover_stale_processing("default")
+        if recovered:
+            logger.info("triage_queue_recovered_stale_items", count=recovered)
+
+        async def _triage_worker_loop():
+            try:
+                await triage_queue.start_worker("default")
+            except Exception as e:
+                logger.error("triage_worker_crashed", error=str(e))
+
+        asyncio.create_task(_triage_worker_loop())
+        logger.info("triage_queue_worker_started")
 
     yield
 
@@ -435,6 +492,17 @@ def create_app() -> FastAPI:
     # Grouped Events API (CEP sequence aggregation — AttackPatternCard)
     from app.api.events_grouped import router as events_grouped_router
     app.include_router(events_grouped_router, prefix="/api/v1")
+
+    # CEP Rules API (Phase 3)
+    app.include_router(cep_rules.router, prefix="/api/v1")
+
+    # Entity Details API (Investigation Console F-01)
+    from app.api.entity_details import router as entity_details_router
+    app.include_router(entity_details_router, prefix="/api/v1")
+
+    # Narrative Generation API (AI Summarize)
+    from app.api.narrative import router as narrative_router
+    app.include_router(narrative_router, prefix="/api/v1")
 
     # Tenant-scoped SSE stream
     @app.get("/api/v1/events/stream")

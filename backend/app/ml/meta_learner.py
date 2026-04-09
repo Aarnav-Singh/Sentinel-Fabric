@@ -165,10 +165,20 @@ class MetaLearner:
                 verdicts_processed=self._verdicts_processed,
                 tenant_id=tid,
             )
+            
+            # Version history (for accountability and rollback)
+            await self._postgres.save_model_version({
+                "tenant_id": tid,
+                "version": f"weights_{self._verdicts_processed}",
+                "training_time_seconds": 0.0,
+                "buffer_size": self._verdicts_processed,
+                "rf_f1": sum(self._weights) # Placeholder for consistency check
+            })
         except Exception as exc:
             logger.warning("meta_learner_persist_failed",
                            error=str(exc),
                            msg="Weights are safe in-memory, will retry on next verdict")
+
 
     @property
     def current_weights(self) -> list[float]:

@@ -90,3 +90,19 @@ async def pipeline_models(claims: dict = Depends(require_viewer)):
             "loaded": True,
         })
     return {"models": result}
+
+
+@router.get("/triage-queue")
+async def triage_queue_status(claims: dict = Depends(require_viewer)):
+    """Triage queue depth: pending, processing, and dead-letter counts."""
+    pipeline = get_app_pipeline()
+    try:
+        tenant_id = claims.get("tenant_id", "default")
+        depth = await pipeline._triage_queue.get_queue_depth(tenant_id)
+        return {
+            "status": "active",
+            **depth,
+        }
+    except Exception as e:
+        logger.warning("triage_queue_status_failed", error=str(e))
+        return {"status": "unavailable", "pending": 0, "processing": 0, "dead_letter": 0}

@@ -174,11 +174,17 @@ async def resume_playbook(
 async def execute_playbook(
     playbook_id: str,
     request: Request,
+    event_context: dict = None,
     repo: PostgresRepository = Depends(get_app_postgres),
     engine: ExecutionEngine = Depends(get_app_engine),
     claims: dict = Depends(require_admin),
 ):
-    """Execute a predefined playbook. Admin only."""
+    """Execute a predefined playbook with optional event context.
+    
+    The event_context dict is injected into Jinja2 templates within
+    playbook node params, allowing alert-driven responses like:
+      {{ src_ip }}, {{ hostname }}, {{ severity }}
+    """
     # Ensure playbooks exist
     await repo.seed_playbooks_if_empty()
     
@@ -191,7 +197,7 @@ async def execute_playbook(
         request=request,
         claims=claims,
         target=playbook_id,
-        detail=f"name={playbook_model.name}",
+        detail=f"name={playbook_model.name} context_keys={list((event_context or {}).keys())}",
     )
 
     # Convert PostgreSQL model to Pydantic domain model for execution
@@ -210,8 +216,8 @@ async def execute_playbook(
         nodes=nodes
     )
     
-    # Execute the playbook
-    result = await engine.execute_playbook(playbook)
+    # Execute the playbook with event context for Jinja2 template rendering
+    result = await engine.execute_playbook(playbook, event_context=event_context)
     
     has_failures = any(node_res.get("status") in ("failed", "error_provider_missing", "error_exception") for node_res in result)
     is_paused = any(node_res.get("status") == "pending_approval" for node_res in result)

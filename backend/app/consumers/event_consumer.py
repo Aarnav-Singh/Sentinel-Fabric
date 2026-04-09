@@ -55,6 +55,16 @@ class EventConsumer:
         self._running = False
 
     async def start(self) -> None:
+        # Build SASL kwargs for cloud Kafka (e.g. Upstash)
+        kafka_kwargs = {}
+        if settings.kafka_security_protocol != "PLAINTEXT":
+            kafka_kwargs.update({
+                "security_protocol": settings.kafka_security_protocol,
+                "sasl_mechanism": settings.kafka_sasl_mechanism,
+                "sasl_plain_username": settings.kafka_sasl_username,
+                "sasl_plain_password": settings.kafka_sasl_password,
+            })
+
         self._consumer = AIOKafkaConsumer(
             *settings.kafka_topics,
             bootstrap_servers=settings.kafka_bootstrap_servers,
@@ -62,10 +72,12 @@ class EventConsumer:
             auto_offset_reset="latest",
             enable_auto_commit=False,
             value_deserializer=lambda v: v.decode("utf-8"),
+            **kafka_kwargs,
         )
         self._dlq_producer = AIOKafkaProducer(
             bootstrap_servers=settings.kafka_bootstrap_servers,
             value_serializer=lambda v: json.dumps(v, default=str).encode("utf-8"),
+            **kafka_kwargs,
         )
         await self._consumer.start()
         await self._dlq_producer.start()

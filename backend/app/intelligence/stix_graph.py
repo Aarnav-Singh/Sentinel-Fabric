@@ -12,7 +12,13 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
-from neo4j import AsyncGraphDatabase, AsyncDriver
+try:
+    from neo4j import AsyncGraphDatabase, AsyncDriver
+    HAS_NEO4J = True
+except ImportError:
+    HAS_NEO4J = False
+    AsyncGraphDatabase = None  # type: ignore
+    AsyncDriver = None  # type: ignore
 
 from app.config import settings
 

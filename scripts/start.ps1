@@ -133,11 +133,11 @@ function Test-SimulationRunning([int]$bPort) {
 }
 
 function Test-DockerContainersRunning {
-    $composeFile = Join-Path $INFRA 'docker-compose.yml'
+    $composeFile = Join-Path $ROOT 'docker-compose.yml'
     if (-not (Test-Path $composeFile)) { return $false }
 
     try {
-        Push-Location $INFRA
+        Push-Location $ROOT
         $output = docker compose ps --status running --format '{{.Name}}' 2>$null
         Pop-Location
         if ($null -eq $output -or $output.Count -eq 0) { return $false }
@@ -151,12 +151,12 @@ function Test-DockerContainersRunning {
 }
 
 function Test-ProdContainersRunning {
-    $prodCompose = Join-Path $ROOT 'docker-compose.prod.yml'
+    $prodCompose = Join-Path $ROOT 'docker-compose.yml'
     if (-not (Test-Path $prodCompose)) { return $false }
 
     try {
         Push-Location $ROOT
-        $output = docker compose -f docker-compose.prod.yml ps --status running --format '{{.Name}}' 2>$null
+        $output = docker compose --profile app ps --status running --format '{{.Name}}' 2>$null
         Pop-Location
         if ($null -eq $output -or $output.Count -eq 0) { return $false }
         $count = @($output).Count
@@ -187,17 +187,10 @@ function Stop-All {
     Stop-Port $FrontendPort
     Stop-Port $BackendPort
 
-    $infraCompose = Join-Path $INFRA 'docker-compose.yml'
-    if (Test-Path $infraCompose) {
-        Push-Location $INFRA
-        docker compose down 2>$null
-        Pop-Location
-    }
-
-    $prodCompose = Join-Path $ROOT 'docker-compose.prod.yml'
-    if (Test-Path $prodCompose) {
+    $unifiedCompose = Join-Path $ROOT 'docker-compose.yml'
+    if (Test-Path $unifiedCompose) {
         Push-Location $ROOT
-        docker compose -f docker-compose.prod.yml down 2>$null
+        docker compose --profile app down 2>$null
         Pop-Location
     }
 
@@ -243,9 +236,9 @@ function Start-Infra {
 
     Initialize-EnvironmentVariables
 
-    $composeFile = Join-Path $INFRA 'docker-compose.yml'
+    $composeFile = Join-Path $ROOT 'docker-compose.yml'
     if (-not (Test-Path $composeFile)) {
-        Write-Warn2 "docker-compose.yml not found in $INFRA. Backend will use in-memory fallbacks."
+        Write-Warn2 "docker-compose.yml not found in $ROOT. Backend will use in-memory fallbacks."
         return $false
     }
 
@@ -296,7 +289,7 @@ function Start-Infra {
     }
 
     Write-Status 'Starting Docker infrastructure containers...'
-    Push-Location $INFRA
+    Push-Location $ROOT
     docker compose up -d 2>&1 | Out-Null
     $code = $LASTEXITCODE
     Pop-Location
@@ -566,7 +559,7 @@ switch ($Mode) {
             if ($Force) {
                 Write-Status 'Force-stopping existing containers...'
                 Push-Location $ROOT
-                docker compose -f docker-compose.prod.yml down 2>$null
+                docker compose --profile app down 2>$null
                 Pop-Location
                 Start-Sleep -Seconds 2
             }
@@ -576,14 +569,14 @@ switch ($Mode) {
             if ($Force -or $null -eq $existingImages -or $existingImages.Count -eq 0) {
                 Write-Status 'Building and starting production containers (may take several minutes on first run)...'
                 Push-Location $ROOT
-                docker compose -f docker-compose.prod.yml up -d --build
+                docker compose --profile app up -d --build
                 $code = $LASTEXITCODE
                 Pop-Location
             }
             else {
                 Write-Status 'Images already built. Starting production containers...'
                 Push-Location $ROOT
-                docker compose -f docker-compose.prod.yml up -d
+                docker compose --profile app up -d
                 $code = $LASTEXITCODE
                 Pop-Location
             }

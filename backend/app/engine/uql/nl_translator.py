@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import re
 import structlog
+from app.config import settings
 
 logger = structlog.get_logger(__name__)
 
@@ -97,7 +98,7 @@ async def translate_nl_to_uql(nl_query: str, api_key: str) -> str:
         prompt = _build_prompt(_EXAMPLES, nl_query)
 
         message = await client.messages.create(
-            model="claude-3-5-haiku-latest",
+            model=settings.anthropic_model_triage,
             max_tokens=256,
             messages=[{"role": "user", "content": prompt}],
         )

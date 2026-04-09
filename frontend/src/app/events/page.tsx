@@ -314,7 +314,7 @@ function HuntPanel() {
                                   {row.timestamp ? new Date(row.timestamp).toLocaleTimeString('en-US', { hour12: false }) : '—'}
                                 </td>
                                 <td className="px-3 py-1 text-sf-text/70">{row.source_type || '—'}</td>
-                                <td className="px-3 py-1 text-sf-text truncate max-w-md">{row.message || row.action || '—'}</td>
+                                <td className="px-3 py-1 text-sf-text whitespace-pre-wrap leading-relaxed">{row.message || row.action || '—'}</td>
                                 <td className="px-3 py-1 text-right">
                                   {row.meta_score != null ? <MlScoreBadge score={row.meta_score} /> : '—'}
                                 </td>
@@ -555,7 +555,7 @@ export default function RawEventsPage() {
                         </button>
                     </div>
 
-                    <div className="px-4 py-3 border-b border-sf-border bg-sf-surface/50">
+                    <div className="px-4 py-3 border-b border-sf-border bg-sf-surface/50 overflow-y-auto max-h-[30vh]">
                         <div className="font-mono text-[11px] text-sf-text whitespace-pre-wrap break-words leading-relaxed select-text">
                             {selectedLog.message}
                         </div>

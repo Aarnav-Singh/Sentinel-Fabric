@@ -8,6 +8,7 @@ services:
     region: ohio
     plan: starter
     healthCheckPath: /health
+    preDeployCommand: "alembic upgrade head"
     envVars:
       - key: ENVIRONMENT
         value: production
@@ -15,16 +16,53 @@ services:
         fromDatabase:
           name: umbrix-postgres
           property: connectionString
-      - key: REDIS_URL
-        fromService:
-          type: redis
-          name: umbrix-redis
-          property: connectionString
       - key: JWT_SECRET_KEY
         generateValue: true
       - key: CORS_ORIGINS
-        value: '["*"]' # Update this via Render Dashboard to match Vercel URL
-        
+        value: '["*"]' # Update via Render Dashboard to match Vercel URL
+      - key: INGEST_API_KEY
+        generateValue: true
+
+      # ── Redis (Upstash) ──
+      - key: REDIS_URL
+        sync: false  # Set via Render Dashboard: rediss://<user>:<pass>@<host>:6379
+
+      # ── ClickHouse Cloud ──
+      - key: CLICKHOUSE_HOST
+        sync: false  # Set via Render Dashboard from ClickHouse Cloud
+      - key: CLICKHOUSE_PORT
+        value: "8443"
+      - key: CLICKHOUSE_USER
+        value: default
+      - key: CLICKHOUSE_PASSWORD
+        sync: false
+      - key: CLICKHOUSE_DATABASE
+        value: umbrix
+
+      # ── Qdrant Cloud ──
+      - key: QDRANT_URL
+        sync: false  # https://<cluster>.cloud.qdrant.io
+      - key: QDRANT_API_KEY
+        sync: false
+
+      # ── Neo4j AuraDB (Memgraph replacement — same Bolt driver) ──
+      - key: MEMGRAPH_URI
+        sync: false  # neo4j+s://<id>.databases.neo4j.io
+      - key: MEMGRAPH_USER
+        value: neo4j
+      - key: MEMGRAPH_PASSWORD
+        sync: false
+
+      # ── Kafka (Upstash) ──
+      - key: KAFKA_BOOTSTRAP_SERVERS
+        sync: false  # <endpoint>.upstash.io:9092
+      - key: KAFKA_SECURITY_PROTOCOL
+        value: SASL_SSL
+      - key: KAFKA_SASL_USERNAME
+        sync: false
+      - key: KAFKA_SASL_PASSWORD
+        sync: false
+
   # ─── Kafka Background Worker ───────────────────────────────────────────────
   - type: worker
     name: umbrix-worker
@@ -40,18 +78,48 @@ services:
         fromDatabase:
           name: umbrix-postgres
           property: connectionString
-      - key: REDIS_URL
-        fromService:
-          type: redis
-          name: umbrix-redis
-          property: connectionString
+      - key: JWT_SECRET_KEY
+        generateValue: true
 
-  # ─── Redis Cache ───────────────────────────────────────────────────────────
-  - type: redis
-    name: umbrix-redis
-    plan: free
-    region: ohio
-    ipAllowList: []
+      # ── Redis (Upstash) ──
+      - key: REDIS_URL
+        sync: false
+
+      # ── ClickHouse Cloud ──
+      - key: CLICKHOUSE_HOST
+        sync: false
+      - key: CLICKHOUSE_PORT
+        value: "8443"
+      - key: CLICKHOUSE_USER
+        value: default
+      - key: CLICKHOUSE_PASSWORD
+        sync: false
+      - key: CLICKHOUSE_DATABASE
+        value: umbrix
+
+      # ── Qdrant Cloud ──
+      - key: QDRANT_URL
+        sync: false
+      - key: QDRANT_API_KEY
+        sync: false
+
+      # ── Neo4j AuraDB ──
+      - key: MEMGRAPH_URI
+        sync: false
+      - key: MEMGRAPH_USER
+        value: neo4j
+      - key: MEMGRAPH_PASSWORD
+        sync: false
+
+      # ── Kafka (Upstash) ──
+      - key: KAFKA_BOOTSTRAP_SERVERS
+        sync: false
+      - key: KAFKA_SECURITY_PROTOCOL
+        value: SASL_SSL
+      - key: KAFKA_SASL_USERNAME
+        sync: false
+      - key: KAFKA_SASL_PASSWORD
+        sync: false
 
 databases:
   # ─── PostgreSQL Database ───────────────────────────────────────────────────

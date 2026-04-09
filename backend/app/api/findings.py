@@ -100,7 +100,9 @@ async def action_finding(
     """Record analyst approve/dismiss/modify decision. Requires analyst role."""
     redis = get_app_redis()
     postgres = get_app_postgres()
+    ch = get_app_clickhouse()
     analyst_id = claims.get("sub", "unknown")
+    tenant_id = claims.get("tenant_id", "default")
 
     AuditLogger.log(
         "finding_action",
@@ -119,40 +121,61 @@ async def action_finding(
     except Exception as exc:
         logger.warning("finding_action_store_failed", error=str(exc))
 
+    # Compute the ML-compatible verdict label BEFORE saving
+    ml_verdict = (
+        "true_positive" if body.action == "approve"
+        else "false_positive" if body.action == "dismiss"
+        else "escalated"
+    )
+
+    # Extract entity_value from the original event for precise RAG lookups
+    entity_value = None
+    if finding_id.startswith("FE-"):
+        try:
+            raw_event = await ch.get_event_by_id(finding_id[3:], tenant_id)
+            if raw_event:
+                entity_value = (
+                    raw_event.get("src_ip")
+                    or raw_event.get("source_entity")
+                    or raw_event.get("dst_ip")
+                )
+        except Exception as exc:
+            logger.debug("entity_value_extraction_failed", error=str(exc))
+
+    # Persist the analyst verdict to PostgreSQL — the core feedback loop write
     try:
-        verdict = AnalystVerdict(
+        verdict_record = AnalystVerdict(
             id=str(uuid.uuid4()),
-            tenant_id=claims.get("tenant_id", "default"),
+            tenant_id=tenant_id,
             event_id=finding_id,
             analyst_id=analyst_id,
-            decision=body.action,
-            comment=body.comment,
-            created_at=datetime.utcnow()
+            verdict=ml_verdict,
+            notes=body.comment,
+            entity_value=entity_value,
+            created_at=datetime.utcnow(),
         )
-        await postgres.save_verdict(verdict)
+        await postgres.save_verdict(verdict_record)
+        logger.info("analyst_verdict_saved", finding_id=finding_id, verdict=ml_verdict, entity_value=entity_value)
     except Exception as exc:
         logger.error("postgres_verdict_save_failed", error=str(exc))
 
+    # Tune MetaLearner fusion weights based on the verdict
     pipeline = get_app_pipeline()
-    ml_verdict = "true_positive" if body.action == "approve" else "false_positive" if body.action == "dismiss" else "unknown"
-    if ml_verdict != "unknown":
+    if ml_verdict in ("true_positive", "false_positive"):
         scores_to_use = body.stream_scores or [0.5, 0.5, 0.5, 0.5, 0.5]
         try:
             pipeline.meta_learner.update_weights(ml_verdict, scores_to_use)
             # Persist updated weights to PostgreSQL (Phase 22B)
-            await pipeline.meta_learner.persist_weights(
-                tenant_id=claims.get("tenant_id", "default")
-            )
+            await pipeline.meta_learner.persist_weights(tenant_id=tenant_id)
             logger.info("meta_learner_weights_tuned", finding_id=finding_id, verdict=ml_verdict)
         except Exception as exc:
             logger.error("meta_learner_tuning_failed", error=str(exc))
 
-    # Save to verdict buffer for model retraining (Phase 34C - Agent Lightning)
-    if ml_verdict != "unknown":
+        # Save to verdict buffer for model retraining (Phase 34C - Agent Lightning)
         try:
             import json as _json
             await postgres.save_verdict_to_buffer(
-                tenant_id=claims.get("tenant_id", "default"),
+                tenant_id=tenant_id,
                 finding_id=finding_id,
                 features_json=_json.dumps(scores_to_use),
                 label=ml_verdict,

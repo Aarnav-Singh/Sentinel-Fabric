@@ -38,8 +38,9 @@ KILL_CHAIN_ORDER = [
 class CampaignEngine:
     """Stateful campaign correlation coordinator."""
 
-    def __init__(self, redis: RedisStore) -> None:
+    def __init__(self, redis: RedisStore, postgres: any = None) -> None:
         self._redis = redis
+        self._postgres = postgres
 
     async def correlate(self, event: CanonicalEvent) -> Optional[str]:
         """Determine if this event belongs to an existing campaign
@@ -122,20 +123,38 @@ class CampaignEngine:
                 if pred.technique_id and pred.technique_id not in initial_tags:
                     initial_tags.append(pred.technique_id)
 
-            # Store campaign metadata
+            # Store campaign metadata — Redis (hot cache)
+            campaign_meta = {
+                "created_at": event.timestamp.isoformat(),
+                "seed_event": event.event_id,
+                "severity": event.severity.value,
+                "stage": tactic,
+                "meta_score": event.ml_scores.meta_score,
+                "mitre_tags": initial_tags,
+                "active": True,
+            }
             await self._redis.cache_set(
                 f"campaign_meta:{tenant_id}:{campaign_id}",
-                json.dumps({
-                    "created_at": event.timestamp.isoformat(),
-                    "seed_event": event.event_id,
-                    "severity": event.severity.value,
-                    "stage": tactic,
-                    "meta_score": event.ml_scores.meta_score,
-                    "mitre_tags": initial_tags,
-                    "active": True,
-                }),
+                json.dumps(campaign_meta),
                 ttl=86400 * 7,  # 7 days
             )
+
+            # Write-through to Postgres (durable record)
+            if self._postgres:
+                try:
+                    await self._postgres.save_campaign_state(
+                        tenant_id=tenant_id,
+                        campaign_id=campaign_id,
+                        severity=event.severity.value,
+                        stage=tactic,
+                        active=True,
+                        affected_assets=1,
+                        meta_score=event.ml_scores.meta_score,
+                        metadata_json=json.dumps(campaign_meta),
+                    )
+                except Exception as e:
+                    logger.warning("campaign_postgres_persist_failed", campaign_id=campaign_id, error=str(e))
+
             logger.info(
                 "new_campaign_seeded",
                 campaign_id=campaign_id,
@@ -262,6 +281,24 @@ class CampaignEngine:
                 
             if stage_updated or score_updated or tags_updated:
                 await self._redis.cache_set(key, json.dumps(meta), ttl=86400 * 7)
+
+                # Write-through to Postgres (durable record)
+                if self._postgres:
+                    try:
+                        entities = await self._redis.get_campaign_entities(tenant_id, campaign_id)
+                        await self._postgres.save_campaign_state(
+                            tenant_id=tenant_id,
+                            campaign_id=campaign_id,
+                            severity=meta.get("severity", "medium"),
+                            stage=meta.get("stage", "initial_access"),
+                            active=meta.get("active", True),
+                            affected_assets=len(entities),
+                            meta_score=meta.get("meta_score", 0.0),
+                            metadata_json=json.dumps(meta),
+                        )
+                    except Exception as persist_exc:
+                        logger.warning("campaign_postgres_update_failed", campaign_id=campaign_id, error=str(persist_exc))
+
                 if stage_updated:
                     logger.info("campaign_stage_progressed", campaign_id=campaign_id, new_stage=meta["stage"], old_stage=current_stage)
                     

@@ -15,36 +15,39 @@ export function CisoMode({ metrics, threatMapData, setMaximizedWidget }: Dashboa
     return (
         <div className="flex flex-col gap-6 h-full w-full relative">
             <div className="z-10 grid grid-cols-1 md:grid-cols-3 gap-4 shrink-0">
-                <PanelCard className="p-6 flex flex-col gap-4 relative overflow-hidden group border-sf-safe/30">
-                    <div className="flex items-center justify-between text-sf-muted text-xs font-mono tracking-widest z-10">
-                        <span className="flex items-center gap-2"><ShieldAlert className="w-5 h-5 text-sf-safe" /> ENTERPRISE POSTURE</span>
+                <PanelCard className="p-4 md:p-6 flex flex-col gap-4 relative overflow-hidden group border-sf-safe/30">
+                    <div className="flex items-center justify-between text-sf-muted text-[10px] font-mono tracking-widest z-10">
+                        <span className="flex items-center gap-2 text-sf-safe"><ShieldAlert className="w-4 h-4" /> POSTURE</span>
                     </div>
-                    <div className="text-4xl font-mono text-sf-text z-10 mt-2">
-                        <AnimatedNumber value={Math.round(metrics.posture_score)} /><span className="text-xl text-sf-muted">/100</span>
+                    <div className="text-3xl font-mono text-sf-text z-10 mt-1">
+                        <AnimatedNumber value={Math.round(metrics.posture_score)} /><span className="text-lg text-sf-muted">/100</span>
                     </div>
-                    <div className="h-8 w-full mt-2 opacity-50 z-10">
-                        <Sparkline data={DEMO_HISTORY} width={300} height={32} color="var(--sf-safe)" />
+                    <div className="h-6 w-full mt-1 opacity-40 z-10">
+                        <Sparkline data={[...DEMO_HISTORY].reverse().map(v => v + Math.random())} width={300} height={24} color="var(--sf-safe)" />
                     </div>
                 </PanelCard>
 
-                <PanelCard className="p-6 flex flex-col gap-4 relative overflow-hidden group border-[var(--sf-critical)]/30">
-                    <div className="flex items-center justify-between text-sf-muted text-xs font-mono tracking-widest z-10">
-                        <span className="flex items-center gap-2"><XCircle className="w-5 h-5 text-sf-critical animate-pulse-fast" /> CRITICAL THREATS</span>
+                <PanelCard className="p-4 md:p-6 flex flex-col gap-4 relative overflow-hidden group border-sf-critical/30">
+                    <div className="flex items-center justify-between text-sf-muted text-[10px] font-mono tracking-widest z-10">
+                        <span className="flex items-center gap-2 text-sf-critical"><XCircle className="w-4 h-4 animate-pulse-fast" /> CRITICAL</span>
                     </div>
-                    <div className="text-4xl font-mono text-sf-critical z-10 mt-2">
+                    <div className="text-3xl font-mono text-sf-critical z-10 mt-1">
                         <AnimatedNumber value={metrics.critical_campaigns} />
                     </div>
+                    <div className="h-6 w-full mt-1 opacity-40 z-10">
+                        <Sparkline data={Array.from({length: 20}, () => Math.random() * 10)} width={300} height={24} color="var(--sf-critical)" />
+                    </div>
                 </PanelCard>
 
-                <PanelCard className="p-6 flex flex-col gap-4 relative overflow-hidden group border-[var(--sf-warning)]/30">
-                    <div className="flex items-center justify-between text-sf-muted text-xs font-mono tracking-widest z-10">
-                        <span className="flex items-center gap-2"><Activity className="w-5 h-5 text-sf-warning" /> ACTIVE CAMPAIGNS</span>
+                <PanelCard className="p-4 md:p-6 flex flex-col gap-4 relative overflow-hidden group border-sf-warning/30">
+                    <div className="flex items-center justify-between text-sf-muted text-[10px] font-mono tracking-widest z-10">
+                        <span className="flex items-center gap-2 text-sf-warning"><Activity className="w-4 h-4" /> ACTIVE</span>
                     </div>
-                    <div className="text-4xl font-mono text-sf-warning z-10 mt-2">
+                    <div className="text-3xl font-mono text-sf-warning z-10 mt-1">
                         <AnimatedNumber value={metrics.active_campaigns} />
                     </div>
-                    <div className="h-8 w-full mt-2 opacity-50 z-10">
-                        <Sparkline data={SPARK_CAMPAIGNS} width={300} height={32} color="var(--sf-warning)" />
+                    <div className="h-6 w-full mt-1 opacity-40 z-10">
+                        <Sparkline data={[...SPARK_CAMPAIGNS].map(v => v + Math.random())} width={300} height={24} color="var(--sf-warning)" />
                     </div>
                 </PanelCard>
             </div>

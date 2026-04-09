@@ -3,6 +3,7 @@
 import { useState } from "react";
 import useSWR from "swr";
 import { Plus, Trash2, Save, FileCode2, AlertCircle, Edit2 } from "lucide-react";
+import { useToast } from "@/components/ui/Toast";
 
 // Fetcher for SWR
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
@@ -24,20 +25,19 @@ interface SigmaRule {
 export default function SigmaRulesPage() {
     const { data: rules, error, isLoading, mutate } = useSWR<SigmaRule[]>("/api/proxy/api/v1/sigma-rules", fetcher);
     
+    const { toast } = useToast();
     const [selectedRule, setSelectedRule] = useState<SigmaRule | null>(null);
     const [isEditing, setIsEditing] = useState(false);
     
     // Form states
     const [formData, setFormData] = useState<SigmaRule | null>(null);
     const [conditionsText, setConditionsText] = useState("");
-    const [submitStatus, setSubmitStatus] = useState<{type: "success" | "error", message: string} | null>(null);
 
     const handleSelectRule = (rule: SigmaRule) => {
         setSelectedRule(rule);
         setFormData(rule);
         setConditionsText(JSON.stringify(rule.conditions, null, 2));
         setIsEditing(false);
-        setSubmitStatus(null);
     };
 
     const handleNewRule = () => {
@@ -56,7 +56,6 @@ export default function SigmaRulesPage() {
         setFormData(newRule);
         setConditionsText(JSON.stringify(newRule.conditions, null, 2));
         setIsEditing(true);
-        setSubmitStatus(null);
     };
 
     const handleSave = async () => {
@@ -88,12 +87,12 @@ export default function SigmaRulesPage() {
                 throw new Error(errData.detail || "Failed to save rule");
             }
 
-            setSubmitStatus({ type: "success", message: "Rule saved successfully!" });
+            toast("Rule saved successfully!", "success");
             setIsEditing(false);
             mutate(); // Refresh rules list
             setSelectedRule(payload);
         } catch (e: any) {
-            setSubmitStatus({ type: "error", message: e.message || "Invalid JSON in conditions or server error." });
+            toast(e.message || "Invalid JSON in conditions or server error.", "error");
         }
     };
 
@@ -104,13 +103,14 @@ export default function SigmaRulesPage() {
                 method: "DELETE"
             });
             if (!res.ok) throw new Error("Failed to delete rule");
+            toast("Rule deleted successfully", "success");
             mutate();
             if (selectedRule?.id === ruleId) {
                 setSelectedRule(null);
                 setFormData(null);
             }
         } catch (e: any) {
-            alert(e.message);
+            toast(e.message, "error");
         }
     };
 
@@ -144,14 +144,14 @@ export default function SigmaRulesPage() {
                                         body: formData
                                     });
                                     if (res.ok) {
-                                        alert("Rules imported successfully!");
+                                        toast("Rules imported successfully!", "success");
                                         mutate();
                                     } else {
                                         const err = await res.json();
-                                        alert("Import failed: " + (err.detail || 'Unknown error'));
+                                        toast("Import failed: " + (err.detail || 'Unknown error'), "error");
                                     }
                                 } catch (err: any) {
-                                    alert("Import error: " + err.message);
+                                    toast("Import error: " + err.message, "error");
                                 }
                                 e.target.value = '';
                             }}
@@ -251,15 +251,6 @@ export default function SigmaRulesPage() {
                                     )}
                                 </div>
                             </div>
-
-                            {submitStatus && (
-                                <div className={`p-3 rounded mb-6 text-sm flex items-center gap-2 ${
-                                    submitStatus.type === "success" ? "bg-sf-safe/10 text-sf-safe border border-sf-safe/20" : "bg-red-500/10 text-red-400 border border-red-500/20"
-                                }`}>
-                                    <AlertCircle className="w-4 h-4" />
-                                    {submitStatus.message}
-                                </div>
-                            )}
 
                             <div className="space-y-6">
                                 {/* Basic Info */}

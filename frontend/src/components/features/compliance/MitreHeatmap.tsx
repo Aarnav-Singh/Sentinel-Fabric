@@ -95,8 +95,12 @@ export function MitreHeatmap({ className = '' }: MitreHeatmapProps) {
         <div className="flex-1 overflow-auto custom-scrollbar border border-sf-border p-4 bg-black/20 relative">
           <div className="inline-flex gap-2 min-w-max">
             {Object.entries(coverageData.by_tactic).map(([tacticKey, tacticData]) => {
-              const techniques = Object.values(tacticData.techniques)
-                .sort((a, b) => a.id.localeCompare(b.id));
+              const techniques = Object.entries(tacticData.techniques).map(([tid, tval]: [string, any]) => ({
+                id: tid,
+                name: tval.name || `Technique ${tid}`,
+                rule_count: tval.rules?.length || 0,
+                coverage_pct: tval.covered ? 1.0 : 0.0
+              })).sort((a, b) => a.id.localeCompare(b.id));
 
               return (
                 <div key={tacticKey} className="flex flex-col w-40 shrink-0 gap-2">

@@ -204,15 +204,76 @@ class RedisCEPEngine:
             await kafka_producer.send("sentinel.sequences", alert)
     """
 
-    def __init__(self, redis_client: Any) -> None:
+    def __init__(self, redis_client: Any, postgres: Any = None) -> None:
         """
         Args:
-            redis_client: An async Redis client (from ``redis.asyncio``).
-                          Must support ``zadd``, ``zrangebyscore``, ``zremrangebyscore``,
-                          ``zcard``, ``expire``, and ``delete`` commands.
+            redis_client: An async Redis client
+            postgres: Postgres repository for loading active CEP rules.
         """
         self._redis = redis_client
-        self._patterns = ATTACK_PATTERNS
+        self._postgres = postgres
+        
+        self._tenant_patterns: dict[str, list[CEPPattern]] = {}
+        # We start with ATTACK_PATTERNS as global defaults, but tenant-specific overrides 
+        # from Postgres will take precedence.
+        self._default_patterns = ATTACK_PATTERNS
+
+    def invalidate_tenant(self, tenant_id: str) -> None:
+        """Called via Redis pub/sub when a tenant updates their CEP rules."""
+        if tenant_id in self._tenant_patterns:
+            del self._tenant_patterns[tenant_id]
+
+    async def _get_patterns(self, tenant_id: str) -> list[CEPPattern]:
+        """Lazy load patterns from Postgres with tenant caching."""
+        if tenant_id in self._tenant_patterns:
+            return self._tenant_patterns[tenant_id]
+            
+        if not self._postgres:
+            return self._default_patterns
+            
+        try:
+            records = await self._postgres.list_cep_rules(tenant_id)
+            if not records:
+                self._tenant_patterns[tenant_id] = self._default_patterns
+                return self._default_patterns
+                
+            patterns = []
+            for r in records:
+                if not r.is_active:
+                    continue
+                stages_data = json.loads(r.stages_json)
+                stages = [
+                    PatternStage(
+                        name=s.get("name"),
+                        tactic=s.get("tactic"),
+                        technique_prefix=s.get("technique_prefix"),
+                        min_ml_score=s.get("min_ml_score", 0.0),
+                    )
+                    for s in stages_data
+                ]
+                patterns.append(
+                    CEPPattern(
+                        id=r.id,
+                        name=r.name,
+                        description=r.description,
+                        stages=stages,
+                        max_span_seconds=r.max_span_seconds,
+                        severity=r.severity,
+                        mitre_tactic=r.mitre_tactic,
+                    )
+                )
+            
+            # If they deleted all rules but not the rows? Wait, if they have active rules, use them.
+            if not patterns:
+                patterns = self._default_patterns
+
+            self._tenant_patterns[tenant_id] = patterns
+            return patterns
+            
+        except Exception as e:
+            logger.error("failed_to_load_cep_rules", tenant=tenant_id, error=str(e))
+            return self._default_patterns
+
 
     async def check_event(self, event: CanonicalEvent) -> list[dict[str, Any]]:
         """Check a single event against all registered patterns.
@@ -223,15 +284,18 @@ class RedisCEPEngine:
         if event.ml_scores is None:
             return []
 
+        tenant_id = event.metadata.tenant_id
         entity_key = (
             event.source_entity.identifier
             if event.source_entity
-            else event.metadata.tenant_id
+            else tenant_id
         )
         now_ts = time.time()
         fired_alerts: list[dict[str, Any]] = []
 
-        for pattern in self._patterns:
+        patterns = await self._get_patterns(tenant_id)
+
+        for pattern in patterns:
             alert = await self._evaluate_pattern(pattern, event, entity_key, now_ts)
             if alert:
                 fired_alerts.append(alert)
@@ -371,7 +435,9 @@ class RedisCEPEngine:
         active: list[dict[str, Any]] = []
         now_ts = time.time()
 
-        for pattern in self._patterns:
+        patterns = await self._get_patterns(tenant_id)
+
+        for pattern in patterns:
             completed_stages: list[str] = []
             for i, stage in enumerate(pattern.stages):
                 key = _redis_key(f"{pattern.id}:s{i}", entity_key)

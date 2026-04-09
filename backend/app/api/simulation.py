@@ -14,6 +14,7 @@ from fastapi import APIRouter, Depends, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from app.api.auth import AuditLogger
+from app.services.simulation_service import SimulationEngine, SimulationScenario
 from app.dependencies import get_app_pipeline
 from app.schemas.canonical_event import (
     ActionType,
@@ -134,8 +135,11 @@ def _generate_event() -> CanonicalEvent:
         ),
         metadata=EventMetadata(
             parser_name=f"{scenario['source']}_simulator",
+            is_synthetic=True,
         ),
+        is_synthetic=True,
     )
+
     
     # ML scores will be computed by the pipeline — no manual override needed
     return event
@@ -236,3 +240,18 @@ async def burst_events(
             logger.warning("burst_event_failed", error=str(exc))
 
     return {"status": "burst_complete", "events_processed": processed}
+
+@router.post("/run")
+async def run_scenario(
+    scenario: SimulationScenario,
+    request: Request = None,
+    claims: dict | None = Depends(_optional_claims),
+) -> dict:
+    """Run a structured simulation scenario."""
+    if claims:
+        AuditLogger.log("simulation_scenario_run", request=request, claims=claims, detail=f"scenario={scenario.name}")
+    
+    engine = SimulationEngine()
+    asyncio.create_task(engine.run_scenario(scenario))
+    
+    return {"status": "scenario_started", "scenario_id": scenario.id}

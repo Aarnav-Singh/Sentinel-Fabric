@@ -22,12 +22,14 @@ Query Params
 from __future__ import annotations
 
 import logging
+import re
 from typing import Any, Dict, List
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Query, Depends
 from fastapi.responses import JSONResponse
 
 from app.dependencies import get_app_clickhouse
+from app.middleware.auth import require_analyst
 
 logger = logging.getLogger(__name__)
 
@@ -39,6 +41,7 @@ _SEV_RANK = {"critical": 4, "high": 3, "medium": 2, "low": 1, "info": 0}
 
 @router.get("/events/grouped")
 async def get_grouped_events(
+    claims: dict = Depends(require_analyst),
     limit: int = Query(default=20, ge=1, le=100),
     hours: int = Query(default=24, ge=1, le=168),
 ) -> JSONResponse:
@@ -50,6 +53,10 @@ async def get_grouped_events(
     ch = get_app_clickhouse()
     if not ch or not ch.client:
         return JSONResponse({"groups": [], "source": "unavailable"})
+
+    tenant_id = claims.get("tenant_id", "default")
+    if not re.match(r'^[\w\-]+$', tenant_id):
+        tenant_id = "default"
 
     query = f"""
         SELECT
@@ -63,7 +70,8 @@ async def get_grouped_events(
             groupArray(id)        AS event_ids
         FROM sentinel.events
         WHERE
-            cep_sequence_id IS NOT NULL
+            tenant_id = '{tenant_id}'
+            AND cep_sequence_id IS NOT NULL
             AND cep_sequence_id != ''
             AND timestamp >= now() - INTERVAL {hours} HOUR
         GROUP BY cep_sequence_id

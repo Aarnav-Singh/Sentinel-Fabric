@@ -15,7 +15,9 @@ class Settings(BaseSettings):
         env_file=".env",
         env_file_encoding="utf-8",
         case_sensitive=False,
+        extra='ignore',
     )
+
 
     # ── App ──────────────────────────────────────────────
     app_name: str = "UMBRIX"
@@ -55,6 +57,10 @@ class Settings(BaseSettings):
     # ── Kafka ────────────────────────────────────────────
     kafka_bootstrap_servers: str = "localhost:9092"
     kafka_consumer_group: str = "sentinel-pipeline"
+    kafka_security_protocol: str = "PLAINTEXT"  # SASL_SSL for Upstash
+    kafka_sasl_mechanism: str = "SCRAM-SHA-256"  # Upstash default
+    kafka_sasl_username: str = ""
+    kafka_sasl_password: str = ""
     kafka_topics: list[str] = [
         "sentinel.suricata",
         "sentinel.zeek",
@@ -70,6 +76,8 @@ class Settings(BaseSettings):
     # ── Qdrant ───────────────────────────────────────────
     qdrant_host: str = "localhost"
     qdrant_port: int = 6333
+    qdrant_url: str = ""       # Qdrant Cloud: https://<cluster>.cloud.qdrant.io
+    qdrant_api_key: str = ""   # Qdrant Cloud API key
 
     # ── Pipeline ─────────────────────────────────────────
     pipeline_budget_ms: int = 2000
@@ -100,6 +108,9 @@ class Settings(BaseSettings):
     llama_cpp_base_url: str = "http://localhost:8080/v1"
     llama_cpp_temperature: float = 0.2
     llama_cpp_max_tokens: int = 200
+    triage_auto_threshold: float = 0.7
+    anthropic_timeout_seconds: float = 30.0
+
 
     # ── CVE/NVD Enrichment ────────────────────────────────
     nvd_api_key: str = ""  # NVD API key for higher rate limits

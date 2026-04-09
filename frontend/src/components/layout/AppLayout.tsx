@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Menu, X, Settings, Zap, FileText, Search, Bell, Shield, Network, LayoutDashboard, Crosshair, Fingerprint, BookOpen, Activity, ShieldCheck, Target, Server, Lock } from "lucide-react";
@@ -38,11 +38,23 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     const { eventsRate, pipelineStatus } = useEventStream();
     const [lastRefreshed, setLastRefreshed] = useState<number>(0);
+    const searchInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         setLastRefreshed(Date.now());
         const interval = setInterval(() => setLastRefreshed(Date.now()), 15000);
         return () => clearInterval(interval);
+    }, []);
+
+    useEffect(() => {
+        const handler = (e: KeyboardEvent) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                e.preventDefault();
+                searchInputRef.current?.focus();
+            }
+        };
+        window.addEventListener('keydown', handler);
+        return () => window.removeEventListener('keydown', handler);
     }, []);
 
     if (pathname === "/") {
@@ -84,6 +96,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                             <Search className="h-3.5 w-3.5 text-sf-muted" />
                         </div>
                         <input
+                            ref={searchInputRef}
                             type="text"
                             className="block w-full pl-9 pr-12 py-1.5 border border-sf-border rounded-none leading-5 bg-sf-bg text-sf-text placeholder-sf-muted focus:outline-none focus:border-sf-accent focus:ring-1 focus:ring-sf-accent sm:text-xs font-mono transition-none"
                             placeholder="SEARCH IP, HASH, CVE..."
@@ -114,9 +127,9 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                     </div>
 
                     <div className="relative">
-                        <button 
+                        <button
                             onClick={() => setNotificationsOpen(!notificationsOpen)}
-                            className="text-sf-muted hover:text-sf-text transition-colors relative"
+                            className="p-2 text-sf-muted hover:text-sf-text transition-colors relative"
                         >
                             <Bell className="w-4 h-4" />
                             <span className="absolute -top-1 -right-1 w-2 h-2 bg-sf-critical border border-sf-surface rounded-none animate-pulse-fast" />
@@ -142,11 +155,11 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                             )}
                         </AnimatePresence>
                     </div>
-                    <Link href="/admin" className="text-sf-muted hover:text-sf-text transition-colors">
+                    <Link href="/admin" className="p-2 text-sf-muted hover:text-sf-text transition-colors">
                         <Settings className="w-4 h-4" />
                     </Link>
                     
-                    <Link href="/profile" className="w-7 h-7 bg-sf-bg border border-sf-border flex items-center justify-center ml-2 hover:border-sf-accent transition-colors">
+                    <Link href="/profile" className="w-8 h-8 bg-sf-bg border border-sf-border flex items-center justify-center ml-2 hover:border-sf-accent transition-colors">
                         <span className="text-[10px] font-bold font-mono text-sf-text">OP</span>
                     </Link>
                 </div>
@@ -188,7 +201,6 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                                     <Link
                                         key={item.id}
                                         href={item.href}
-                                        title={!isSidebarExpanded ? item.name : undefined}
                                         onClick={() => setSidebarOpen(false)}
                                         className={`flex items-center gap-4 px-2.5 py-1.5 text-sm transition-colors relative group whitespace-nowrap
                                             ${isActive ? "text-sf-text bg-sf-bg border border-sf-border" : "text-sf-muted hover:text-sf-text hover:bg-sf-bg border border-transparent"}
@@ -203,6 +215,12 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                                         <span className={`font-mono text-[11px] uppercase tracking-wider transition-opacity duration-200 truncate min-w-0 ${isSidebarExpanded ? "opacity-100" : "opacity-0"}`}>
                                             {item.name}
                                         </span>
+                                        
+                                        {!isSidebarExpanded && (
+                                            <div className="absolute left-full ml-2 px-2 py-1 bg-sf-surface border border-sf-border text-[9px] font-mono whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-[110] shadow-xl">
+                                                {item.name}
+                                            </div>
+                                        )}
                                     </Link>
                                 );
                             })}
@@ -218,7 +236,6 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                                     <Link
                                         key={item.id}
                                         href={item.href}
-                                        title={!isSidebarExpanded ? item.name : undefined}
                                         onClick={() => setSidebarOpen(false)}
                                         className={`flex items-center gap-4 px-2.5 py-1.5 text-sm transition-colors relative group whitespace-nowrap
                                             ${isActive ? "text-sf-text bg-sf-bg border border-sf-border" : "text-sf-muted hover:text-sf-text hover:bg-sf-bg border border-transparent"}
@@ -233,6 +250,12 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                                         <span className={`font-mono text-[11px] uppercase tracking-wider transition-opacity duration-200 truncate min-w-0 ${isSidebarExpanded ? "opacity-100" : "opacity-0"}`}>
                                             {item.name}
                                         </span>
+
+                                        {!isSidebarExpanded && (
+                                            <div className="absolute left-full ml-2 px-2 py-1 bg-sf-surface border border-sf-border text-[9px] font-mono whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-[110] shadow-xl">
+                                                {item.name}
+                                            </div>
+                                        )}
                                     </Link>
                                 );
                             })}

@@ -15,6 +15,7 @@ from qdrant_client.models import Distance, VectorParams, PointStruct, Filter, Fi
 from app.config import settings
 
 import structlog
+import httpx
 
 logger = structlog.get_logger(__name__)
 
@@ -22,6 +23,7 @@ COLLECTIONS = {
     "behavioral_dna": {"size": 128, "distance": Distance.COSINE},
     "ioc_enrichment": {"size": 384, "distance": Distance.COSINE},
     "campaign_narrative": {"size": 384, "distance": Distance.COSINE},
+    "stix_entities": {"size": 384, "distance": Distance.COSINE},
 }
 
 
@@ -33,10 +35,18 @@ class QdrantRepository:
 
     async def connect(self) -> None:
         try:
-            self._client = QdrantClient(
-                host=settings.qdrant_host,
-                port=settings.qdrant_port,
-            )
+            # Cloud mode: qdrant_url is set (e.g. https://<cluster>.cloud.qdrant.io)
+            if settings.qdrant_url:
+                self._client = QdrantClient(
+                    url=settings.qdrant_url,
+                    api_key=settings.qdrant_api_key or None,
+                )
+            else:
+                # Local mode: host + port
+                self._client = QdrantClient(
+                    host=settings.qdrant_host,
+                    port=settings.qdrant_port,
+                )
             for name, config in COLLECTIONS.items():
                 if not self._client.collection_exists(name):
                     self._client.create_collection(
@@ -57,9 +67,36 @@ class QdrantRepository:
 
     @property
     def client(self) -> QdrantClient:
-        if not self._client:
-            raise RuntimeError("Qdrant not initialized")
+        assert self._client, "Qdrant not initialized"
         return self._client
+
+    async def _embed_text(self, text: str) -> list[float] | None:
+        """Generate semantic embedding using Anthropic API."""
+        if not settings.anthropic_api_key:
+            return None
+            
+        try:
+            # We use a standard async POST for speed + simplicity in this module
+            # Anthropic Embeddings use the /v1/embeddings endpoint
+            async with httpx.AsyncClient() as client:
+                resp = await client.post(
+                    "https://api.anthropic.com/v1/embeddings",
+                    headers={
+                        "x-api-key": settings.anthropic_api_key,
+                        "anthropic-version": "2023-06-01",
+                        "content-type": "application/json",
+                    },
+                    json={
+                        "model": "claude-3-5-haiku-latest", # Haiku is fast/cheap for embeddings
+                        "input": text[:4000],  # safety truncate
+                    },
+                    timeout=5.0
+                )
+                if resp.status_code == 200:
+                    return resp.json()["embedding"]
+        except Exception as e:
+            logger.warning("anthropic_embedding_failed", error=str(e))
+        return None
 
     # ── Behavioral DNA ───────────────────────────────────
 
@@ -138,6 +175,43 @@ class QdrantRepository:
             {"ioc_id": r.payload.get("ioc_id"), "score": r.score, **(r.payload or {})}
             for r in results
         ]
+
+    # ── Generic Text Upsert (used by STIX graph layer) ───
+
+    async def upsert_text(
+        self,
+        collection: str,
+        doc_id: str,
+        text: str,
+        payload: dict | None = None,
+    ) -> None:
+        """Embed text via semantic model (if available) or hash-vector fallback."""
+        import hashlib
+        import struct
+
+        # 1. Attempt real semantic embedding
+        vector = await self._embed_text(text)
+        
+        # 2. Fallback to hash-based vector if embedding failed or skipped
+        if not vector:
+            # Deterministic 384-float vector from SHA-512 digest
+            digest = hashlib.sha512(text.encode("utf-8")).digest()  # 64 bytes
+            floats_12 = list(struct.unpack("<12f", digest[:48]))
+            # Normalise to [-1, 1]
+            max_abs = max(abs(f) for f in floats_12) or 1.0
+            floats_12 = [f / max_abs for f in floats_12]
+            vector = (floats_12 * 32)[:384]
+
+        # Qdrant requires points to have stable internal IDs
+        point_id = hash(doc_id) & 0xFFFFFFFF
+        self._client.upsert(
+            collection_name=collection,
+            points=[PointStruct(
+                id=point_id,
+                vector=vector,
+                payload={"doc_id": doc_id, "text": text, **(payload or {})},
+            )],
+        )
 
     # ── Campaign Narrative ───────────────────────────────
 

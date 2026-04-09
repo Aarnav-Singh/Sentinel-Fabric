@@ -28,7 +28,9 @@ class TriageResult:
     recommended_actions: list[str] = field(default_factory=list)
     playbook_id: str | None = None
     verdict: str | None = None  # "true_positive" / "false_positive" if agent submitted
+    confidence: float = 0.0     # 0.0 to 1.0 assessment
     tool_calls_made: list[str] = field(default_factory=list)
+
     raw_response: str = ""
 
 
@@ -49,7 +51,9 @@ Your role:
 Output your final assessment as a JSON object with these fields:
 - "severity": one of "Critical", "High", "Medium", "Low", "Informational"
 - "reasoning": 2-4 sentences citing tool evidence
+- "confidence": float between 0.0 and 1.0
 - "recommended_actions": list of concrete next steps
+
 - "playbook_id": SOAR playbook ID to trigger (null if none)
 
 NEVER hallucinate indicator data. If a tool returns no results, say so explicitly."""
@@ -295,7 +299,9 @@ def _parse_final_response(text: str, result: TriageResult) -> None:
 
         parsed = json.loads(json_str)
         result.severity = parsed.get("severity", result.severity)
+        result.confidence = float(parsed.get("confidence", result.confidence))
         result.reasoning = parsed.get("reasoning", text[:500])
+
         result.recommended_actions = parsed.get("recommended_actions", [])
         result.playbook_id = parsed.get("playbook_id")
     except (json.JSONDecodeError, ValueError, IndexError):
@@ -307,7 +313,9 @@ def _to_dict(result: TriageResult) -> dict[str, Any]:
     """Convert TriageResult to API response dict."""
     return {
         "severity": result.severity,
+        "confidence": result.confidence,
         "reasoning": result.reasoning,
+
         "recommended_actions": result.recommended_actions,
         "playbook_id": result.playbook_id,
         "verdict": result.verdict,

@@ -43,6 +43,10 @@ def _sequence_alert_to_event_dict(alert: dict[str, Any]) -> dict[str, Any]:
             f"(span: {alert.get('span_seconds', 0):.0f}s, "
             f"entity: {alert.get('entity_key', 'unknown')})"
         ),
+        # CEP tracking fields — these are what events_grouped.py queries
+        "cep_sequence_id": alert.get("alert_id", str(uuid.uuid4())),
+        "tactic": alert.get("mitre_tactic", ""),
+        "technique": alert.get("pattern_id", ""),
         "metadata": {
             "tenant_id": alert.get("tenant_id", "default"),
             "cep_pattern_id": alert.get("pattern_id"),
@@ -74,9 +78,15 @@ class CEPConsumer:
     into the pipeline for full processing (scoring, narrative, SSE broadcast).
     """
 
-    def __init__(self, pipeline: Any, kafka_bootstrap: str = "localhost:9092") -> None:
+    def __init__(
+        self,
+        pipeline: Any,
+        kafka_bootstrap: str = "localhost:9092",
+        kafka_sasl_kwargs: dict | None = None,
+    ) -> None:
         self._pipeline = pipeline
         self._kafka_bootstrap = kafka_bootstrap
+        self._kafka_sasl_kwargs = kafka_sasl_kwargs or {}
         self._running = False
         self._consumer: Any = None
 
@@ -90,6 +100,7 @@ class CEPConsumer:
                 auto_offset_reset="latest",
                 enable_auto_commit=True,
                 value_deserializer=lambda v: v.decode("utf-8"),
+                **self._kafka_sasl_kwargs,
             )
             await self._consumer.start()
             self._running = True

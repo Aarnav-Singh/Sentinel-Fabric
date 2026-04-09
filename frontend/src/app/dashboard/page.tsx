@@ -10,7 +10,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { StaggerChildren, AnimatedNumber, FadeIn, PanelCard } from "@/components/ui/MotionWrappers";
 import { Sparkline } from "@/components/ui/Sparkline";
 import { DataGrid } from "@/components/ui/DataGrid";
-import { DASHBOARD_MODES, DashboardMode } from "@/lib/dashboardModes";
+import { DASHBOARD_MODES, DashboardMode, getPersistedMode, persistMode } from "@/lib/dashboardModes";
 import { CisoMode } from "./modes/CisoMode";
 import { AnalystMode } from "./modes/AnalystMode";
 import { HunterMode } from "./modes/HunterMode";
@@ -41,7 +41,7 @@ const DEMO_LIVE_FEED = [
 
 export default function DashboardPage() {
     
-    const [mode, setMode] = useState<DashboardMode>('analyst');
+    const [mode, setMode] = useState<DashboardMode>(getPersistedMode);
     const { data: apiMetrics } = useSWR("metrics", api.getMetrics, { refreshInterval: 5000 });
     const { data: apiFindingsResponse } = useSWR("/api/proxy/api/v1/findings", (url) => fetch(url).then(r => r.json()), { refreshInterval: 30000 });
 
@@ -129,7 +129,10 @@ export default function DashboardPage() {
                     {DASHBOARD_MODES.map(m => (
                         <button
                             key={m.id}
-                            onClick={() => setMode(m.id)}
+                            onClick={() => {
+                                setMode(m.id);
+                                persistMode(m.id);
+                            }}
                             className={`px-4 py-1.5 transition-colors relative z-10 ${mode === m.id ? 'text-sf-bg font-bold' : 'text-sf-muted hover:text-sf-text'}`}
                         >
                             {mode === m.id && (

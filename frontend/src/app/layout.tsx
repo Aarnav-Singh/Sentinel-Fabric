@@ -9,6 +9,7 @@ import { EntityProvider } from "@/contexts/EntityContext";
 import { EntityPanel } from "@/components/features/investigation/EntityPanel";
 import { CommandPaletteProvider } from "@/contexts/CommandPaletteContext";
 import { CommandPalette } from "@/components/ui/CommandPalette";
+import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 const sora = Sora({ subsets: ["latin"], variable: "--font-sora" });
@@ -27,21 +28,23 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark h-full bg-sf-bg">
       <body className={`${inter.variable} ${sora.variable} ${jetbrainsMono.variable} font-sans antialiased h-full flex flex-col overflow-hidden selection:bg-sf-accent/30 text-sf-text bg-sf-bg`}>
-        <QueryProvider>
-          <ToastProvider>
-            <CommandPaletteProvider>
-              <EntityProvider>
-                <EventStreamProvider>
-                  <AppLayout>
-                    {children}
-                    <EntityPanel />
-                    <CommandPalette />
-                  </AppLayout>
-                </EventStreamProvider>
-              </EntityProvider>
-            </CommandPaletteProvider>
-          </ToastProvider>
-        </QueryProvider>
+        <ErrorBoundary>
+          <QueryProvider>
+            <ToastProvider>
+              <CommandPaletteProvider>
+                <EntityProvider>
+                  <EventStreamProvider>
+                    <AppLayout>
+                      {children}
+                      <EntityPanel />
+                      <CommandPalette />
+                    </AppLayout>
+                  </EventStreamProvider>
+                </EntityProvider>
+              </CommandPaletteProvider>
+            </ToastProvider>
+          </QueryProvider>
+        </ErrorBoundary>
       </body>
     </html>
   );

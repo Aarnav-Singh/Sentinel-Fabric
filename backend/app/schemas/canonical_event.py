@@ -126,6 +126,8 @@ class EventMetadata(BaseModel):
     connector_id: Optional[str] = None
     raw_log: Optional[str] = None
     parser_name: Optional[str] = None
+    is_synthetic: bool = False
+
 
 
 # ─── The Central Schema ─────────────────────────────────────────
@@ -162,6 +164,11 @@ class CanonicalEvent(BaseModel):
     # ML pipeline outputs (populated during processing)
     ml_scores: MLScores = Field(default_factory=MLScores)
 
+    # CEP sequence tracking (populated by Redis CEP engine)
+    cep_sequence_id: Optional[str] = Field(default=None, description="Set by CEP engine when event joins a multi-stage attack sequence")
+    tactic: Optional[str] = Field(default=None, description="MITRE ATT&CK tactic, e.g. 'lateral-movement'")
+    technique: Optional[str] = Field(default=None, description="MITRE ATT&CK technique ID, e.g. 'T1021.002'")
+
     # Campaign correlation
     campaign_id: Optional[str] = None
     posture_delta: float = 0.0
@@ -171,6 +178,8 @@ class CanonicalEvent(BaseModel):
 
     # Metadata
     metadata: EventMetadata = Field(default_factory=EventMetadata)
+    is_synthetic: bool = False
+
 
     model_config = {"json_schema_extra": {"example": {
         "source_type": "suricata",

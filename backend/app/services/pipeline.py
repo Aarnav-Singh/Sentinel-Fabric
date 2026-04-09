@@ -92,7 +92,7 @@ class PipelineService:
         # Phase 1: Redis CEP — sequence detection across Kafka events
         redis_raw = getattr(redis, "_client", None)
         self._cep: RedisCEPEngine | None = (
-            RedisCEPEngine(redis_raw) if redis_raw else None
+            RedisCEPEngine(redis_raw, postgres) if redis_raw else None
         )
         self._cep_producer: Any = None  # lazily set by main.py after Kafka starts
 
@@ -140,6 +140,11 @@ class PipelineService:
         # Pipeline metrics
         self._events_processed = 0
         self._total_duration_ms = 0.0
+        
+        # Phase 42B: Triage Queue (durable, non-blocking)
+        from app.services.triage_queue import TriageQueue
+        self._triage_queue = TriageQueue(redis=redis)
+
 
     @property
     def meta_learner(self) -> MetaLearner:
@@ -363,8 +368,23 @@ class PipelineService:
         # Step 9: Decision engine
         recommendation = self._decision.recommend(event, sigma_matches, ioc_matches)
 
-        # Step 9b: Dispatch alerts
-        await self._alerting.dispatch(event)
+        # Step 9b: Auto-Triage — push to durable Redis queue (non-blocking)
+        from app.config import settings
+        if event.ml_scores.meta_score >= settings.triage_auto_threshold and not event.is_synthetic:
+            try:
+                await self._triage_queue.enqueue(
+                    tenant_id=event.metadata.tenant_id,
+                    event_data=event.model_dump(mode="json"),
+                )
+            except Exception as e:
+                logger.error("triage_enqueue_failed", event_id=event.event_id, error=str(e))
+
+        # Step 9c: Dispatch alerts
+        if not event.is_synthetic:
+            await self._alerting.dispatch(event)
+        else:
+            logger.debug("skipping_alerting_for_synthetic_event", event_id=event.event_id)
+
 
         # Step 10: Audit log
         logger.info(
@@ -471,7 +491,7 @@ class PipelineService:
     async def _correlate_campaign(self, event: CanonicalEvent) -> None:
         """Step 4: Campaign correlation engine."""
         from app.services.campaign_engine import CampaignEngine
-        engine = CampaignEngine(self._redis)
+        engine = CampaignEngine(self._redis, postgres=self._postgres)
         campaign_id = await engine.correlate(event)
         if campaign_id:
             event.campaign_id = campaign_id

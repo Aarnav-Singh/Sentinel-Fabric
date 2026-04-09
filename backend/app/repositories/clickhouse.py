@@ -49,6 +49,10 @@ CREATE TABLE IF NOT EXISTS events (
     adversarial_score Float32 DEFAULT 0.0,
     meta_score       Float32 DEFAULT 0.0,
 
+    cep_sequence_id  Nullable(String),
+    tactic           Nullable(String),
+    technique        Nullable(String),
+
     campaign_id      Nullable(String),
     posture_delta    Float32 DEFAULT 0.0,
 
@@ -56,6 +60,9 @@ CREATE TABLE IF NOT EXISTS events (
     connector_id     Nullable(String),
     raw_log          Nullable(String),
     parser_name      Nullable(String),
+
+    auto_triage_json Nullable(String),
+
 
     ingest_timestamp DateTime64(3) DEFAULT now64(3)
 ) ENGINE = MergeTree()
@@ -75,8 +82,11 @@ _INSERT_COLUMNS = [
     "signature_id", "signature_name", "src_ip", "src_port",
     "dst_ip", "dst_port", "protocol", "bytes_in", "bytes_out",
     "ensemble_score", "vae_score", "hst_score", "temporal_score",
-    "adversarial_score", "meta_score", "campaign_id", "posture_delta",
-    "tenant_id", "connector_id", "raw_log", "parser_name",
+    "adversarial_score", "meta_score",
+    "cep_sequence_id", "tactic", "technique",
+    "campaign_id", "posture_delta",
+    "tenant_id", "connector_id", "raw_log", "parser_name", "auto_triage_json",
+
 ]
 
 
@@ -255,13 +265,18 @@ class ClickHouseRepository:
             event.ml_scores.temporal_score,
             event.ml_scores.adversarial_score,
             event.ml_scores.meta_score,
+            event.cep_sequence_id,
+            event.tactic,
+            event.technique,
             event.campaign_id,
             event.posture_delta,
             event.metadata.tenant_id,
             event.metadata.connector_id,
             event.metadata.raw_log,
             event.metadata.parser_name,
+            getattr(event, "auto_triage_json", None),
         ]
+
 
     def _event_to_dict(self, event: CanonicalEvent) -> dict:
         """Convert to dict for in-memory fallback storage."""
@@ -291,13 +306,18 @@ class ClickHouseRepository:
             "temporal_score": event.ml_scores.temporal_score,
             "adversarial_score": event.ml_scores.adversarial_score,
             "meta_score": event.ml_scores.meta_score,
+            "cep_sequence_id": event.cep_sequence_id,
+            "tactic": event.tactic,
+            "technique": event.technique,
             "campaign_id": event.campaign_id,
             "posture_delta": event.posture_delta,
             "tenant_id": event.metadata.tenant_id,
             "connector_id": event.metadata.connector_id,
             "raw_log": event.metadata.raw_log,
             "parser_name": event.metadata.parser_name,
+            "auto_triage_json": getattr(event, "auto_triage_json", None),
         }
+
 
     async def insert_event(self, event: CanonicalEvent) -> None:
         """Append event to the batch buffer (non-blocking).

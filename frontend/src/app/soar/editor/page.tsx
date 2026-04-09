@@ -138,7 +138,7 @@ export default function PlaybookEditorPage() {
                         type="text" 
                         value={name} 
                         onChange={e => setName(e.target.value)} 
-                        className="bg-transparent border-none text-lg font-bold text-white focus:ring-0 p-0 w-[400px]"
+                        className="bg-transparent border-none text-lg font-bold font-mono text-white focus:ring-0 p-0 w-[400px]"
                     />
                 </div>
                 <button 
