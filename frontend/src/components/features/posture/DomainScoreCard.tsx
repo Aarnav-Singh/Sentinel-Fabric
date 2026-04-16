@@ -15,25 +15,25 @@ export function DomainScoreCard({ domain, score, description, topRemediations = 
     const trendColor = trend === "up" ? "var(--sf-safe)" : trend === "down" ? "var(--sf-critical)" : "var(--sf-bg)";
 
     return (
-        <div className="sf-card p-4 flex flex-col hover:-translate-y-1 transition-transform cursor-pointer">
+        <div className="sf-panel p-4 flex flex-col hover:-translate-y-1 transition-transform cursor-pointer">
             <div className="flex items-center gap-3 mb-3">
                 <PostureRing score={score} size={52} strokeWidth={5} showLabel={false} />
                 <div className="flex-1 min-w-0">
-                    <div className="text-xs font-semibold text-sf-text-primary">{domain}</div>
+                    <div className="text-xs font-semibold text-sf-text">{domain}</div>
                     <div className="flex items-center gap-1.5 mt-0.5">
-                        <span className="text-lg font-condensed font-bold text-sf-text-primary">{Math.round(score)}</span>
+                        <span className="text-lg font-condensed font-bold text-sf-text">{Math.round(score)}</span>
                         <span className="text-[10px] font-space" style={{ color: trendColor }}>
                             {trendIcon}
                         </span>
                     </div>
                 </div>
             </div>
-            <p className="text-[10px] text-sf-text-secondary leading-relaxed mb-3">{description}</p>
+            <p className="text-[10px] text-sf-muted leading-relaxed mb-3">{description}</p>
             {topRemediations.length > 0 && (
                 <div className="mt-auto border-t border-sf-border pt-2">
-                    <div className="text-[8px] font-space text-sf-text-muted tracking-wider mb-1">TOP ACTIONS</div>
+                    <div className="text-[8px] font-space text-sf-muted tracking-wider mb-1">TOP ACTIONS</div>
                     {topRemediations.slice(0, 2).map((r, i) => (
-                        <div key={i} className="text-[10px] text-sf-text-secondary leading-snug mb-0.5">
+                        <div key={i} className="text-[10px] text-sf-muted leading-snug mb-0.5">
                             <span className="text-sf-teal mr-1">›</span>{r}
                         </div>
                     ))}

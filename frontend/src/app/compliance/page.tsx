@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React from 'react';
 import useSWR from 'swr';
@@ -33,9 +33,9 @@ export default function CompliancePage() {
   const retentionDays = complianceData?.retention_days ?? 2555;
 
   const statusColors = {
-    compliant: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
-    partial: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
-    non_compliant: 'bg-red-500/20 text-red-400 border-red-500/30',
+    compliant: 'bg-[var(--sf-safe)]/20 text-[var(--sf-safe)] border-[var(--sf-safe)]/30',
+    partial: 'bg-[var(--sf-warning)]/20 text-[var(--sf-warning)] border-[var(--sf-warning)]/30',
+    non_compliant: 'bg-[var(--sf-critical)]/20 text-[var(--sf-critical)] border-[var(--sf-critical)]/30',
   };
 
   const compliantCount = tscStatuses.filter(t => t.status === 'compliant').length;
@@ -56,29 +56,29 @@ export default function CompliancePage() {
         <section className="space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <FileCheck className="w-5 h-5 text-emerald-400" />
-              <h3 className="text-lg font-bold text-white">SOC 2 Type II — Trust Service Criteria</h3>
+              <FileCheck className="w-5 h-5 text-[var(--sf-safe)]" />
+              <h3 className="text-lg font-bold text-white">SOC 2 Type II â€” Trust Service Criteria</h3>
             </div>
             <div className="flex items-center gap-3 text-xs">
-              <span className="px-2 py-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 rounded font-bold">{compliantCount} COMPLIANT</span>
-              <span className="px-2 py-1 bg-yellow-500/10 text-yellow-400 border border-yellow-500/30 rounded font-bold">{partialCount} PARTIAL</span>
+              <span className="px-2 py-1 bg-[var(--sf-safe)]/10 text-[var(--sf-safe)] border border-[var(--sf-safe)]/30 rounded-none font-bold">{compliantCount} COMPLIANT</span>
+              <span className="px-2 py-1 bg-[var(--sf-warning)]/10 text-[var(--sf-warning)] border border-[var(--sf-warning)]/30 rounded-none font-bold">{partialCount} PARTIAL</span>
               <div className="flex items-center gap-1.5 px-2 py-1 bg-sf-surface border border-sf-border rounded">
                 <Clock className="w-3 h-3 text-sf-muted" />
-                <span className="text-slate-300 font-mono">{retentionDays}d retention</span>
+                <span className="text-sf-text font-mono">{retentionDays}d retention</span>
               </div>
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             {tscStatuses.map(tsc => (
-              <div key={tsc.tsc} className="bg-sf-surface/70 border border-sf-accent/10 p-4 rounded-xl">
+              <div key={tsc.tsc} className="sf-panel border border-sf-border p-4 rounded-none">
                 <div className="flex justify-between items-center mb-2">
                   <span className="text-sf-accent font-mono text-xs font-bold">{tsc.tsc}</span>
-                  <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded border ${statusColors[tsc.status]}`}>
+                  <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-none border ${statusColors[tsc.status]}`}>
                     {tsc.status.replace('_', ' ')}
                   </span>
                 </div>
-                <p className="text-slate-300 text-sm">{tsc.description}</p>
+                <p className="text-sf-text text-sm">{tsc.description}</p>
               </div>
             ))}
           </div>
@@ -86,10 +86,11 @@ export default function CompliancePage() {
 
         {/* MITRE ATT&CK Coverage */}
         <section className="space-y-4">
-          <MitreHeatmap className="h-[700px] rounded-xl border border-sf-border overflow-hidden shadow-[0_4px_20px_rgba(0,0,0,0.5)]" />
+          <MitreHeatmap className="h-[700px] rounded-none border border-sf-border overflow-hidden sf-panel" />
         </section>
       </div>
     </div>
   );
 }
+
 

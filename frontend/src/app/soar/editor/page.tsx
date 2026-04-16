@@ -37,17 +37,17 @@ function SortableStepItem({ step, removeStep }: { step: PlaybookStep; removeStep
     return (
         <div ref={setNodeRef} style={style} className="relative group">
             {/* Connector Line */}
-            <div className={`absolute left-1/2 -top-4 w-px h-4 bg-slate-700 -translate-x-1/2 ${isDragging ? 'opacity-0' : ''}`} />
+            <div className={`absolute left-1/2 -top-4 w-px h-4 bg-sf-border -translate-x-1/2 ${isDragging ? 'opacity-0' : ''}`} />
             
-            <div className={`bg-sf-bg border ${isDragging ? 'border-sf-accent shadow-lg scale-[1.02]' : 'border-sf-border'} group-hover:border-[var(--sf-accent)]/50 rounded-xl p-4 flex items-center gap-4 transition-all shadow-md`}>
+            <div className={`bg-sf-bg border ${isDragging ? 'border-sf-accent shadow-lg scale-[1.02]' : 'border-sf-border'} group-hover:border-[var(--sf-accent)]/50 rounded-none p-4 flex items-center gap-4 transition-all shadow-md`}>
                 <div 
                     {...attributes} 
                     {...listeners} 
-                    className="cursor-grab active:cursor-grabbing p-1 text-slate-600 hover:text-sf-muted focus:outline-none touch-none"
+                    className="cursor-grab active:cursor-grabbing p-1 text-sf-muted hover:text-sf-text focus:outline-none touch-none"
                 >
                     <GripVertical className="w-5 h-5" />
                 </div>
-                <div className="w-10 h-10 rounded-lg bg-sf-surface flex items-center justify-center border border-sf-border">
+                <div className="w-10 h-10 rounded-none bg-sf-surface flex items-center justify-center border border-sf-border">
                     {actionDef?.icon}
                 </div>
                 <div className="flex-1">
@@ -58,7 +58,7 @@ function SortableStepItem({ step, removeStep }: { step: PlaybookStep; removeStep
                 </div>
                 <button 
                     onClick={() => removeStep(step.id)}
-                    className="p-2 text-sf-muted hover:text-[var(--sf-critical)] hover:bg-[var(--sf-critical)]/10 rounded-lg transition-colors"
+                    className="p-2 text-sf-muted hover:text-[var(--sf-critical)] hover:bg-[var(--sf-critical)]/10 rounded-none transition-colors"
                 >
                     <Trash2 className="w-4 h-4" />
                 </button>
@@ -126,14 +126,14 @@ export default function PlaybookEditorPage() {
     };
 
     return (
-        <div className="flex-1 flex flex-col h-full bg-slate-950">
+        <div className="flex-1 flex flex-col h-full bg-sf-bg">
             {/* Header */}
             <header className="h-16 border-b border-sf-border bg-sf-bg/50 flex items-center justify-between px-6 shrink-0">
                 <div className="flex items-center gap-4">
                     <Link href="/soar" className="text-sf-muted hover:text-white transition-colors">
                         <ArrowLeft className="w-5 h-5" />
                     </Link>
-                    <div className="w-px h-6 bg-slate-700" />
+                    <div className="w-px h-6 bg-sf-border" />
                     <input 
                         type="text" 
                         value={name} 
@@ -143,7 +143,7 @@ export default function PlaybookEditorPage() {
                 </div>
                 <button 
                     onClick={handleSave}
-                    className="flex items-center gap-2 bg-[var(--sf-accent)] hover:bg-sf-accent text-slate-950 px-4 py-2 rounded-lg font-bold text-xs transition-colors"
+                    className="flex items-center gap-2 bg-[var(--sf-accent)] hover:bg-sf-accent text-sf-bg px-4 py-2 rounded-none font-bold text-xs transition-colors"
                 >
                     <Save className="w-4 h-4" />
                     {saving ? "Saving..." : "Save Playbook"}
@@ -160,7 +160,7 @@ export default function PlaybookEditorPage() {
                                 type="text"
                                 value={description}
                                 onChange={e => setDescription(e.target.value)}
-                                className="w-full bg-sf-bg/50 border border-sf-border rounded-lg p-3 text-sm text-slate-300 focus:outline-none focus:border-[var(--sf-accent)]/50 transition-colors"
+                                className="w-full bg-sf-bg/50 border border-sf-border rounded-none p-3 text-sm text-sf-text focus:outline-none focus:border-[var(--sf-accent)]/50 transition-colors"
                             />
                         </div>
 
@@ -172,7 +172,7 @@ export default function PlaybookEditorPage() {
                             </div>
 
                             {steps.length === 0 && (
-                                <div className="text-center py-12 border-2 border-dashed border-sf-border rounded-xl bg-sf-bg/20">
+                                <div className="text-center py-12 border-2 border-dashed border-sf-border rounded-none bg-sf-bg/20">
                                     <p className="text-sf-muted text-sm">Add actions from the right panel to build your playbook.</p>
                                 </div>
                             )}
@@ -199,7 +199,7 @@ export default function PlaybookEditorPage() {
                             <button
                                 key={action.type}
                                 onClick={() => addStep(action.type)}
-                                className="w-full text-left bg-sf-surface/50 hover:bg-sf-surface border border-sf-border hover:border-slate-600 p-3 rounded-lg flex items-start gap-3 transition-all group"
+                                className="w-full text-left bg-sf-surface/50 hover:bg-sf-surface border border-sf-border hover:border-sf-text p-3 rounded-none flex items-start gap-3 transition-all group"
                             >
                                 <div className="mt-0.5 w-8 h-8 rounded shrink-0 bg-sf-bg border border-sf-border flex items-center justify-center group-hover:scale-110 transition-transform">
                                     {action.icon}

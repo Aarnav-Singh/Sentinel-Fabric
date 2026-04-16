@@ -49,7 +49,7 @@ export default function HealthDashboardPage() {
                 <button 
                     onClick={() => mutate()} 
                     disabled={isValidating}
-                    className="flex items-center gap-2 px-4 py-2 bg-sf-surface hover:bg-slate-700 text-white font-bold rounded-lg border border-slate-600 transition-colors text-xs tracking-wider uppercase disabled:opacity-50"
+                    className="flex items-center gap-2 px-4 py-2 bg-sf-surface hover:bg-sf-surface/50 text-white font-bold rounded-none border border-sf-border transition-colors text-[10px] tracking-widest font-mono uppercase disabled:opacity-50"
                 >
                     <RefreshCw className={`w-4 h-4 ${isValidating ? 'animate-spin' : ''}`} />
                     Refresh Node
@@ -57,13 +57,13 @@ export default function HealthDashboardPage() {
             </div>
 
             {/* Overall Status Banner */}
-            <div className={`p-4 rounded-xl border flex items-center justify-between ${
+            <div className={`p-4 rounded-none sf-panel border flex items-center justify-between ${
                 isLoading ? 'bg-sf-surface/50 border-sf-border' :
                 isError ? 'bg-[var(--sf-critical)]/10 border-[var(--sf-critical)]/30' : 'bg-[var(--sf-safe)]/10 border-[var(--sf-safe)]/30'
             }`}>
                 <div className="flex items-center gap-4">
-                    <div className={`w-12 h-12 rounded-full flex items-center justify-center border shadow-inner ${
-                        isLoading ? 'bg-slate-700 border-slate-600' :
+                    <div className={`w-12 h-12 rounded-none flex items-center justify-center border shadow-inner ${
+                        isLoading ? 'bg-sf-surface border-sf-border' :
                         isError ? 'bg-[var(--sf-critical)]/20 border-[var(--sf-critical)]/50' : 'bg-[var(--sf-safe)]/20 border-[var(--sf-safe)]/50'
                     }`}>
                         {isLoading ? <Activity className="w-6 h-6 text-sf-muted" /> :
@@ -86,113 +86,31 @@ export default function HealthDashboardPage() {
             </div>
 
             {/* Components Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                
-                {/* ClickHouse Card */}
-                <div className="sf-card p-6 glow-border relative overflow-hidden group">
-                    <div className="flex justify-between items-start mb-4">
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-lg bg-sf-bg border border-sf-border/50 flex items-center justify-center shadow-inner">
-                                <Database className="w-5 h-5 text-[var(--sf-accent)]" />
-                            </div>
-                            <div>
-                                <h3 className="font-bold text-white text-sm">ClickHouse</h3>
-                                <p className="text-[10px] text-sf-muted font-mono tracking-widest uppercase">Primary Data Store</p>
-                            </div>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                {Object.entries(data?.components || {}).map(([name, svc]: [string, any]) => (
+                    <div key={name} className="sf-panel p-4">
+                        <div className="flex items-center justify-between mb-2">
+                            <span className="text-[12px] text-sf-text font-bold uppercase tracking-widest font-mono">{name}</span>
+                            <span className={`text-[9px] font-mono px-1.5 py-0.5 border uppercase ${
+                                svc.status === 'ok' || svc.status === 'healthy' ? 'border-sf-safe text-sf-safe bg-sf-safe/10' :
+                                svc.status === 'degraded' || svc.status === 'error' ? 'border-sf-critical text-sf-critical bg-sf-critical/10' :
+                                'border-sf-warning text-sf-warning bg-sf-warning/10'
+                            }`}>{svc.status}</span>
                         </div>
-                        {renderStatusIcon(data?.components?.clickhouse?.status)}
-                    </div>
-                    
-                    <div className="space-y-4">
-                        <div className="flex items-center justify-between border-b border-sf-border/50 pb-2">
-                            <span className="text-xs text-sf-muted font-medium">Event Count</span>
-                            <span className="text-sm text-white font-mono font-bold">
-                                {isLoading ? '-' : data?.components?.clickhouse?.event_count?.toLocaleString() || 0}
-                            </span>
-                        </div>
-                        <div className="flex items-center justify-between border-b border-sf-border/50 pb-2">
-                            <span className="text-xs text-sf-muted font-medium">Query Latency</span>
-                            <span className="text-sm text-[var(--sf-accent)] font-mono font-bold">
-                                {isLoading ? '-' : `${data?.components?.clickhouse?.latency_ms || 0} ms`}
-                            </span>
-                        </div>
-                        
-                        {data?.components?.clickhouse?.message && (
-                            <div className="mt-2 text-[10px] bg-[var(--sf-critical)]/10 text-[var(--sf-critical)] p-2 rounded border border-[var(--sf-critical)]/20 font-mono">
-                                {data.components.clickhouse.message}
-                            </div>
+                        {svc.latency_ms !== undefined && (
+                            <div className="text-[11px] font-mono text-sf-muted tracking-widest mt-2">{svc.latency_ms} ms</div>
+                        )}
+                        {svc.event_count !== undefined && (
+                            <div className="text-[10px] font-mono text-sf-muted mt-1">Events: {svc.event_count.toLocaleString()}</div>
+                        )}
+                        {svc.vector_count !== undefined && (
+                            <div className="text-[10px] font-mono text-sf-muted mt-1">Vectors: {svc.vector_count.toLocaleString()}</div>
+                        )}
+                        {svc.message && (
+                           <div className="text-[9px] font-mono text-sf-muted mt-2 uppercase line-clamp-2">{svc.message}</div>
                         )}
                     </div>
-                </div>
-
-                {/* Redis Card */}
-                <div className="sf-card p-6 glow-border relative overflow-hidden group">
-                    <div className="flex justify-between items-start mb-4">
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-lg bg-sf-bg border border-sf-border/50 flex items-center justify-center shadow-inner">
-                                <Server className="w-5 h-5 text-[var(--sf-critical)]" />
-                            </div>
-                            <div>
-                                <h3 className="font-bold text-white text-sm">Redis Cache</h3>
-                                <p className="text-[10px] text-sf-muted font-mono tracking-widest uppercase">Fast Stateful Buffer</p>
-                            </div>
-                        </div>
-                        {renderStatusIcon(data?.components?.redis?.status)}
-                    </div>
-                    
-                    <div className="space-y-4">
-                        <div className="flex items-center justify-between border-b border-sf-border/50 pb-2">
-                            <span className="text-xs text-sf-muted font-medium">Ping Latency</span>
-                            <span className="text-sm text-[var(--sf-critical)] font-mono font-bold">
-                                {isLoading ? '-' : `${data?.components?.redis?.latency_ms || 0} ms`}
-                            </span>
-                        </div>
-                        
-                        {data?.components?.redis?.message && (
-                            <div className="mt-2 text-[10px] bg-[var(--sf-critical)]/10 text-[var(--sf-critical)] p-2 rounded border border-[var(--sf-critical)]/20 font-mono">
-                                {data.components.redis.message}
-                            </div>
-                        )}
-                    </div>
-                </div>
-
-                {/* Qdrant Card */}
-                <div className="sf-card p-6 glow-border relative overflow-hidden group">
-                    <div className="flex justify-between items-start mb-4">
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-lg bg-sf-bg border border-sf-border/50 flex items-center justify-center shadow-inner">
-                                <Layers className="w-5 h-5 text-[var(--sf-accent-2)]" />
-                            </div>
-                            <div>
-                                <h3 className="font-bold text-white text-sm">Qdrant Vector DB</h3>
-                                <p className="text-[10px] text-sf-muted font-mono tracking-widest uppercase">Behavioral DNA</p>
-                            </div>
-                        </div>
-                        {renderStatusIcon(data?.components?.qdrant?.status)}
-                    </div>
-                    
-                    <div className="space-y-4">
-                        <div className="flex items-center justify-between border-b border-sf-border/50 pb-2">
-                            <span className="text-xs text-sf-muted font-medium">Vector Points</span>
-                            <span className="text-sm text-white font-mono font-bold">
-                                {isLoading ? '-' : data?.components?.qdrant?.vector_count?.toLocaleString() || 0}
-                            </span>
-                        </div>
-                        <div className="flex items-center justify-between border-b border-sf-border/50 pb-2">
-                            <span className="text-xs text-sf-muted font-medium">Query Latency</span>
-                            <span className="text-sm text-[var(--sf-accent-2)] font-mono font-bold">
-                                {isLoading ? '-' : `${data?.components?.qdrant?.latency_ms || 0} ms`}
-                            </span>
-                        </div>
-                        
-                        {data?.components?.qdrant?.message && (
-                            <div className="mt-2 text-[10px] bg-[var(--sf-warning)]/10 text-[var(--sf-warning)] p-2 rounded border border-[var(--sf-warning)]/20 font-mono">
-                                {data.components.qdrant.message}
-                            </div>
-                        )}
-                    </div>
-                </div>
-
+                ))}
             </div>
         </div>
     );

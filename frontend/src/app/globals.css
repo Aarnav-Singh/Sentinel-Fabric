@@ -5,29 +5,64 @@
 @tailwind utilities;
 
 @layer base {
+  /* ── Nominal (default) ─────────────────────────────────────── */
+  /* All color vars are RGB channels (no rgb() wrapper) so Tailwind  */
+  /* opacity modifiers like bg-sf-accent/10 compile correctly.       */
   :root {
-    --sf-bg: #0a0a0c;
-    --sf-base: #0a0a0c;
-    --sf-surface: #111115;
-    --sf-surface-raised: #15151a;
-    --sf-card: #111115;
-    
-    --sf-border: #2a2a35;
-    --sf-border-active: #0d9488;
-    
-    --sf-accent: #0d9488;
-    --sf-accent-2: #475569;
-    --sf-critical: #dc2626;
-    --sf-warning: #d97706;
-    --sf-safe: #059669;
-    --sf-data: #0d9488;
-    --sf-muted: #64748b;
-    --sf-text: #e2e8f0;
+    --sf-bg:            6 6 15;
+    --sf-surface:       12 12 26;
+    --sf-surface-2:     17 17 42;
+    --sf-border:        30 27 75;
+    --sf-border-active: 76 29 149;
+    --sf-accent:        124 58 237;
+    --sf-accent-2:      67 56 202;
+    --sf-text:          226 232 240;
+    --sf-muted:         99 102 241;
+
+    /* Invariants — never change */
+    --sf-critical:  220 38 38;
+    --sf-warning:   217 119 6;
+    --sf-safe:      5 150 105;
+    --sf-disabled:  55 65 81;
+
+    /* Glow — kept as box-shadow value string, not a color */
+    --sf-accent-glow: transparent;
+
+    /* Animation speed — driven by EPS in JS */
+    --pulse-rate: 2s;
+  }
+
+  /* ── Elevated ──────────────────────────────────────────────── */
+  [data-threat="elevated"] {
+    --sf-bg:            8 8 9;
+    --sf-surface:       19 13 7;
+    --sf-surface-2:     26 17 8;
+    --sf-border:        146 64 14;
+    --sf-border-active: 217 119 6;
+    --sf-accent:        245 158 11;
+    --sf-accent-2:      180 83 9;
+    --sf-text:          254 243 199;
+    --sf-muted:         120 113 108;
+    --sf-accent-glow:   0 0 20px rgba(245,158,11,0.12);
+  }
+
+  /* ── Incident ──────────────────────────────────────────────── */
+  [data-threat="incident"] {
+    --sf-bg:            10 4 4;
+    --sf-surface:       19 6 6;
+    --sf-surface-2:     26 7 7;
+    --sf-border:        127 29 29;
+    --sf-border-active: 239 68 68;
+    --sf-accent:        239 68 68;
+    --sf-accent-2:      185 28 28;
+    --sf-text:          254 242 242;
+    --sf-muted:         159 18 57;
+    --sf-accent-glow:   0 0 24px rgba(239,68,68,0.2);
   }
 
   body {
-    background-color: var(--sf-bg);
-    color: var(--sf-text);
+    background-color: rgb(var(--sf-bg));
+    color: rgb(var(--sf-text));
   }
 
   /* Scanline overlay - strict / less visible */
@@ -44,20 +79,24 @@
 }
 
 @layer utilities {
-  /* ─── Panel Utilities (Replacing Glass) ─────────────────────────────────── */
+  /* ─── Panel Utilities ─────────────────────────────────── */
   .sf-panel {
-    background-color: var(--sf-surface);
-    border: 1px solid var(--sf-border);
-    border-top: 1px solid rgba(255, 255, 255, 0.05); /* Slight hard highlight on top */
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
-    position: relative;
-    overflow: hidden;
+    background: rgb(var(--sf-surface) / 0.80);
+    backdrop-filter: blur(4px);
+    border: 1px solid rgb(var(--sf-border));
+    border-top: 1px solid rgba(255,255,255,0.04);
+    border-radius: 0px !important;
   }
-  
+
   .sf-panel-elevated {
-    background-color: var(--sf-surface-raised);
-    border: 1px solid var(--sf-border);
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.6);
+    background: rgb(var(--sf-surface-2) / 0.90);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgb(var(--sf-border));
+  }
+
+  .sf-panel-ambient {
+    background: transparent;
+    border: 1px solid rgb(var(--sf-border) / 0.30);
   }
 
 
@@ -76,14 +115,14 @@
       linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
       linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
     background-size: 24px 24px;
-    background-color: var(--sf-bg);
+    background-color: rgb(var(--sf-bg));
   }
 
   /* ─── Shimmer Skeleton (Strict) ─────────────────────────────────── */
   .sf-shimmer {
     position: relative;
     overflow: hidden;
-    background: var(--sf-border);
+    background: rgb(var(--sf-border));
     border-radius: 2px;
   }
 
@@ -110,11 +149,28 @@
   100% { transform: translateX(100%); }
 }
 
+@keyframes threat-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 var(--sf-accent-glow, transparent); }
+  50%       { box-shadow: 0 0 0 8px transparent; }
+}
+@keyframes incident-sweep {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(200%); }
+}
+@keyframes ambient-drift {
+  0%   { transform: translate(0, 0); }
+  100% { transform: translate(8px, 8px); }
+}
+@keyframes state-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
 /* ─── Scrollbar ──────────────────────────────────────────── */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: var(--sf-bg); border-left: 1px solid var(--sf-border); }
-::-webkit-scrollbar-thumb { background: var(--sf-border); border-radius: 0px; }
-::-webkit-scrollbar-thumb:hover { background: var(--sf-accent-2); }
+::-webkit-scrollbar-thumb { background: rgb(var(--sf-border)); border-radius: 0px; }
+::-webkit-scrollbar-thumb:hover { background: rgb(var(--sf-accent-2)); }
 
 /* ─── Reduced Motion ─────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {

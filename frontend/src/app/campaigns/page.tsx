@@ -8,6 +8,8 @@ import { StaggerChildren, AnimatedNumber, FadeIn, ShimmerSkeleton, PanelCard } f
 import { DataGrid } from '@/components/ui/DataGrid';
 import { VectorMap } from '@/components/ui/VectorMap';
 import { useToast } from '@/components/ui/Toast';
+import { AmbientBackground } from '@/components/ui/AmbientBackground';
+import { Badge } from '@/components/ui/Badge';
 
 const fetcher = (url: string) => fetch(url).then(res => res.json());
 
@@ -22,9 +24,15 @@ export default function CampaignsPage() {
   const blockedCount = campaignList.filter(c => c.active === false || c.stage === 'closed' || c.stage === 'mitigated' || c.stage === 'resolved').length;
   const criticalCount = campaignList.filter(c => c.severity === 'critical' || (c.meta_score != null && c.meta_score > 0.8)).length;
 
+  const campaignName = (c: any) =>
+    c.name ||
+    [c.mitre_tactics?.[0], c.stage].filter(Boolean).join("-") ||
+    `CAMPAIGN-${String(c.id).slice(0, 6).toUpperCase()}`;
+
   return (
-    <div className="flex-1 overflow-y-auto custom-scrollbar p-6 bg-sf-bg flex flex-col min-h-0 space-y-4">
-      <div className="flex flex-col xl:flex-row gap-4 w-full h-full max-w-[1600px] mx-auto min-h-0">
+    <div className="flex-1 overflow-y-auto custom-scrollbar p-6 bg-transparent flex flex-col min-h-0 space-y-4 relative">
+      <AmbientBackground variant="threatmap" />
+      <div className="flex flex-col xl:flex-row gap-4 w-full h-full max-w-[1600px] mx-auto min-h-0 relative z-10">
         
         {/* Left Column: Metrics & Map */}
         <div className="flex-[2] flex flex-col gap-4 min-h-0">
@@ -105,49 +113,30 @@ export default function CampaignsPage() {
                             )}
                         </div>
                     ) : (
-                        <DataGrid 
-                            data={campaignList.slice().sort((a,b) => (b.meta_score || 0) - (a.meta_score || 0))}
-                            rowKey="id"
-                            columns={[
-                                {
-                                    header: "!",
-                                    key: "meta_score",
-                                    render: (_, row) => {
-                                        const c = (row.severity === 'critical' || (row.meta_score || 0) > 0.8) ? 'bg-sf-critical text-sf-bg' : ((row.severity === 'high' || (row.meta_score || 0) > 0.6) ? 'bg-sf-warning text-sf-bg' : 'bg-sf-surface text-sf-muted border border-sf-border');
-                                        return <div className={`w-5 h-5 flex items-center justify-center font-bold text-[9px] ${c}`}>{row.active === false ? 'X' : '!'}</div>;
-                                    }
-                                },
-                                {
-                                    header: "ID",
-                                    key: "id",
-                                    render: (val, row) => (
-                                         <div className="flex flex-col">
-                                            <span className="font-mono text-[11px] text-sf-text font-bold">{val}</span>
-                                            <span className="font-mono text-[9px] text-sf-muted">STAGE: {row.stage || 'UNK'}</span>
-                                         </div>
-                                    )
-                                },
-                                {
-                                    header: "MITRE",
-                                    key: "mitre_tags",
-                                    render: (val: string[]) => (
-                                        <div className="flex flex-wrap gap-1">
-                                            {(val || []).slice(0,2).map(t => <span key={t} className="text-[9px] font-mono border border-sf-border text-sf-muted px-1 truncate max-w-[60px]" title={t}>{t}</span>)}
-                                        </div>
-                                    )
-                                },
-                                {
-                                    header: "SEV",
-                                    key: "severity",
-                                    align: "right",
-                                    render: (val, row) => (
-                                        <span className={`text-[10px] font-mono tracking-widest ${row.active === false ? 'text-sf-disabled' : val === 'critical' ? 'text-sf-critical' : val === 'high' ? 'text-sf-warning' : 'text-sf-text'}`}>
-                                            {row.active === false ? 'CLOSED' : val?.toUpperCase()}
-                                        </span>
-                                    )
-                                }
-                            ]}
-                        />
+                        <div className="flex flex-col gap-2 p-2">
+                          {campaignList.sort((a,b) => (b.meta_score || 0) - (a.meta_score || 0)).map((c: any) => (
+                            <div
+                              key={c.id}
+                              className="sf-panel p-3 cursor-pointer hover:border-sf-border-active transition-colors group"
+                            >
+                              <div className="flex items-center justify-between mb-1.5">
+                                <div className="flex items-center gap-2">
+                                  <Badge label={c.active === false ? 'CLOSED' : (c.severity?.toUpperCase() || "UNKNOWN")} severity={c.active === false ? 'info' : (c.severity || "info")} />
+                                  <span className="text-[13px] text-sf-text font-medium truncate">{campaignName(c)}</span>
+                                </div>
+                                <span className="text-sf-muted text-[10px] font-mono">→</span>
+                              </div>
+                              <div className="flex items-center gap-3 text-[10px] font-mono text-sf-muted">
+                                {c.mitre_tactics?.slice(0, 3).map((t: string) => <span key={t}>{t}</span>)}
+                                {c.stage && <><span className="text-sf-border">·</span><span>{c.stage}</span></>}
+                                {c.meta_score != null && <><span className="text-sf-border">·</span><span className="text-sf-warning">Score: {c.meta_score.toFixed(2)}</span></>}
+                              </div>
+                              {c.affected_assets && (
+                                <div className="text-[10px] text-sf-muted mt-1">{c.affected_assets} affected assets · Started {c.created_at ? new Date(c.created_at).toLocaleString() : "unknown"}</div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
                     )}
                 </div>
             </PanelCard>

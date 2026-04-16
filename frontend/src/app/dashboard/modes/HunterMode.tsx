@@ -14,6 +14,25 @@ import { EditorState } from '@codemirror/state';
 import { defaultKeymap, history, historyKeymap } from '@codemirror/commands';
 import { sql } from '@codemirror/lang-sql';
 import { oneDark } from '@codemirror/theme-one-dark';
+import { RealSparkline } from "@/components/ui/RealSparkline";
+
+const umbrixTheme = EditorView.theme({
+  "&": {
+    backgroundColor: "var(--sf-bg)",
+    color: "var(--sf-text)",
+    fontSize: "12px",
+  },
+  ".cm-gutters": {
+    backgroundColor: "var(--sf-surface)",
+    color: "var(--sf-muted)",
+    border: "none",
+    borderRight: "1px solid var(--sf-border)",
+  },
+  ".cm-activeLineGutter": { backgroundColor: "var(--sf-surface-2)" },
+  ".cm-activeLine": { backgroundColor: "color-mix(in srgb, var(--sf-surface) 40%, transparent)" },
+  ".cm-cursor": { borderLeftColor: "var(--sf-accent)" },
+  ".cm-selectionBackground, ::selection": { backgroundColor: "color-mix(in srgb, var(--sf-accent) 20%, transparent)" },
+}, { dark: true });
 
 // ── UQL Editor ────────────────────────────────────────────────────────────────
 
@@ -41,7 +60,7 @@ function UQLEditor({ value, onChange, onRun }: UQLEditorProps) {
         const state = EditorState.create({
             doc: value,
             extensions: [
-                oneDark,
+                umbrixTheme,
                 sql(),                    // enables UQL keyword highlighting via SQL grammar
                 history(),
                 keymap.of([
@@ -139,9 +158,12 @@ export function HunterMode({ liveFeed, eventsRate, setMaximizedWidget }: Dashboa
                 <PanelCard className="p-4 flex items-center justify-center min-w-[180px]">
                     <div className="flex items-center gap-3">
                         <Activity className="w-5 h-5 text-sf-accent" />
-                        <span className="text-2xl font-mono text-sf-text">
-                            {eventsRate} <span className="text-xs text-sf-muted">EPS</span>
-                        </span>
+                        <div className="flex flex-col items-end gap-1">
+                            <span className="text-2xl font-mono text-sf-text leading-none mt-2">
+                                {eventsRate} <span className="text-xs text-sf-muted">EPS</span>
+                            </span>
+                            <RealSparkline source="eps" width={80} height={18} />
+                        </div>
                     </div>
                 </PanelCard>
             </div>

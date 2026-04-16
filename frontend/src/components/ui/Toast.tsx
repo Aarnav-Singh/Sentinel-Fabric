@@ -54,7 +54,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
               animate={{ opacity: 1, x: 0, scale: 1 }}
               exit={{ opacity: 0, x: 20, scale: 0.95 }}
               transition={{ type: "spring", damping: 25, stiffness: 300 }}
-              className={`flex items-start gap-3 p-4 rounded-lg shadow-2xl border backdrop-blur-md pointer-events-auto min-w-[300px] max-w-sm ${
+              className={`flex items-start gap-3 p-4 rounded-none shadow-2xl border backdrop-blur-md pointer-events-auto min-w-[300px] max-w-sm ${
                 t.variant === "success" ? "bg-green-500/10 border-green-500/30 text-green-400" :
                 t.variant === "error" ? "bg-sf-critical/10 border-sf-critical/30 text-sf-critical" :
                 t.variant === "warning" ? "bg-sf-warning/10 border-sf-warning/30 text-sf-warning" :

@@ -13,6 +13,8 @@ import { DataFreshness } from '@/components/ui/DataFreshness';
 import { QuickActions } from '@/components/features/actions/QuickActions';
 import { Badge } from '@/components/ui/Badge';
 import { AttackTimeline } from '@/components/features/investigation/AttackTimeline';
+import { AmbientBackground } from '@/components/ui/AmbientBackground';
+import { SyntaxHighlightedJson } from '@/components/ui/SyntaxHighlightedJson';
 
 // ── UQL Threat Hunt Panel ─────────────────────────────────────────────────────
 
@@ -399,8 +401,9 @@ export default function RawEventsPage() {
     const allLogs = liveEvents.length > 0 ? liveEvents : DEMO_LOGS;
 
     return (
-        <div className="flex-1 overflow-hidden p-6 bg-sf-bg flex flex-col min-h-0">
-            <div className="flex flex-col gap-4 w-full h-full max-w-[1600px] mx-auto min-h-0">
+        <div className="flex-1 overflow-hidden p-6 bg-transparent flex flex-col min-h-0 relative">
+            <AmbientBackground variant="frequency" />
+            <div className="flex flex-col gap-4 w-full h-full max-w-[1600px] mx-auto min-h-0 relative z-10">
                 {/* UQL Threat Hunt Panel */}
                 <HuntPanel />
 
@@ -534,17 +537,17 @@ export default function RawEventsPage() {
                 </PanelCard>
             </div>
 
-            {/* Modal */}
+            {/* Drawer */}
             <AnimatePresence>
             {selectedLog && (
                 <motion.div
-                    initial={{ opacity: 0, y: 10, scale: 0.99 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 10, scale: 0.99 }}
-                    transition={{ duration: 0.15 }}
-                    className="absolute inset-x-8 md:inset-x-32 top-16 bottom-16 z-50 flex flex-col bg-sf-bg border border-sf-border shadow-2xl"
+                    initial={{ x: "100%" }}
+                    animate={{ x: 0 }}
+                    exit={{ x: "100%" }}
+                    transition={{ type: "spring", damping: 25, stiffness: 200 }}
+                    className="absolute top-0 right-0 bottom-0 w-full md:w-[600px] z-50 flex flex-col bg-sf-surface shadow-[-20px_0_40px_rgba(0,0,0,0.5)] border-l border-sf-border"
                 >
-                    <div className="flex justify-between items-center px-4 py-3 border-b border-sf-border bg-sf-surface">
+                    <div className="flex justify-between items-center px-4 py-3 border-b border-sf-border bg-sf-surface shrink-0">
                         <div className="flex items-center gap-2">
                             <Terminal className="w-4 h-4 text-sf-accent" />
                             <h4 className="text-sf-text text-[11px] font-mono uppercase tracking-widest">Payload Inspector</h4>
@@ -555,19 +558,17 @@ export default function RawEventsPage() {
                         </button>
                     </div>
 
-                    <div className="px-4 py-3 border-b border-sf-border bg-sf-surface/50 overflow-y-auto max-h-[30vh]">
+                    <div className="px-4 py-3 border-b border-sf-border bg-sf-bg shrink-0">
                         <div className="font-mono text-[11px] text-sf-text whitespace-pre-wrap break-words leading-relaxed select-text">
                             {selectedLog.message}
                         </div>
                     </div>
 
-                    <div className="flex-1 bg-black p-4 font-mono text-[11px] leading-relaxed overflow-auto custom-scrollbar select-text">
-                        <pre className="text-sf-safe/80 whitespace-pre-wrap break-all">
-                            {JSON.stringify(selectedLog.rawJson, null, 2)}
-                        </pre>
+                    <div className="flex-1 bg-black p-4 overflow-auto custom-scrollbar relative">
+                        <SyntaxHighlightedJson data={selectedLog.rawJson} />
                     </div>
 
-                    <div className="p-3 flex gap-3 border-t border-sf-border bg-sf-surface">
+                    <div className="p-3 flex gap-3 border-t border-sf-border bg-sf-surface shrink-0">
                         <button className="flex-1 bg-sf-surface hover:bg-sf-bg border border-sf-border text-sf-text font-mono font-bold text-[10px] py-2 flex items-center justify-center gap-2 transition-all">
                             <Share2 className="w-3 h-3" /> EXPORT JSON
                         </button>
@@ -579,6 +580,7 @@ export default function RawEventsPage() {
             )}
             </AnimatePresence>
 
+            {/* Backdrop */}
             <AnimatePresence>
             {selectedLog && (
                 <motion.div

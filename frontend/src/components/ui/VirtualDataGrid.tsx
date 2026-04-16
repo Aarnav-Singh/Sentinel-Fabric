@@ -20,16 +20,38 @@ interface VirtualDataGridProps<T> {
     rowKey: keyof T;
     onRowClick?: (row: T) => void;
     itemSize?: number;
+    severityKey?: keyof T;
+    sortable?: boolean;
 }
 
-export function VirtualDataGrid<T>({ data, columns, className = "", rowKey, onRowClick, itemSize = 40 }: VirtualDataGridProps<T>) {
+export function VirtualDataGrid<T>({ data, columns, className = "", rowKey, onRowClick, itemSize = 40, severityKey, sortable }: VirtualDataGridProps<T>) {
     
+    const [sortKey, setSortKey] = React.useState<keyof T | null>(null);
+    const [sortDir, setSortDir] = React.useState<"asc" | "desc">("asc");
+
+    const sortedData = sortable && sortKey
+      ? [...data].sort((a, b) => {
+          const av = a[sortKey], bv = b[sortKey];
+          const cmp = String(av).localeCompare(String(bv));
+          return sortDir === "asc" ? cmp : -cmp;
+        })
+      : data;
+
+    function getSeverityClass(severity: string): string {
+      if (severity === "critical") return "border-l-[3px] border-sf-critical bg-[rgba(220,38,38,0.03)]";
+      if (severity === "high")     return "border-l-[3px] border-sf-warning  bg-[rgba(215,119,6,0.02)]";
+      return "border-l-[3px] border-transparent";
+    }
+
     const Row = useCallback(({ index, style }: { index: number; style: React.CSSProperties }) => {
-        const item = data[index];
+        const item = sortedData[index];
+        const severityVal = severityKey ? String(item[severityKey]) : "";
+        const severityClass = severityKey ? getSeverityClass(severityVal) : "";
+
         return (
             <div 
                 style={style} 
-                className={`flex items-center border-b border-sf-border/50 group hover:bg-sf-surface/50 transition-colors ${onRowClick ? 'cursor-pointer' : ''}`}
+                className={`flex items-center border-b border-sf-border/50 group hover:bg-sf-surface/50 transition-colors ${onRowClick ? 'cursor-pointer' : ''} ${severityClass}`}
                 onClick={() => onRowClick?.(item)}
             >
                 {columns.map((col) => {
@@ -47,7 +69,7 @@ export function VirtualDataGrid<T>({ data, columns, className = "", rowKey, onRo
                 })}
             </div>
         );
-    }, [data, columns, onRowClick, rowKey]);
+    }, [sortedData, columns, onRowClick, rowKey, severityKey]);
 
     return (
         <div className={`w-full h-full flex flex-col ${className}`}>
@@ -58,10 +80,14 @@ export function VirtualDataGrid<T>({ data, columns, className = "", rowKey, onRo
                     return (
                         <div 
                             key={String(col.key)} 
-                            className={`py-2 px-3 tracking-widest text-[11px] text-sf-muted uppercase font-normal ${col.align === "right" ? "text-right" : col.align === "center" ? "text-center" : "text-left"}`}
+                            onClick={sortable ? () => {
+                                if (sortKey === col.key) setSortDir(d => d === "asc" ? "desc" : "asc");
+                                else { setSortKey(col.key); setSortDir("asc"); }
+                            } : undefined}
+                            className={`py-2 px-3 tracking-widest text-[11px] text-sf-muted uppercase font-normal ${col.align === "right" ? "text-right" : col.align === "center" ? "text-center" : "text-left"} ${sortable ? "cursor-pointer hover:text-sf-text select-none" : ""}`}
                             style={flexStyle}
                         >
-                            {col.header}
+                            {col.header}{sortable && sortKey === col.key ? (sortDir === "asc" ? " ↑" : " ↓") : ""}
                         </div>
                     );
                 })}
@@ -79,7 +105,7 @@ export function VirtualDataGrid<T>({ data, columns, className = "", rowKey, onRo
                         {({ height, width }: { height: number; width: number }) => (
                             <List
                                 height={height}
-                                itemCount={data.length}
+                                itemCount={sortedData.length}
                                 itemSize={itemSize}
                                 width={width}
                                 overscanCount={5}

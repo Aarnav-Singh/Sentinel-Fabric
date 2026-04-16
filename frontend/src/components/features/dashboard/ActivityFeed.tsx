@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState, useCallback } from "react";
 import { AlertCircle, Target, ShieldCheck, Activity } from "lucide-react";
@@ -54,9 +54,9 @@ export function ActivityFeed() {
     const getIcon = (type: string) => {
         switch (type) {
             case 'critical': return <AlertCircle className="w-4 h-4 text-sf-warning" />;
-            case 'high': return <Target className="w-4 h-4 text-orange-400" />;
+            case 'high': return <Target className="w-4 h-4 text-[var(--sf-warning)]" />;
             case 'success': return <ShieldCheck className="w-4 h-4 text-green-500" />;
-            default: return <Activity className="w-4 h-4 text-text-muted" />;
+            default: return <Activity className="w-4 h-4 text-sf-muted" />;
         }
     };
 
@@ -65,16 +65,16 @@ export function ActivityFeed() {
             {displayEvents.map((evt) => {
                 const type = severityToType(evt.severity);
                 return (
-                    <div key={evt.event_id} className="p-3 bg-surface-elevated/50 rounded-lg border border-surface-border/50 flex gap-3 text-sm transition-colors hover:bg-surface-elevated group">
+                    <div key={evt.event_id} className="p-3 bg-sf-surface/50 rounded-none border border-sf-border/50 flex gap-3 text-sm transition-colors hover:bg-sf-surface group">
                         <div className="pt-0.5 opacity-80 group-hover:opacity-100 transition-opacity">
                             {getIcon(type)}
                         </div>
                         <div className="flex-1">
-                            <p className={`font-medium ${['critical', 'high'].includes(type) ? 'text-text-primary' : 'text-text-secondary'}`}>
+                            <p className={`font-medium ${['critical', 'high'].includes(type) ? 'text-white' : 'text-sf-muted'}`}>
                                 {evt.message}
                             </p>
                             <div className="flex gap-3 items-center mt-1.5">
-                                <span className="text-xs text-text-muted font-mono">{timeAgo(evt.timestamp)}</span>
+                                <span className="text-xs text-sf-muted font-mono">{timeAgo(evt.timestamp)}</span>
                                 {evt.meta_score > 0.5 && (
                                     <span className="text-[9px] font-bold uppercase tracking-wider text-sf-warning bg-sf-warning/10 px-1.5 py-0.5 rounded">
                                         {(evt.meta_score * 100).toFixed(0)}%
@@ -88,3 +88,4 @@ export function ActivityFeed() {
         </div>
     );
 }
+

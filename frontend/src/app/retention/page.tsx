@@ -103,27 +103,27 @@ export default function RetentionPage() {
             </header>
 
             {error && (
-                <div className="mb-6 px-4 py-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm flex items-center gap-2">
+                <div className="mb-6 px-4 py-3 rounded-none bg-[var(--sf-critical)]/10 border border-[var(--sf-critical)]/30 text-[var(--sf-critical)] text-[10px] font-mono tracking-widest uppercase flex items-center gap-2">
                     <AlertTriangle className="w-4 h-4 flex-shrink-0" /> {error}
-                    <button onClick={() => setError(null)} className="ml-auto underline text-xs">Dismiss</button>
+                    <button onClick={() => setError(null)} className="ml-auto underline">Dismiss</button>
                 </div>
             )}
 
             {saved && (
-                <div className="mb-6 px-4 py-3 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-sm flex items-center gap-2">
+                <div className="mb-6 px-4 py-3 rounded-none bg-[var(--sf-safe)]/10 border border-[var(--sf-safe)]/30 text-[var(--sf-safe)] text-[10px] font-mono tracking-widest uppercase flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4" /> Retention policy updated successfully.
                 </div>
             )}
 
             {purgeResult && (
-                <div className="mb-6 px-4 py-3 rounded-lg bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 text-sm flex items-center gap-2">
+                <div className="mb-6 px-4 py-3 rounded-none bg-[var(--sf-accent)]/10 border border-[var(--sf-accent)]/30 text-[var(--sf-accent)] text-[10px] font-mono tracking-widest uppercase flex items-center gap-2">
                     <HardDrive className="w-4 h-4" /> {purgeResult}
                 </div>
             )}
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {/* Current Setting */}
-                <div className="bg-sf-surface border border-sf-border rounded-xl p-6 space-y-6">
+                <div className="sf-panel border border-sf-border rounded-none p-6 space-y-6">
                     <h2 className="text-sm font-bold uppercase tracking-widest text-sf-accent/80 flex items-center gap-2">
                         <Clock className="w-4 h-4" /> Retention Period
                     </h2>
@@ -156,10 +156,10 @@ export default function RetentionPage() {
                             <button
                                 key={preset.days}
                                 onClick={() => setPendingDays(preset.days)}
-                                className={`px-3 py-2 rounded border text-xs text-left transition-all ${
+                                className={`px-3 py-2 rounded-none border text-xs text-left transition-all ${
                                     pendingDays === preset.days
                                         ? "border-sf-accent bg-sf-accent/10 text-sf-accent"
-                                        : "border-sf-border bg-sf-surface text-sf-muted hover:border-slate-500"
+                                        : "border-sf-border bg-sf-bg text-sf-muted hover:border-sf-text"
                                 }`}
                             >
                                 <span className="font-bold">{preset.label}</span>
@@ -171,7 +171,7 @@ export default function RetentionPage() {
                     <button
                         onClick={saveRetention}
                         disabled={saving || pendingDays === currentDays}
-                        className="w-full px-4 py-2.5 bg-sf-accent text-sf-bg font-bold rounded hover:bg-sf-accent/90 transition-colors flex items-center justify-center gap-2 text-sm disabled:opacity-40"
+                        className="w-full px-4 py-2.5 bg-sf-accent text-sf-bg font-bold rounded-none hover:bg-sf-accent/90 transition-colors flex items-center justify-center gap-2 text-sm disabled:opacity-40"
                     >
                         <Save className="w-4 h-4" />
                         {saving ? "Saving..." : "Save Retention Policy"}
@@ -180,17 +180,17 @@ export default function RetentionPage() {
 
                 {/* Info & Purge */}
                 <div className="space-y-6">
-                    <div className="bg-sf-surface border border-sf-border rounded-xl p-6 space-y-4">
+                    <div className="sf-panel border border-sf-border rounded-none p-6 space-y-4">
                         <h2 className="text-sm font-bold uppercase tracking-widest text-sf-accent/80">
                             Compliance Requirements
                         </h2>
                         <div className="space-y-3">
                             {[
-                                { framework: "SOC 2 Type II", minimum: "90 days", color: "text-cyan-400" },
-                                { framework: "HIPAA", minimum: "180 days (6 years for records)", color: "text-purple-400" },
-                                { framework: "PCI-DSS v4.0", minimum: "365 days", color: "text-orange-400" },
-                                { framework: "GDPR", minimum: "As long as needed (Art. 5)", color: "text-blue-400" },
-                                { framework: "NIST CSF 2.0", minimum: "Organization-defined", color: "text-emerald-400" },
+                                { framework: "SOC 2 Type II", minimum: "90 days", color: "text-[var(--sf-accent)]" },
+                                { framework: "HIPAA", minimum: "180 days (6 years for records)", color: "text-[var(--sf-accent-2)]" },
+                                { framework: "PCI-DSS v4.0", minimum: "365 days", color: "text-[var(--sf-warning)]" },
+                                { framework: "GDPR", minimum: "As long as needed (Art. 5)", color: "text-[var(--sf-accent-2)]" },
+                                { framework: "NIST CSF 2.0", minimum: "Organization-defined", color: "text-[var(--sf-safe)]" },
                             ].map(item => (
                                 <div key={item.framework} className="flex justify-between items-center py-2 border-b border-sf-border last:border-0">
                                     <span className={`text-sm font-medium ${item.color}`}>{item.framework}</span>
@@ -200,19 +200,19 @@ export default function RetentionPage() {
                         </div>
                     </div>
 
-                    <div className="bg-sf-surface border border-red-500/20 rounded-xl p-6 space-y-4">
-                        <h2 className="text-sm font-bold uppercase tracking-widest text-red-400/80 flex items-center gap-2">
+                    <div className="sf-panel border border-[var(--sf-critical)]/30 rounded-none p-6 space-y-4">
+                        <h2 className="text-sm font-bold uppercase tracking-widest text-[var(--sf-critical)]/80 flex items-center gap-2">
                             <Trash2 className="w-4 h-4" /> Manual Data Purge
                         </h2>
                         <p className="text-xs text-sf-muted leading-relaxed">
                             Manually trigger a data purge to remove events and audit data older than
                             the current retention period ({currentDays} days). This operation is
-                            <strong className="text-red-400"> irreversible</strong>.
+                            <strong className="text-[var(--sf-critical)]"> irreversible</strong>.
                         </p>
                         <button
                             onClick={() => setIsConfirmOpen(true)}
                             disabled={purging}
-                            className="w-full px-4 py-2.5 bg-red-500/10 border border-red-500/30 text-red-400 font-bold rounded hover:bg-red-500/20 transition-colors flex items-center justify-center gap-2 text-sm disabled:opacity-40"
+                            className="w-full px-4 py-2.5 bg-[var(--sf-critical)]/10 border border-[var(--sf-critical)]/30 text-[var(--sf-critical)] font-bold rounded-none hover:bg-[var(--sf-critical)]/20 transition-colors flex items-center justify-center gap-2 text-sm disabled:opacity-40"
                         >
                             <Trash2 className="w-4 h-4" />
                             {purging ? "Purging..." : "Purge Expired Data"}

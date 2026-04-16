@@ -6,6 +6,7 @@ import useSWR from 'swr';
 import { useEventStream } from "@/contexts/EventStreamContext";
 import { PanelCard, AnimatedNumber, StaggerChildren } from '@/components/ui/MotionWrappers';
 import { DataGrid } from '@/components/ui/DataGrid';
+import { AmbientBackground } from '@/components/ui/AmbientBackground';
 
 const fetcher = (url: string) => fetch(url).then(r => r.json());
 
@@ -71,10 +72,6 @@ const GRAPH_NODES = {
   ]
 };
 
-const graphConnections: { id: string, from: any; to: any }[] = [];
-GRAPH_NODES.ingestors.forEach(ing => { GRAPH_NODES.extractors.forEach(ext => { graphConnections.push({ id: `${ing.id}-${ext.id}`, from: ing, to: ext }); }); });
-GRAPH_NODES.extractors.forEach(ext => { GRAPH_NODES.models.forEach(mod => { graphConnections.push({ id: `${ext.id}-${mod.id}`, from: ext, to: mod }); }); });
-
 function formatCount(n: number): string {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
   if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
@@ -89,10 +86,37 @@ export default function MLPipelinePage() {
 
   const { data: statusData, isLoading: statusLoading } = useSWR<PipelineStatus>('/api/proxy/api/v1/pipeline/status', fetcher, { refreshInterval: 5000 });
   const { data: modelsData, isLoading: modelsLoading } = useSWR<ModelsResponse>('/api/proxy/api/v1/pipeline/models', fetcher, { refreshInterval: 30000 });
+  const { data: connectorsData } = useSWR("/api/proxy/api/v1/admin/connectors", fetcher);
 
   const pipelineStatus = statusData ?? DEMO_STATUS;
   const models = modelsData?.models ?? DEMO_MODELS;
   const streams = pipelineStatus.streams ?? {};
+  
+  const isDemo = !statusData && !statusLoading;
+  const isDemoModels = !modelsData && !modelsLoading;
+
+  const graphNodes = React.useMemo(() => {
+    return connectorsData?.connectors ?? connectorsData ?? GRAPH_NODES;
+  }, [connectorsData]);
+
+  const currentConnections = React.useMemo(() => {
+    const conns: { id: string, from: any; to: any }[] = [];
+    if (graphNodes.ingestors && graphNodes.extractors) {
+      graphNodes.ingestors.forEach((ing: any) => {
+        graphNodes.extractors.forEach((ext: any) => {
+          conns.push({ id: `${ing.id}-${ext.id}`, from: ing, to: ext });
+        });
+      });
+    }
+    if (graphNodes.extractors && graphNodes.models) {
+      graphNodes.extractors.forEach((ext: any) => {
+        graphNodes.models.forEach((mod: any) => {
+          conns.push({ id: `${ext.id}-${mod.id}`, from: ext, to: mod });
+        });
+      });
+    }
+    return conns;
+  }, [graphNodes]);
 
   const handleLiveEvent = useCallback((event: Record<string, unknown>) => {
     const ts = new Date().toLocaleTimeString('en-US', { hour12: false });
@@ -125,9 +149,12 @@ export default function MLPipelinePage() {
 
     const sType = sourceType.toLowerCase();
     const sourceMap: Record<string, string> = { zeek: 'zeek', suricata: 'suricata', aws: 'aws', syslog: 'syslog' };
-    const matchedSourceId = Object.keys(sourceMap).find(k => sType.includes(k)) || GRAPH_NODES.ingestors[Math.floor(Math.random() * GRAPH_NODES.ingestors.length)].id;
-    const extId = GRAPH_NODES.extractors[Math.floor(Math.random() * GRAPH_NODES.extractors.length)].id;
-    const modId = GRAPH_NODES.models[Math.floor(Math.random() * GRAPH_NODES.models.length)].id;
+    const ingestorsInfo = graphNodes.ingestors || GRAPH_NODES.ingestors;
+    const extractorsInfo = graphNodes.extractors || GRAPH_NODES.extractors;
+    const modelsInfo = graphNodes.models || GRAPH_NODES.models;
+    const matchedSourceId = Object.keys(sourceMap).find(k => sType.includes(k)) || ingestorsInfo[Math.floor(Math.random() * ingestorsInfo.length)].id;
+    const extId = extractorsInfo[Math.floor(Math.random() * extractorsInfo.length)].id;
+    const modId = modelsInfo[Math.floor(Math.random() * modelsInfo.length)].id;
 
     const newPulse = { id: Date.now().toString() + Math.random(), source: matchedSourceId, ext: extId, mod: modId };
     setPulses(p => [...p, newPulse]);
@@ -145,8 +172,9 @@ export default function MLPipelinePage() {
   const servingCount = models.filter(m => m.status === 'serving').length;
 
   return (
-    <div className="flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar bg-sf-bg flex flex-col min-h-0">
-        
+    <div className="flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar bg-transparent relative flex flex-col min-h-0">
+      <AmbientBackground variant="pipeline" />
+      <div className="relative z-10 flex flex-col flex-1 p-6">
       {/* KPI TOP ROW */}
       <div className="flex shrink-0 gap-4 mb-4">
         <PanelCard className="flex-1 p-3 flex flex-col gap-1">
@@ -189,10 +217,15 @@ export default function MLPipelinePage() {
                         <span className="w-1.5 h-1.5 bg-sf-accent animate-pulse-fast border border-sf-bg" /> INFERENCE TOPOLOGY
                     </span>
                 </div>
+                {isDemo && (
+                  <div className="absolute top-2 right-2 z-20 text-[9px] font-mono bg-sf-warning/10 border border-sf-warning/30 text-sf-warning px-1.5 py-0.5">
+                    [DEMO DATA]
+                  </div>
+                )}
                 
-                <div className="flex-1 relative border border-sf-border bg-sf-bg overflow-hidden">
+                <div className="flex-1 relative border border-sf-border bg-sf-bg overflow-hidden mt-3 md:mt-0">
                     <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="absolute inset-0 w-full h-full pointer-events-none z-0">
-                    {graphConnections.map(conn => {
+                    {currentConnections.map(conn => {
                         const isPulsing = pulses.some(
                         p => (p.source === conn.from.id && p.ext === conn.to.id) || 
                             (p.ext === conn.from.id && p.mod === conn.to.id)
@@ -212,8 +245,9 @@ export default function MLPipelinePage() {
                     </svg>
 
                     <div className="absolute inset-0 z-10 pointer-events-none">
-                    {Object.entries(GRAPH_NODES).flatMap(([group, nodes]) => nodes.map(node => {
+                    {Object.entries(graphNodes || GRAPH_NODES).flatMap(([group, nodes]) => (nodes as any[]).map((node: any) => {
                         const isPulsing = pulses.some(p => p.source === node.id || p.ext === node.id || p.mod === node.id);
+                        const Icon = node.icon || Activity;
                         return (
                         <div
                             key={node.id}
@@ -221,7 +255,7 @@ export default function MLPipelinePage() {
                             style={{ left: `${node.x}%`, top: `${node.y}%` }}
                         >
                             <div className={`w-8 h-8 rounded-none border-[1.5px] ${isPulsing ? 'border-sf-accent bg-sf-accent/10 text-sf-accent' : 'border-sf-border bg-sf-surface text-sf-muted'} flex items-center justify-center transition-colors duration-100`}>
-                              <node.icon className="w-4 h-4" />
+                              <Icon className="w-4 h-4" />
                             </div>
                             <span className={`mt-1 text-[8px] font-mono tracking-widest px-1 transition-colors duration-100 ${isPulsing ? 'bg-sf-accent text-sf-bg' : 'bg-sf-surface text-sf-muted'}`}>
                               {node.label}
@@ -276,8 +310,8 @@ export default function MLPipelinePage() {
                         rowKey="name"
                         columns={[
                             { header: "ST", key: "status", render: (val) => <div className={`w-1.5 h-1.5 ${val === 'serving' ? 'bg-sf-safe' : 'bg-sf-warning'}`} /> },
-                            { header: "MODEL", key: "name" },
-                            { header: "ACCURACY", key: "accuracy", align: "right", render: (val) => <span className="text-sf-text">{val}%</span> }
+                            { header: "MODEL", key: "name", render: (val) => <div className="flex items-center gap-2"><span className="text-[11px] text-sf-text">{val}</span>{isDemoModels && <span className="text-[8px] border border-sf-warning/40 text-sf-warning px-1.5 font-mono">[DEMO]</span>}</div> },
+                            { header: "ACCURACY", key: "accuracy", align: "right", render: (val) => <span className="text-[11px] font-mono text-sf-text">{val}%</span> }
                         ]}
                     />
                 </div>
@@ -303,6 +337,7 @@ export default function MLPipelinePage() {
                 </div>
              </PanelCard>
         </div>
+      </div>
       </div>
     </div>
   );

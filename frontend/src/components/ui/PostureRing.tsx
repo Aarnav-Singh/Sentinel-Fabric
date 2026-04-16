@@ -42,7 +42,7 @@ export function PostureRing({ score, size = 120, strokeWidth = 8, showLabel = tr
                     strokeWidth={strokeWidth}
                     strokeDasharray={circumference}
                     strokeDashoffset={circumference - progress}
-                    strokeLinecap="round"
+                    strokeLinecap="butt"
                     className="transition-all duration-1000 ease-out"
                     style={{ filter: score < 50 ? `drop-shadow(0 0 10px rgba(255, 45, 85, 0.5))` : "none" }}
                 />

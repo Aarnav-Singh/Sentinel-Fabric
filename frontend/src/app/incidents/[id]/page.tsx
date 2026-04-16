@@ -92,12 +92,12 @@ export default function IncidentDetailPage({ params }: { params: { id: string } 
     if (error || !finding) {
         return (
             <div className="flex-1 p-8 flex flex-col items-center justify-center text-center h-full bg-transparent">
-                <div className="w-20 h-20 rounded-2xl bg-[var(--sf-critical)]/10 flex items-center justify-center border border-[var(--sf-critical)]/30 shadow-[0_0_20px_rgba(239,68,68,0.2)] mb-6">
+                <div className="w-20 h-20 rounded-none bg-[var(--sf-critical)]/10 flex items-center justify-center border border-[var(--sf-critical)]/30 shadow-[0_0_20px_rgba(239,68,68,0.2)] mb-6">
                     <AlertTriangle className="w-10 h-10 text-[var(--sf-critical)]" />
                 </div>
                 <h2 className="text-2xl font-display font-bold text-white mb-2">Incident Not Found</h2>
                 <p className="text-sf-muted max-w-sm mb-8">The incident you requested could not be found or has been purged from active telemetry.</p>
-                <Link href="/dashboard" className="px-6 py-2.5 bg-sf-surface border border-slate-600 text-white text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-slate-700 transition-colors">
+                <Link href="/dashboard" className="px-6 py-2.5 bg-sf-surface border border-sf-border text-white text-[10px] font-mono tracking-widest uppercase rounded-none hover:bg-sf-surface/50 transition-colors">
                     Return to SOC
                 </Link>
             </div>
@@ -116,7 +116,7 @@ export default function IncidentDetailPage({ params }: { params: { id: string } 
         ? "text-[var(--sf-warning)] bg-[var(--sf-warning)]/10 border-[var(--sf-warning)]/30"
         : isMedium
         ? "text-[var(--sf-accent-2)] bg-[var(--sf-accent-2)]/10 border-[var(--sf-accent-2)]/30"
-        : "text-sf-muted bg-slate-500/10 border-slate-500/30";
+        : "text-sf-muted bg-sf-muted/10 border-sf-border/30";
 
     const severityTextColor = isCritical ? "text-[var(--sf-critical)]" : isHigh ? "text-[var(--sf-warning)]" : isMedium ? "text-[var(--sf-accent-2)]" : "text-sf-muted";
 
@@ -128,7 +128,7 @@ export default function IncidentDetailPage({ params }: { params: { id: string } 
                 <div className="flex flex-col">
                     <div className="flex items-center gap-2 text-[11px] font-bold text-sf-muted mb-1.5 uppercase tracking-widest">
                         <span>Incidents</span>
-                        <ChevronRight className="w-3 h-3 text-slate-600" />
+                        <ChevronRight className="w-3 h-3 text-sf-muted" />
                         <span className="text-sf-muted">INC-{id.split('-')[0].substring(0,6)}</span>
                     </div>
                     <div className="flex items-center gap-4">
@@ -145,23 +145,23 @@ export default function IncidentDetailPage({ params }: { params: { id: string } 
                 </div>
                 <div className="flex items-center gap-6">
                     {/* Tab Bar */}
-                    <div className="flex items-center gap-1 bg-sf-bg border border-sf-border rounded-lg p-1">
+                    <div className="flex items-center gap-1 bg-sf-bg border border-sf-border rounded-none p-1">
                         <button
                             onClick={() => setActiveTab("details")}
-                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-bold uppercase tracking-wider transition-all ${
+                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-none text-xs font-bold uppercase tracking-wider transition-all ${
                                 activeTab === "details"
                                     ? "bg-sf-surface text-white shadow"
-                                    : "text-sf-muted hover:text-slate-300"
+                                    : "text-sf-muted hover:text-sf-text"
                             }`}
                         >
                             <Layers className="w-3.5 h-3.5" /> Details
                         </button>
                         <button
                             onClick={() => setActiveTab("threat-intel")}
-                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-bold uppercase tracking-wider transition-all ${
+                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-none text-xs font-bold uppercase tracking-wider transition-all ${
                                 activeTab === "threat-intel"
                                     ? "bg-[var(--sf-accent)]/10 text-[var(--sf-accent)] border border-[var(--sf-accent)]/30 shadow"
-                                    : "text-sf-muted hover:text-slate-300"
+                                    : "text-sf-muted hover:text-sf-text"
                             }`}
                         >
                             <Network className="w-3.5 h-3.5" /> Threat Intel
@@ -172,13 +172,13 @@ export default function IncidentDetailPage({ params }: { params: { id: string } 
                         <div className={`text-lg font-bold uppercase tracking-wide ${severityTextColor}`}>{finding.severity}</div>
                         <div className="text-[9px] uppercase tracking-widest text-[var(--sf-accent)]">{finding.confidence || "High"} Confidence</div>
                     </div>
-                    <div className="w-[1px] h-10 bg-slate-700/50 hidden sm:block"></div>
+                    <div className="w-[1px] h-10 bg-sf-surface/50 hidden sm:block"></div>
                     <div className="flex gap-3">
-                        <div className="flex items-center gap-2 px-3 py-1.5 bg-sf-bg border border-sf-border/50 rounded-lg text-xs font-bold text-slate-300 shadow-inner">
+                        <div className="flex items-center gap-2 px-3 py-1.5 bg-sf-bg border border-sf-border/50 rounded-none text-[10px] font-mono text-sf-text shadow-inner">
                             <Users className="w-3.5 h-3.5 text-sf-muted" />
                             <span>{finding.entities?.filter(e => e.type === 'user').length || 0}</span>
                         </div>
-                        <div className="flex items-center gap-2 px-3 py-1.5 bg-sf-bg border border-sf-border/50 rounded-lg text-xs font-bold text-slate-300 shadow-inner">
+                        <div className="flex items-center gap-2 px-3 py-1.5 bg-sf-bg border border-sf-border/50 rounded-none text-[10px] font-mono text-sf-text shadow-inner">
                             <MonitorSmartphone className="w-3.5 h-3.5 text-sf-muted" />
                             <span>{finding.entities?.filter(e => e.type === 'host' || e.type === 'ip').length || 0}</span>
                         </div>
@@ -192,7 +192,7 @@ export default function IncidentDetailPage({ params }: { params: { id: string } 
                 {/* Left Column: Summary & Scope */}
                 <div className="col-span-12 xl:col-span-3 space-y-6">
                     {/* What's Happening Card */}
-                    <div className="sf-card p-5">
+                    <div className="sf-panel p-5">
                         <div className="flex items-center gap-2 mb-4">
                             <Radar className="w-5 h-5 text-[var(--sf-accent-2)]" />
                             <h3 className="text-sm font-bold text-white uppercase tracking-wider">Context Overview</h3>
@@ -200,14 +200,14 @@ export default function IncidentDetailPage({ params }: { params: { id: string } 
                         <p className="text-xs leading-relaxed text-sf-muted mb-5">
                             {finding.description}
                         </p>
-                        <div className="p-3 bg-sf-bg/50 rounded-lg border border-sf-border/50 space-y-3 shadow-inner">
+                        <div className="p-3 bg-sf-bg/50 rounded-none border border-sf-border/50 space-y-3 shadow-inner">
                             <div className="flex justify-between items-center text-[11px]">
                                 <span className="text-sf-muted font-bold uppercase tracking-wider">First Identified</span>
-                                <span className="text-slate-300 font-mono">{new Date(finding.created_at).toLocaleString()}</span>
+                                <span className="text-sf-text font-mono">{new Date(finding.created_at).toLocaleString()}</span>
                             </div>
                             <div className="flex justify-between items-center text-[11px]">
                                 <span className="text-sf-muted font-bold uppercase tracking-wider">Last Updated</span>
-                                <span className="text-slate-300 font-mono">{new Date(finding.updated_at).toLocaleString()}</span>
+                                <span className="text-sf-text font-mono">{new Date(finding.updated_at).toLocaleString()}</span>
                             </div>
                             <div className="flex justify-between items-center text-[11px]">
                                 <span className="text-sf-muted font-bold uppercase tracking-wider">Correlation ID</span>
@@ -217,14 +217,14 @@ export default function IncidentDetailPage({ params }: { params: { id: string } 
                     </div>
 
                     {/* Affected Entities Card */}
-                    <div className="sf-card p-5">
+                    <div className="sf-panel p-5">
                         <h3 className="text-[10px] font-bold text-sf-muted uppercase tracking-widest mb-4 flex items-center gap-2">
                             <Target className="w-3.5 h-3.5 text-sf-muted" />
                             AFFECTED ENTITIES
                         </h3>
                         <div className="space-y-3">
                             {finding.entities?.length > 0 ? finding.entities.map((entity, idx) => (
-                                <div key={idx} className="flex items-center justify-between p-3 bg-sf-bg rounded-lg border border-sf-border/50 hover:border-slate-600 transition-colors">
+                                <div key={idx} className="flex items-center justify-between p-3 bg-sf-bg rounded-none border border-sf-border/50 hover:border-sf-border transition-colors">
                                     <div className="flex items-center gap-3">
                                         <div className="w-8 h-8 rounded shrink-0 bg-sf-surface flex items-center justify-center border border-sf-border">
                                             {entity.type === 'user' ? <Users className="w-4 h-4 text-[var(--sf-critical)]" /> : <MonitorSmartphone className="w-4 h-4 text-[var(--sf-accent)]" />}
@@ -236,10 +236,10 @@ export default function IncidentDetailPage({ params }: { params: { id: string } 
                                             </p>
                                         </div>
                                     </div>
-                                    <ChevronRight className="w-4 h-4 text-slate-600" />
+                                    <ChevronRight className="w-4 h-4 text-sf-muted" />
                                 </div>
                             )) : (
-                                <div className="p-4 bg-sf-bg/50 rounded-lg border border-sf-border border-dashed text-center">
+                                <div className="p-4 bg-sf-bg/50 rounded-none border border-sf-border border-dashed text-center">
                                     <p className="text-xs text-sf-muted font-medium">No specific entities correlated.</p>
                                 </div>
                             )}
@@ -250,11 +250,11 @@ export default function IncidentDetailPage({ params }: { params: { id: string } 
                 {/* Center Column: Evidence & Timeline */}
                 <div className="col-span-12 xl:col-span-6 space-y-6">
                     {/* Evidence Overview Table */}
-                    <div className="sf-card overflow-hidden flex flex-col h-[300px]">
+                    <div className="sf-panel overflow-hidden flex flex-col h-[300px]">
                         <div className="p-5 flex items-center justify-between border-b border-sf-border/50 bg-sf-bg/30">
                             <h3 className="text-sm font-bold text-white uppercase tracking-wider">Evidence Matrix</h3>
                             <div className="relative">
-                                <input className="bg-sf-bg border border-sf-border/50 rounded shadow-inner text-[11px] font-medium py-1.5 pl-8 pr-4 w-48 focus:border-[var(--sf-accent)]/50 text-white placeholder-slate-500 focus:outline-none transition-colors" placeholder="Search logs..." type="text" />
+                                <input className="bg-sf-bg border border-sf-border/50 rounded shadow-inner text-[11px] font-medium py-1.5 pl-8 pr-4 w-48 focus:border-[var(--sf-accent)]/50 text-white placeholder-sf-muted/50 focus:outline-none transition-colors" placeholder="Search logs..." type="text" />
                                 <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-sf-muted" />
                             </div>
                         </div>
@@ -268,16 +268,16 @@ export default function IncidentDetailPage({ params }: { params: { id: string } 
                                         <th className="px-5 py-3 font-bold">Validation</th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-slate-700/30">
+                                <tbody className="divide-y divide-sf-border/30">
                                     <tr className="hover:bg-sf-surface/50 transition-colors group">
                                         <td className="px-5 py-4"><Activity className="w-4 h-4 text-[var(--sf-warning)]" /></td>
-                                        <td className="px-5 py-4 text-slate-300 font-medium">Anomaly detected via behavioral ML model</td>
+                                        <td className="px-5 py-4 text-sf-text font-medium">Anomaly detected via behavioral ML model</td>
                                         <td className="px-5 py-4 text-sf-muted font-mono">{new Date(finding.created_at).toLocaleTimeString()}</td>
                                         <td className="px-5 py-4"><span className="bg-[var(--sf-safe)]/10 text-[var(--sf-safe)] text-[10px] font-bold tracking-widest uppercase px-2 py-0.5 rounded border border-[var(--sf-safe)]/30">Valid</span></td>
                                     </tr>
                                     <tr className="hover:bg-sf-surface/50 transition-colors group">
                                         <td className="px-5 py-4"><ShieldOff className="w-4 h-4 text-[var(--sf-critical)]" /></td>
-                                        <td className="px-5 py-4 text-slate-300 font-medium">Signature match: Cobalt Strike Beacon</td>
+                                        <td className="px-5 py-4 text-sf-text font-medium">Signature match: Cobalt Strike Beacon</td>
                                         <td className="px-5 py-4 text-sf-muted font-mono">{new Date(finding.created_at).toLocaleTimeString()}</td>
                                         <td className="px-5 py-4"><span className="bg-[var(--sf-safe)]/10 text-[var(--sf-safe)] text-[10px] font-bold tracking-widest uppercase px-2 py-0.5 rounded border border-[var(--sf-safe)]/30">Valid</span></td>
                                     </tr>
@@ -287,14 +287,14 @@ export default function IncidentDetailPage({ params }: { params: { id: string } 
                     </div>
 
                     {/* Activity Timeline */}
-                    <div className="sf-card p-6">
+                    <div className="sf-panel p-6">
                         <div className="flex items-center justify-between mb-8">
                             <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
                                 <Clock className="w-4 h-4 text-sf-muted" />
                                 Execution Timeline
                             </h3>
                             <div className="flex items-center gap-2">
-                                <input defaultChecked className="w-3.5 h-3.5 rounded border-slate-600 bg-sf-bg text-[var(--sf-accent)] focus:ring-0 focus:ring-offset-0 cursor-pointer" type="checkbox" />
+                                <input defaultChecked className="w-3.5 h-3.5 rounded border-sf-border bg-sf-bg text-[var(--sf-accent)] focus:ring-0 focus:ring-offset-0 cursor-pointer" type="checkbox" />
                                 <label className="text-[10px] font-bold uppercase tracking-wider text-sf-muted cursor-pointer">Key Events Only</label>
                             </div>
                         </div>
@@ -302,7 +302,7 @@ export default function IncidentDetailPage({ params }: { params: { id: string } 
                             
                             <div className="flex items-start gap-4">
                                 <div className="mt-1 -ml-[23px] w-3 h-3 rounded-full bg-[var(--sf-critical)] shadow-[0_0_10px_rgba(239,68,68,0.6)] border-2 border-sf-border relative z-10 animate-pulse"></div>
-                                <div className="flex-1 bg-sf-bg/50 border border-sf-border/50 rounded-lg p-3">
+                                <div className="flex-1 bg-sf-bg/50 border border-sf-border/50 rounded-none p-3">
                                     <div className="flex justify-between items-center mb-1">
                                         <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--sf-critical)]">Detection Event</span>
                                     </div>
@@ -313,11 +313,11 @@ export default function IncidentDetailPage({ params }: { params: { id: string } 
                             
                             <div className="flex items-start gap-4">
                                 <div className="mt-1 -ml-[23px] w-3 h-3 rounded-full bg-[var(--sf-accent)] border-2 border-sf-border relative z-10"></div>
-                                <div className="flex-1 bg-sf-bg/50 border border-sf-border/50 rounded-lg p-3 opacity-80">
+                                <div className="flex-1 bg-sf-bg/50 border border-sf-border/50 rounded-none p-3 opacity-80">
                                     <div className="flex justify-between items-center mb-1">
                                         <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--sf-accent)]">Automated Enrichment</span>
                                     </div>
-                                    <p className="text-xs text-slate-300 font-medium">Status initialized to <strong className="text-white uppercase">{finding.status}</strong></p>
+                                    <p className="text-xs text-sf-text font-medium">Status initialized to <strong className="text-white uppercase">{finding.status}</strong></p>
                                     <span className="text-[10px] text-sf-muted font-mono mt-2 block">{new Date(finding.updated_at).toLocaleString()}</span>
                                 </div>
                             </div>
@@ -329,7 +329,7 @@ export default function IncidentDetailPage({ params }: { params: { id: string } 
                 {/* Right Column: Remediation Hub & Activity */}
                 <div className="col-span-12 xl:col-span-3 space-y-6">
                     {/* Remediation Hub Sidebar */}
-                    <div className="sf-card p-5 relative overflow-hidden group">
+                    <div className="sf-panel p-5 relative overflow-hidden group">
                         <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-[var(--sf-accent)]/50 to-transparent" />
                         
                         <div className="flex items-center gap-2 mb-6 focus-border">
@@ -337,29 +337,29 @@ export default function IncidentDetailPage({ params }: { params: { id: string } 
                             <h3 className="text-sm font-bold text-white uppercase tracking-wider">Mitigation Center</h3>
                         </div>
                         <div className="space-y-4">
-                            <button className="w-full bg-[var(--sf-accent)] text-slate-950 font-bold py-3 rounded-xl text-xs flex items-center justify-center gap-2 hover:bg-sf-accent transition-all shadow-[0_0_15px_rgba(6,182,212,0.3)] uppercase tracking-wider">
+                            <button className="w-full bg-[var(--sf-accent)] text-sf-bg font-bold py-3 rounded-none text-[10px] font-mono tracking-widest flex items-center justify-center gap-2 hover:bg-sf-accent/90 transition-all uppercase">
                                 <ShieldAlert className="w-4 h-4" />
                                 EXECUTE PLAYBOOK
                             </button>
                             
                             <div className="pt-2 space-y-2">
                                 <p className="text-[9px] font-bold text-sf-muted uppercase tracking-widest mb-2 border-b border-sf-border/50 pb-2">Manual Actions</p>
-                                <button className="w-full text-left px-4 py-2.5 text-xs font-bold text-slate-300 border border-sf-border hover:border-slate-500 bg-sf-bg hover:bg-sf-surface rounded-lg flex items-center justify-between group transition-all uppercase tracking-wider">
+                                <button className="w-full text-left px-4 py-2.5 text-xs font-bold text-sf-text border border-sf-border hover:border-sf-border bg-sf-bg hover:bg-sf-surface rounded-none flex items-center justify-between group transition-all uppercase tracking-wider">
                                     <span>Isolate Endpoint</span>
                                     <ChevronRight className="w-3.5 h-3.5 text-sf-muted group-hover:text-white" />
                                 </button>
-                                <button className="w-full text-left px-4 py-2.5 text-xs font-bold text-slate-300 border border-sf-border hover:border-slate-500 bg-sf-bg hover:bg-sf-surface rounded-lg flex items-center justify-between group transition-all uppercase tracking-wider">
+                                <button className="w-full text-left px-4 py-2.5 text-xs font-bold text-sf-text border border-sf-border hover:border-sf-border bg-sf-bg hover:bg-sf-surface rounded-none flex items-center justify-between group transition-all uppercase tracking-wider">
                                     <span>Revoke Tokens</span>
                                     <ChevronRight className="w-3.5 h-3.5 text-sf-muted group-hover:text-white" />
                                 </button>
-                                <button className="w-full text-left px-4 py-2.5 text-xs font-bold text-slate-300 border border-sf-border hover:border-slate-500 bg-sf-bg hover:bg-sf-surface rounded-lg flex items-center justify-between group transition-all uppercase tracking-wider">
+                                <button className="w-full text-left px-4 py-2.5 text-xs font-bold text-sf-text border border-sf-border hover:border-sf-border bg-sf-bg hover:bg-sf-surface rounded-none flex items-center justify-between group transition-all uppercase tracking-wider">
                                     <span>Assign to Team</span>
                                     <ChevronRight className="w-3.5 h-3.5 text-sf-muted group-hover:text-white" />
                                 </button>
                             </div>
                             
                             <div className="pt-4 border-t border-sf-border/50">
-                                <button className="w-full border border-[var(--sf-safe)]/30 text-[var(--sf-safe)] hover:bg-[var(--sf-safe)]/10 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-all">
+                                <button className="w-full border border-[var(--sf-safe)]/30 text-[var(--sf-safe)] hover:bg-[var(--sf-safe)]/10 py-2.5 rounded-none text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-all">
                                     Close Incident
                                 </button>
                             </div>
@@ -389,7 +389,7 @@ export default function IncidentDetailPage({ params }: { params: { id: string } 
                     </div>
 
                     {graphLoading && (
-                        <div className="flex items-center justify-center h-[400px] bg-sf-surface/30 rounded-xl border border-sf-border/50">
+                        <div className="flex items-center justify-center h-[400px] sf-panel border border-sf-border/50">
                             <div className="flex flex-col items-center gap-3">
                                 <div className="w-8 h-8 border-2 border-[var(--sf-accent)] border-b-transparent rounded-full animate-spin" />
                                 <p className="text-xs text-sf-muted font-mono uppercase tracking-widest animate-pulse">Loading Threat Graph…</p>
@@ -398,10 +398,10 @@ export default function IncidentDetailPage({ params }: { params: { id: string } 
                     )}
 
                     {!graphLoading && graphNodes.length === 0 && (
-                        <div className="flex flex-col items-center justify-center h-[400px] bg-sf-surface/30 rounded-xl border border-sf-border/50 border-dashed gap-4">
-                            <Network className="w-12 h-12 text-slate-700" />
+                        <div className="flex flex-col items-center justify-center h-[400px] sf-panel border border-sf-border/50 border-dashed gap-4">
+                            <Network className="w-12 h-12 text-sf-muted" />
                             <div className="text-center">
-                                <p className="text-sm font-bold text-slate-400">No Threat Intelligence Data</p>
+                                <p className="text-sm font-bold text-sf-text">No Threat Intelligence Data</p>
                                 <p className="text-xs text-sf-muted mt-1 max-w-xs">
                                     No STIX2 entities are linked to this incident yet. Connect TAXII feeds or ingest threat bundles to populate this graph.
                                 </p>

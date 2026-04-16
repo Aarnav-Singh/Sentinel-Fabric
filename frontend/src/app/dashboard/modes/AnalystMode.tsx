@@ -4,16 +4,20 @@ import React from 'react';
 import { ShieldAlert, Activity, CheckCircle2, XCircle, Terminal, Maximize2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { StaggerChildren, AnimatedNumber, PanelCard } from "@/components/ui/MotionWrappers";
-import { Sparkline } from "@/components/ui/Sparkline";
+import { RealSparkline } from "@/components/ui/RealSparkline";
 import { DataGrid } from "@/components/ui/DataGrid";
 import { VectorMap } from "@/components/ui/VectorMap";
 import { DashboardModeProps } from './types';
+import useSWR from "swr";
 
-const DEMO_HISTORY = Array.from({ length: 30 }, (_, i) => 62 + Math.round(Math.sin(i * 0.4) * 7 + i * 0.3) + Math.random() * 5);
-const SPARK_CAMPAIGNS = Array.from({ length: 30 }, (_, i) => 10 + Math.round(Math.cos(i * 0.6) * 3 + i * 0.5) + Math.random() * 2);
-const SPARK_RATE = Array.from({ length: 30 }, (_, i) => 220 + Math.round(Math.sin(i * 0.8) * 30 + i * 1.5) + Math.random() * 10);
+const fetcher = (url: string) => fetch(url).then(r => r.json());
 
 export function AnalystMode({ metrics, findings, threatMapData, liveFeed, setMaximizedWidget, eventsRate }: DashboardModeProps) {
+    const { data: postureHistory } = useSWR("/api/proxy/api/v1/posture/history", fetcher);
+    const pts = postureHistory?.data_points ?? [];
+    const delta = pts.length >= 2
+      ? ((pts[pts.length-1].score - pts[0].score) / (pts[0].score || 1) * 100).toFixed(1)
+      : null;
     return (
         <div className="flex flex-col gap-4 h-full w-full relative">
             <div className="z-10 grid grid-cols-2 md:grid-cols-5 gap-2 xl:gap-4 shrink-0">
@@ -21,14 +25,14 @@ export function AnalystMode({ metrics, findings, threatMapData, liveFeed, setMax
                     <div className="flex items-center justify-between text-sf-muted text-[10px] font-mono tracking-widest z-10">
                         <span className="flex items-center gap-1.5"><ShieldAlert className="w-3.5 h-3.5 text-sf-safe" /> POSTURE SCORE</span>
                         <div className="flex items-center gap-2">
-                            <span className="text-sf-safe">+2.4%</span>
+                            <span className="text-sf-safe">{delta !== null ? `${Number(delta) > 0 ? "+" : ""}${delta}%` : "—"}</span>
                         </div>
                     </div>
                     <div className="text-2xl font-mono text-sf-text z-10 mt-1">
                         <AnimatedNumber value={Math.round(metrics.posture_score)} /><span className="text-sm text-sf-muted">/100</span>
                     </div>
                     <div className="h-4 w-full mt-1 opacity-50 z-10">
-                        <Sparkline data={DEMO_HISTORY} width={200} height={16} color="var(--sf-safe)" />
+                        <RealSparkline source="posture" width={200} height={16} />
                     </div>
                 </PanelCard>
 
@@ -40,7 +44,7 @@ export function AnalystMode({ metrics, findings, threatMapData, liveFeed, setMax
                         <AnimatedNumber value={metrics.active_campaigns} />
                     </div>
                     <div className="h-4 w-full mt-1 opacity-50 z-10">
-                        <Sparkline data={SPARK_CAMPAIGNS} width={200} height={16} color="var(--sf-warning)" />
+                        <RealSparkline source="campaigns" width={200} height={16} />
                     </div>
                 </PanelCard>
 
@@ -64,7 +68,7 @@ export function AnalystMode({ metrics, findings, threatMapData, liveFeed, setMax
                         <AnimatedNumber value={eventsRate} />
                     </div>
                     <div className="h-4 w-full mt-1 opacity-50 z-10">
-                        <Sparkline data={SPARK_RATE} width={200} height={16} color="var(--sf-accent)" />
+                        <RealSparkline source="eps" width={200} height={16} />
                     </div>
                 </PanelCard>
 
@@ -85,7 +89,7 @@ export function AnalystMode({ metrics, findings, threatMapData, liveFeed, setMax
                         <h2 className="text-[10px] text-sf-muted font-mono tracking-widest bg-sf-bg border border-sf-border px-2 py-0.5">GLOBAL THREAT TOPOLOGY</h2>
                     </div>
                     <div className="absolute top-3 right-3 z-10 flex gap-2">
-                        <button onClick={() => setMaximizedWidget('map')} className="text-sf-muted hover:text-white transition-colors bg-sf-bg/80 backdrop-blur border border-sf-border p-1.5 rounded hover:bg-sf-surface">
+                        <button onClick={() => setMaximizedWidget('map')} className="text-sf-muted hover:text-white transition-colors bg-sf-bg/80 backdrop-blur border border-sf-border p-1.5 rounded-none hover:bg-sf-surface">
                             <Maximize2 className="w-3.5 h-3.5" />
                         </button>
                     </div>
@@ -116,7 +120,7 @@ export function AnalystMode({ metrics, findings, threatMapData, liveFeed, setMax
                             <div className="w-1.5 h-1.5 bg-sf-accent animate-pulse-fast" /> LIVE
                         </div>
                     </div>
-                    <button onClick={() => setMaximizedWidget('telemetry')} className="absolute top-2.5 right-16 z-10 text-sf-muted hover:text-white transition-colors p-1 rounded hover:bg-white/10">
+                    <button onClick={() => setMaximizedWidget('telemetry')} className="absolute top-2.5 right-16 z-10 text-sf-muted hover:text-white transition-colors p-1 rounded-none hover:bg-white/10">
                         <Maximize2 className="w-3.5 h-3.5" />
                     </button>
                     

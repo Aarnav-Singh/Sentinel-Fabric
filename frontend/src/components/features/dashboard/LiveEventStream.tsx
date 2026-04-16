@@ -24,7 +24,7 @@ export function LiveEventStream({ events }: LiveEventStreamProps) {
     return (
         <div className="flex-1 overflow-hidden flex flex-col">
             <div
-                className="flex items-center gap-2 border-b border-sf-border text-[11px] font-space text-sf-text-secondary tracking-widest uppercase"
+                className="flex items-center gap-2 border-b border-sf-border text-[11px] font-space text-sf-muted tracking-widest uppercase"
                 style={{ padding: "12px 16px 8px" }}
             >
                 <div className="w-1.5 h-1.5 rounded-full bg-sf-green animate-sf-blink" />
@@ -42,7 +42,7 @@ export function LiveEventStream({ events }: LiveEventStreamProps) {
                         }}
                     >
                         <div className="flex items-center gap-1.5 mb-0.5">
-                            <span className="text-[9px] text-sf-text-muted font-space">{ev.time}</span>
+                            <span className="text-[9px] text-sf-muted font-space">{ev.time}</span>
                             <Chip label={ev.tool} color="var(--sf-bg)" />
                             <div className="ml-auto">
                                 <span className="text-[10px] font-space" style={{ color: scoreColor(ev.score) }}>
@@ -50,7 +50,7 @@ export function LiveEventStream({ events }: LiveEventStreamProps) {
                                 </span>
                             </div>
                         </div>
-                        <div className="text-[11px] text-sf-text-secondary leading-snug">{ev.msg}</div>
+                        <div className="text-[11px] text-sf-muted leading-snug">{ev.msg}</div>
                         {ev.campaign && (
                             <div className="text-[9px] text-sf-teal-dim mt-0.5 font-space">→ {ev.campaign}</div>
                         )}

@@ -13,7 +13,7 @@ interface RecommendedActionProps {
 export function RecommendedAction({ campaign, onApprove, onModify, onDismiss }: RecommendedActionProps) {
     return (
         <div
-            className="rounded-lg mt-2 animate-sf-fadeIn"
+            className="rounded-none mt-2 animate-sf-fadeIn"
             style={{
                 background: "var(--sf-bg)",
                 border: "1px solid var(--sf-bg)",
@@ -54,7 +54,7 @@ export function RecommendedAction({ campaign, onApprove, onModify, onDismiss }: 
                 <div className="flex-1" />
                 <button
                     onClick={onDismiss}
-                    className="px-3.5 py-1.5 text-xs bg-transparent border border-sf-border text-sf-text-secondary rounded-[5px] cursor-pointer hover:border-sf-text-muted transition-colors"
+                    className="px-3.5 py-1.5 text-xs bg-transparent border border-sf-border text-sf-muted rounded-[5px] cursor-pointer hover:border-sf-muted transition-colors"
                 >
                     Dismiss
                 </button>

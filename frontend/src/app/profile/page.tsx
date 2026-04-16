@@ -63,9 +63,9 @@ export default function ProfilePage() {
     const mfaEnabled = !!claims.mfa_enabled;
 
     const roleColors: Record<string, string> = {
-        admin: "text-red-400 bg-red-400/10 border-red-400/30",
-        analyst: "text-cyan-400 bg-cyan-400/10 border-cyan-400/30",
-        viewer: "text-sf-muted bg-slate-400/10 border-slate-400/30",
+        admin: "text-[var(--sf-critical)] bg-[var(--sf-critical)]/10 border-[var(--sf-critical)]/30",
+        analyst: "text-[var(--sf-accent)] bg-[var(--sf-accent)]/10 border-[var(--sf-accent)]/30",
+        viewer: "text-sf-muted bg-sf-muted/10 border-sf-border/30",
     };
 
     const startMfaSetup = async () => {
@@ -111,14 +111,14 @@ export default function ProfilePage() {
                 </header>
 
                 {/* Identity Card */}
-                <div className="bg-sf-surface border border-sf-border rounded-xl p-6 space-y-5">
+                <div className="bg-sf-surface border border-sf-border rounded-none p-6 space-y-5">
                     <div className="flex items-center gap-4">
-                        <div className="w-16 h-16 rounded-full bg-gradient-to-br from-sf-accent/30 to-sf-accent/10 border border-sf-accent/40 flex items-center justify-center">
+                        <div className="w-16 h-16 rounded-none bg-gradient-to-br from-sf-accent/30 to-sf-accent/10 border border-sf-accent/40 flex items-center justify-center">
                             <span className="text-2xl font-bold text-sf-accent">{name.charAt(0).toUpperCase()}</span>
                         </div>
                         <div>
                             <h2 className="text-lg font-bold text-white">{name}</h2>
-                            <span className={`inline-block mt-1 px-2 py-0.5 rounded text-[10px] uppercase font-bold border ${roleColors[role] ?? roleColors.viewer}`}>
+                            <span className={`inline-block mt-1 px-2 py-0.5 rounded-none text-[10px] uppercase font-bold border ${roleColors[role] ?? roleColors.viewer}`}>
                                 {role}
                             </span>
                         </div>
@@ -152,14 +152,14 @@ export default function ProfilePage() {
                 </div>
 
                 {/* MFA Management */}
-                <div className="bg-sf-surface border border-sf-border rounded-xl p-6">
+                <div className="bg-sf-surface border border-sf-border rounded-none p-6">
                     <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-sf-accent/80 mb-4 flex items-center gap-2">
                         <Key className="w-3.5 h-3.5" />
                         Multi-Factor Authentication
                     </h3>
 
                     {mfaError && (
-                        <div className="mb-4 px-3 py-2 rounded bg-red-500/10 border border-red-500/30 text-red-400 text-xs flex items-center gap-2">
+                        <div className="mb-4 px-3 py-2 rounded-none bg-[var(--sf-critical)]/10 border border-[var(--sf-critical)]/30 text-[var(--sf-critical)] text-xs flex items-center gap-2">
                             <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" /> {mfaError}
                         </div>
                     )}
@@ -179,13 +179,13 @@ export default function ProfilePage() {
                             {!mfaEnabled && (
                                 <button
                                     onClick={startMfaSetup}
-                                    className="px-4 py-2 bg-sf-accent text-sf-bg font-bold rounded text-xs hover:bg-sf-accent/90"
+                                    className="px-4 py-2 bg-sf-accent text-sf-bg font-bold rounded-none text-xs hover:bg-sf-accent/90"
                                 >
                                     Enable MFA
                                 </button>
                             )}
                             {mfaEnabled && (
-                                <span className="px-2 py-1 rounded text-[10px] font-bold text-emerald-400 bg-emerald-400/10 border border-emerald-400/30">
+                                <span className="px-2 py-1 rounded-none text-[10px] font-bold text-[var(--sf-safe)] bg-[var(--sf-safe)]/10 border border-[var(--sf-safe)]/30">
                                     ✓ Active
                                 </span>
                             )}
@@ -194,10 +194,10 @@ export default function ProfilePage() {
 
                     {mfaStep === "setup" && (
                         <div className="space-y-4">
-                            <p className="text-sm text-slate-300">
+                            <p className="text-sm text-sf-text">
                                 Scan this QR code with your authenticator app (Google Authenticator, Authy, etc.):
                             </p>
-                            <div className="bg-white p-4 rounded-lg w-fit mx-auto">
+                            <div className="bg-white p-4 rounded-none w-fit mx-auto">
                                 {/* QR code placeholder — use provisioning URI */}
                                 {/* eslint-disable-next-line @next/next/no-img-element */}
                                 <img
@@ -208,7 +208,7 @@ export default function ProfilePage() {
                             </div>
                             <div className="text-center">
                                 <p className="text-[10px] text-sf-muted mb-1">Or enter this secret manually:</p>
-                                <code className="text-xs text-sf-accent font-mono bg-sf-surface px-3 py-1 rounded border border-sf-border">
+                                <code className="text-xs text-sf-accent font-mono bg-sf-surface px-3 py-1 rounded-none border border-sf-border">
                                     {mfaSecret}
                                 </code>
                             </div>
@@ -218,12 +218,12 @@ export default function ProfilePage() {
                                     value={mfaCode}
                                     onChange={e => setMfaCode(e.target.value)}
                                     maxLength={6}
-                                    className="flex-1 px-3 py-2 bg-sf-surface border border-sf-border rounded text-white text-sm text-center tracking-[0.3em] focus:outline-none focus:border-sf-accent"
+                                    className="flex-1 px-3 py-2 bg-sf-surface border border-sf-border rounded-none text-white text-sm text-center tracking-[0.3em] focus:outline-none focus:border-sf-accent"
                                 />
                                 <button
                                     onClick={verifyMfa}
                                     disabled={mfaCode.length < 6}
-                                    className="px-4 py-2 bg-sf-accent text-sf-bg font-bold rounded text-xs hover:bg-sf-accent/90 disabled:opacity-40"
+                                    className="px-4 py-2 bg-sf-accent text-sf-bg font-bold rounded-none text-xs hover:bg-sf-accent/90 disabled:opacity-40"
                                 >
                                     Verify
                                 </button>
@@ -233,25 +233,25 @@ export default function ProfilePage() {
 
                     {mfaStep === "done" && (
                         <div className="space-y-4">
-                            <div className="flex items-center gap-2 text-emerald-400">
+                            <div className="flex items-center gap-2 text-[var(--sf-safe)]">
                                 <CheckCircle2 className="w-5 h-5" />
                                 <p className="font-bold text-sm">MFA enabled successfully!</p>
                             </div>
                             <p className="text-xs text-sf-muted">
                                 Save these backup codes in a safe place. Each code can only be used once.
                             </p>
-                            <div className="bg-sf-surface border border-sf-border rounded-lg p-4">
+                            <div className="bg-sf-surface border border-sf-border rounded-none p-4">
                                 <div className="grid grid-cols-2 gap-2">
                                     {backupCodes.map((code, i) => (
-                                        <code key={i} className="text-xs text-slate-300 font-mono">{code}</code>
+                                        <code key={i} className="text-xs text-sf-text font-mono">{code}</code>
                                     ))}
                                 </div>
                             </div>
                             <button
                                 onClick={copyBackupCodes}
-                                className="px-3 py-1.5 text-xs text-sf-muted hover:text-white flex items-center gap-1.5 bg-sf-surface border border-sf-border rounded"
+                                className="px-3 py-1.5 text-xs text-sf-muted hover:text-white flex items-center gap-1.5 bg-sf-surface border border-sf-border rounded-none"
                             >
-                                {copied ? <CheckCircle2 className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                                {copied ? <CheckCircle2 className="w-3 h-3 text-[var(--sf-safe)]" /> : <Copy className="w-3 h-3" />}
                                 {copied ? "Copied!" : "Copy All"}
                             </button>
                         </div>
@@ -259,7 +259,7 @@ export default function ProfilePage() {
                 </div>
 
                 {/* Preferences */}
-                <div className="bg-sf-surface border border-sf-border rounded-xl p-6">
+                <div className="bg-sf-surface border border-sf-border rounded-none p-6">
                     <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-sf-accent/80 mb-4">Preferences</h3>
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
@@ -271,7 +271,7 @@ export default function ProfilePage() {
                         </div>
                         <button
                             onClick={() => setDarkMode(!darkMode)}
-                            className={`w-10 h-5 rounded-full transition-colors relative ${darkMode ? 'bg-sf-accent' : 'bg-slate-600'}`}
+                            className={`w-10 h-5 rounded-full transition-colors relative ${darkMode ? 'bg-sf-accent' : 'bg-sf-surface'}`}
                         >
                             <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${darkMode ? 'left-5' : 'left-0.5'}`} />
                         </button>

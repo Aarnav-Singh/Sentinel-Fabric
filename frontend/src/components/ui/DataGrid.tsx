@@ -15,9 +15,28 @@ interface DataGridProps<T> {
     className?: string;
     rowKey: keyof T;
     onRowClick?: (row: T) => void;
+    severityKey?: keyof T;
+    sortable?: boolean;
 }
 
-export function DataGrid<T>({ data, columns, className = "", rowKey, onRowClick }: DataGridProps<T>) {
+export function DataGrid<T>({ data, columns, className = "", rowKey, onRowClick, severityKey, sortable }: DataGridProps<T>) {
+    const [sortKey, setSortKey] = React.useState<keyof T | null>(null);
+    const [sortDir, setSortDir] = React.useState<"asc" | "desc">("asc");
+
+    const sortedData = sortable && sortKey
+      ? [...data].sort((a, b) => {
+          const av = a[sortKey], bv = b[sortKey];
+          const cmp = String(av).localeCompare(String(bv));
+          return sortDir === "asc" ? cmp : -cmp;
+        })
+      : data;
+
+    function getSeverityClass(severity: string): string {
+      if (severity === "critical") return "border-l-[3px] border-sf-critical bg-[rgba(220,38,38,0.03)]";
+      if (severity === "high")     return "border-l-[3px] border-sf-warning  bg-[rgba(215,119,6,0.02)]";
+      return "border-l-[3px] border-transparent";
+    }
+
     return (
         <div className={`w-full overflow-x-auto ${className}`}>
             <table className="w-full text-[11px] font-mono text-left border-collapse">
@@ -26,18 +45,22 @@ export function DataGrid<T>({ data, columns, className = "", rowKey, onRowClick 
                         {columns.map((col) => (
                             <th 
                                 key={String(col.key)} 
-                                className={`py-2 px-3 tracking-widest text-sf-muted uppercase font-normal ${col.align === "right" ? "text-right" : col.align === "center" ? "text-center" : "text-left"}`}
+                                onClick={sortable ? () => {
+                                    if (sortKey === col.key) setSortDir(d => d === "asc" ? "desc" : "asc");
+                                    else { setSortKey(col.key); setSortDir("asc"); }
+                                } : undefined}
+                                className={`py-2 px-3 tracking-widest text-sf-muted uppercase font-normal ${col.align === "right" ? "text-right" : col.align === "center" ? "text-center" : "text-left"} ${sortable ? "cursor-pointer hover:text-sf-text select-none" : ""}`}
                             >
-                                {col.header}
+                                {col.header}{sortable && sortKey === col.key ? (sortDir === "asc" ? " ↑" : " ↓") : ""}
                             </th>
                         ))}
                     </tr>
                 </thead>
                 <tbody className="divide-y divide-sf-border/50">
-                    {data.map((item) => (
+                    {sortedData.map((item) => (
                         <tr 
                             key={String(item[rowKey])} 
-                            className={`group hover:bg-sf-surface/50 transition-colors ${onRowClick ? 'cursor-pointer' : ''}`}
+                            className={`group hover:bg-sf-surface/50 transition-colors ${onRowClick ? 'cursor-pointer' : ''} ${severityKey ? getSeverityClass(String(item[severityKey])) : ''}`}
                             onClick={() => onRowClick?.(item)}
                         >
                             {columns.map((col) => {

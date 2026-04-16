@@ -47,24 +47,24 @@ export interface ThreatGraphProps {
 const getIconForType = (type: string) => {
   switch (type.toLowerCase()) {
     case 'indicator': return <Crosshair className="h-5 w-5" />;
-    case 'threatactor': return <User className="h-5 w-5 text-red-400" />;
-    case 'campaign': return <ShieldAlert className="h-5 w-5 text-orange-400" />;
-    case 'malware': return <Database className="h-5 w-5 text-purple-400" />;
+    case 'threatactor': return <User className="h-5 w-5 text-[var(--sf-critical)]" />;
+    case 'campaign': return <ShieldAlert className="h-5 w-5 text-[var(--sf-warning)]" />;
+    case 'malware': return <Database className="h-5 w-5 text-[var(--sf-accent-2)]" />;
     case 'attackpattern': return <Network className="h-5 w-5" />;
-    case 'vulnerability': return <FileText className="h-5 w-5 text-yellow-400" />;
-    default: return <Globe className="h-5 w-5 text-slate-400" />;
+    case 'vulnerability': return <FileText className="h-5 w-5 text-[var(--sf-warning)]" />;
+    default: return <Globe className="h-5 w-5 text-sf-muted" />;
   }
 };
 
 const getColorForType = (type: string) => {
   switch(type.toLowerCase()) {
-    case 'threatactor': return 'border-red-500/50 bg-red-500/10';
-    case 'campaign': return 'border-orange-500/50 bg-orange-500/10';
-    case 'malware': return 'border-purple-500/50 bg-purple-500/10';
-    case 'indicator': return 'border-blue-500/50 bg-blue-500/10';
-    case 'attackpattern': return 'border-emerald-500/50 bg-emerald-500/10';
-    case 'vulnerability': return 'border-yellow-500/50 bg-yellow-500/10';
-    default: return 'border-slate-500/50 bg-slate-500/10';
+    case 'threatactor': return 'border-[var(--sf-critical)]/50 bg-[var(--sf-critical)]/10';
+    case 'campaign': return 'border-[var(--sf-warning)]/50 bg-[var(--sf-warning)]/10';
+    case 'malware': return 'border-[var(--sf-accent-2)]/50 bg-[var(--sf-accent-2)]/10';
+    case 'indicator': return 'border-[var(--sf-accent)]/50 bg-[var(--sf-accent)]/10';
+    case 'attackpattern': return 'border-[var(--sf-safe)]/50 bg-[var(--sf-safe)]/10';
+    case 'vulnerability': return 'border-[var(--sf-warning)]/50 bg-[var(--sf-warning)]/10';
+    default: return 'border-sf-border/50 bg-sf-muted/10';
   }
 };
 
@@ -99,7 +99,7 @@ export const ThreatGraph: React.FC<ThreatGraphProps> = ({
   };
 
   return (
-    <div className={`relative flex flex-col xl:flex-row gap-6 w-full h-[600px] overflow-hidden bg-slate-900/40 rounded-xl border border-slate-800 p-6 ${className}`}>
+    <div className={`relative flex flex-col xl:flex-row gap-6 w-full h-[600px] overflow-hidden bg-sf-bg/40 rounded-none border border-sf-border p-6 ${className}`}>
       {/* Node Visualization Area */}
       <div className="flex-1 overflow-auto flex flex-col gap-12 relative pb-20 items-center hide-scrollbar">
         
@@ -114,9 +114,9 @@ export const ThreatGraph: React.FC<ThreatGraphProps> = ({
               animate={{ opacity: 1, y: 0 }}
               className="flex flex-col items-center gap-4 w-full"
             >
-              <h3 className="text-sm font-medium text-slate-400 capitalize tracking-wider flex items-center gap-2">
+              <h3 className="text-sm font-medium text-sf-muted capitalize tracking-wider flex items-center gap-2">
                 {type.replace("-", " ")}
-                <Badge label={typeNodes.length.toString()} className="bg-slate-800/50 text-xs" />
+                <Badge label={typeNodes.length.toString()} className="bg-sf-surface/50 text-xs" />
               </h3>
               
               <div className="flex flex-wrap justify-center gap-6">
@@ -131,28 +131,28 @@ export const ThreatGraph: React.FC<ThreatGraphProps> = ({
                       onClick={() => handleNodeClick(node)}
                       className={`
                         min-w-[200px] max-w-[240px] p-4 cursor-pointer relative
-                        rounded-lg border backdrop-blur-sm transition-all duration-300
+                        rounded-none border backdrop-blur-sm transition-all duration-300
                         flex flex-col items-center text-center gap-3
                         ${getColorForType(node.type)}
-                        ${isSelected ? 'ring-2 ring-primary ring-offset-2 ring-offset-slate-900 shadow-lg shadow-primary/20 scale-105' : 'hover:shadow-md hover:shadow-black/40'}
+                        ${isSelected ? 'ring-2 ring-sf-accent ring-offset-2 ring-offset-sf-bg shadow-lg shadow-sf-accent/20 scale-105' : 'hover:shadow-md hover:shadow-black/40'}
                       `}
                     >
-                      <div className={`p-3 rounded-full bg-slate-900/50 shadow-inner`}>
+                      <div className={`p-3 rounded-none bg-sf-bg/50 shadow-inner`}>
                         {getIconForType(node.type)}
                       </div>
                       
                       <div className="w-full">
-                        <p className="font-semibold text-sm text-slate-200 line-clamp-1 break-all" title={node.name || node.type}>
+                        <p className="font-semibold text-sm text-sf-text line-clamp-1 break-all" title={node.name || node.type}>
                           {node.name || `${node.type.toUpperCase()}`}
                         </p>
-                        <p className="text-xs text-slate-400 mt-1 truncate" title={node.id}>
+                        <p className="text-xs text-sf-muted mt-1 truncate" title={node.id}>
                           {node.id.split('--')[1]?.substring(0, 8) || 'unknown'}
                         </p>
                       </div>
 
                       {/* Display connected edges count badge */}
                       {edges.filter(e => e.source === node.id || e.target === node.id).length > 0 && (
-                        <div className="absolute -top-2 -right-2 bg-slate-800 border border-slate-700 text-slate-300 text-[10px] w-6 h-6 flex items-center justify-center rounded-full shadow-sm">
+                        <div className="absolute -top-2 -right-2 bg-sf-surface border border-sf-border text-sf-text text-[10px] w-6 h-6 flex items-center justify-center rounded-none shadow-sm">
                           {edges.filter(e => e.source === node.id || e.target === node.id).length}
                         </div>
                       )}
@@ -173,11 +173,11 @@ export const ThreatGraph: React.FC<ThreatGraphProps> = ({
             initial={{ width: 0, opacity: 0 }}
             animate={{ width: 320, opacity: 1 }}
             exit={{ width: 0, opacity: 0 }}
-            className="h-full flex flex-col bg-slate-950/60 rounded-xl border border-slate-800 backdrop-blur-md overflow-hidden shrink-0"
+            className="h-full flex flex-col bg-sf-bg/60 rounded-none border border-sf-border backdrop-blur-md overflow-hidden shrink-0"
           >
-            <div className="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-900/50">
-              <h3 className="font-semibold text-slate-200">Entity Inspector</h3>
-              <Button variant="ghost" className="h-6 w-6 p-0 rounded-full text-slate-400 hover:text-slate-200" onClick={() => setSelectedNode(null)}>
+            <div className="p-4 border-b border-sf-border flex justify-between items-center bg-sf-bg/50">
+              <h3 className="font-semibold text-sf-text">Entity Inspector</h3>
+              <Button variant="ghost" className="h-6 w-6 p-0 rounded-none text-sf-muted hover:text-sf-text" onClick={() => setSelectedNode(null)}>
                 &times;
               </Button>
             </div>
@@ -190,29 +190,29 @@ export const ThreatGraph: React.FC<ThreatGraphProps> = ({
                     {getIconForType(selectedNode.type)}
                   </div>
                   <div>
-                    <h4 className="text-sm font-bold text-slate-200 uppercase tracking-widest">{selectedNode.type}</h4>
-                    <p className="text-xs text-slate-400 break-all">{selectedNode.id}</p>
+                    <h4 className="text-sm font-bold text-sf-text uppercase tracking-widest">{selectedNode.type}</h4>
+                    <p className="text-xs text-sf-muted break-all">{selectedNode.id}</p>
                   </div>
                 </div>
                 
                 {selectedNode.name && (
                   <div>
-                    <p className="text-xs font-semibold text-slate-500 uppercase">Name</p>
-                    <p className="text-sm text-slate-200 mt-1">{selectedNode.name}</p>
+                    <p className="text-xs font-semibold text-sf-muted uppercase">Name</p>
+                    <p className="text-sm text-sf-text mt-1">{selectedNode.name}</p>
                   </div>
                 )}
                 
                 {selectedNode.description && (
                   <div>
-                    <p className="text-xs font-semibold text-slate-500 uppercase">Description</p>
-                    <p className="text-sm text-slate-300 mt-1 line-clamp-4">{selectedNode.description}</p>
+                    <p className="text-xs font-semibold text-sf-muted uppercase">Description</p>
+                    <p className="text-sm text-sf-text mt-1 line-clamp-4">{selectedNode.description}</p>
                   </div>
                 )}
 
                 {selectedNode.pattern && (
                   <div>
-                    <p className="text-xs font-semibold text-slate-500 uppercase">Pattern</p>
-                    <div className="mt-1 bg-slate-900 border border-slate-800 rounded p-2 text-xs text-primary font-mono overflow-auto custom-scrollbar max-h-32">
+                    <p className="text-xs font-semibold text-sf-muted uppercase">Pattern</p>
+                    <div className="mt-1 bg-sf-bg border border-sf-border rounded-none p-2 text-xs text-sf-accent font-mono overflow-auto custom-scrollbar max-h-32">
                       {selectedNode.pattern}
                     </div>
                   </div>
@@ -220,8 +220,8 @@ export const ThreatGraph: React.FC<ThreatGraphProps> = ({
               </div>
 
               {/* Relationships */}
-              <div className="pt-4 border-t border-slate-800">
-                <h4 className="text-xs font-semibold text-slate-500 uppercase mb-3 flex items-center gap-2">
+              <div className="pt-4 border-t border-sf-border">
+                <h4 className="text-xs font-semibold text-sf-muted uppercase mb-3 flex items-center gap-2">
                   <Network className="w-3 h-3" /> Relationships
                 </h4>
                 
@@ -229,11 +229,11 @@ export const ThreatGraph: React.FC<ThreatGraphProps> = ({
                   {edges.filter(e => e.source === selectedNode.id).map((e, idx) => {
                     const targetNode = nodes.find(n => n.id === e.target);
                     return (
-                      <div key={`out-${idx}`} className="bg-slate-800/30 rounded p-2 border border-slate-700/50 flex flex-col gap-1">
+                      <div key={`out-${idx}`} className="bg-sf-surface/30 rounded-none p-2 border border-sf-border/50 flex flex-col gap-1">
                         <div className="flex items-center gap-2">
-                          <Badge label={e.type} className="text-[10px] bg-slate-900 border-slate-700 px-1 py-0" />
-                          <ChevronRight className="w-3 h-3 text-slate-500" />
-                          <span className="text-xs text-slate-300 truncate max-w-[120px]" title={targetNode?.name || targetNode?.id}>
+                          <Badge label={e.type} className="text-[10px] bg-sf-bg border-sf-border px-1 py-0" />
+                          <ChevronRight className="w-3 h-3 text-sf-muted" />
+                          <span className="text-xs text-sf-text truncate max-w-[120px]" title={targetNode?.name || targetNode?.id}>
                             {targetNode?.name || targetNode?.type || 'Unknown'}
                           </span>
                         </div>
@@ -244,20 +244,20 @@ export const ThreatGraph: React.FC<ThreatGraphProps> = ({
                   {edges.filter(e => e.target === selectedNode.id).map((e, idx) => {
                     const sourceNode = nodes.find(n => n.id === e.source);
                     return (
-                      <div key={`in-${idx}`} className="bg-slate-800/30 rounded p-2 border border-slate-700/50 flex flex-col gap-1">
-                        <div className="flex items-center gap-2 text-slate-400">
-                          <span className="text-xs text-slate-300 truncate max-w-[120px]" title={sourceNode?.name || sourceNode?.id}>
+                      <div key={`in-${idx}`} className="bg-sf-surface/30 rounded-none p-2 border border-sf-border/50 flex flex-col gap-1">
+                        <div className="flex items-center gap-2 text-sf-muted">
+                          <span className="text-xs text-sf-text truncate max-w-[120px]" title={sourceNode?.name || sourceNode?.id}>
                             {sourceNode?.name || sourceNode?.type || 'Unknown'}
                           </span>
                           <ChevronRight className="w-3 h-3" />
-                          <Badge label={e.type} className="text-[10px] bg-slate-900 border-slate-700 px-1 py-0" />
+                          <Badge label={e.type} className="text-[10px] bg-sf-bg border-sf-border px-1 py-0" />
                         </div>
                       </div>
                     );
                   })}
 
                   {edges.filter(e => e.source === selectedNode.id || e.target === selectedNode.id).length === 0 && (
-                    <p className="text-xs text-slate-500 italic">No connected entities discovered yet.</p>
+                    <p className="text-xs text-sf-muted italic">No connected entities discovered yet.</p>
                   )}
                 </div>
               </div>

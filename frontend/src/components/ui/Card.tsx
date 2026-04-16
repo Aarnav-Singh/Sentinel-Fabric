@@ -14,9 +14,9 @@ interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
 export function Card({ className, children, elevation = "default", hover = false, animate = false, delay = 0, ...props }: CardProps) {
     const elevations = {
         default: "sf-card",
-        raised: "bg-sf-surface-raised border border-sf-active rounded-xl shadow-2xl",
-        sunken: "bg-sf-bg rounded-xl shadow-inner",
-        glass: "sf-glass rounded-xl",
+        raised: "bg-sf-surface-raised border border-sf-active shadow-2xl sf-panel-elevated",
+        sunken: "bg-sf-bg shadow-inner border border-sf-border/50",
+        glass: "sf-panel-ambient",
     };
 
     if (animate || hover) {
@@ -33,7 +33,6 @@ export function Card({ className, children, elevation = "default", hover = false
                 className={cn(elevations[elevation], "relative", className)}
                 {...(props as any)}
             >
-                {elevation === "glass" && <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-white/[0.03] to-transparent pointer-events-none z-0" />}
                 <div className="relative z-10">{children}</div>
             </motion.div>
         );
@@ -41,7 +40,6 @@ export function Card({ className, children, elevation = "default", hover = false
 
     return (
         <div className={cn(elevations[elevation], "relative", className)} {...props}>
-            {elevation === "glass" && <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-white/[0.03] to-transparent pointer-events-none z-0" />}
             <div className="relative z-10">{children}</div>
         </div>
     );

@@ -8,9 +8,10 @@ interface MlScoreBadgeProps {
   score: number;
   factors?: { feature: string; importance: number }[];
   eventContext?: any;
+  modelLabel?: string;
 }
 
-export function MlScoreBadge({ score, factors, eventContext }: MlScoreBadgeProps) {
+export function MlScoreBadge({ score, factors, eventContext, modelLabel }: MlScoreBadgeProps) {
   const [isHovered, setIsHovered] = useState(false);
   const [isPinned, setIsPinned] = useState(false);
   const badgeRef = useRef<HTMLDivElement>(null);
@@ -42,7 +43,9 @@ export function MlScoreBadge({ score, factors, eventContext }: MlScoreBadgeProps
       ref={badgeRef}
     >
       <div className="flex flex-col gap-0.5 w-14 cursor-pointer">
-        <div className="text-[7px] font-mono text-sf-muted uppercase tracking-widest text-right leading-none">VAE-04</div>
+        {modelLabel && (
+          <div className="text-[7px] font-mono text-sf-muted uppercase tracking-widest text-right leading-none">{modelLabel}</div>
+        )}
         <div className="flex items-center gap-1.5">
             <div className="h-1.5 flex-1 bg-sf-surface border border-sf-border overflow-hidden rounded-[1px]">
                <div 

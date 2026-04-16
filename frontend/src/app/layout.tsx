@@ -10,6 +10,7 @@ import { EntityPanel } from "@/components/features/investigation/EntityPanel";
 import { CommandPaletteProvider } from "@/contexts/CommandPaletteContext";
 import { CommandPalette } from "@/components/ui/CommandPalette";
 import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
+import { ThreatStateProvider } from "@/contexts/ThreatStateContext";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 const sora = Sora({ subsets: ["latin"], variable: "--font-sora" });
@@ -31,17 +32,19 @@ export default function RootLayout({
         <ErrorBoundary>
           <QueryProvider>
             <ToastProvider>
-              <CommandPaletteProvider>
-                <EntityProvider>
-                  <EventStreamProvider>
-                    <AppLayout>
-                      {children}
-                      <EntityPanel />
-                      <CommandPalette />
-                    </AppLayout>
-                  </EventStreamProvider>
-                </EntityProvider>
-              </CommandPaletteProvider>
+              <ThreatStateProvider>
+                <CommandPaletteProvider>
+                  <EntityProvider>
+                    <EventStreamProvider>
+                      <AppLayout>
+                        {children}
+                        <EntityPanel />
+                        <CommandPalette />
+                      </AppLayout>
+                    </EventStreamProvider>
+                  </EntityProvider>
+                </CommandPaletteProvider>
+              </ThreatStateProvider>
             </ToastProvider>
           </QueryProvider>
         </ErrorBoundary>

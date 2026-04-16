@@ -241,44 +241,17 @@ export default function IntegrationsPage() {
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 pb-4">
                         {isLoading && localIntegrations === null
                             ? Array.from({ length: 8 }).map((_, i) => <SkeletonCard key={i} />)
-                            : filtered.map((integration) => (
-                                <PanelCard key={integration.id} className="p-4 flex flex-col group hover:border-sf-accent/50 hover:shadow-[0_0_15px_rgba(0,242,255,0.05)] cursor-pointer">
-                                    <div className="flex justify-between items-start mb-4">
-                                        <div className="w-10 h-10 bg-sf-surface flex items-center justify-center border border-sf-border group-hover:border-sf-accent text-sf-muted group-hover:text-sf-accent transition-colors">
-                                            <integration.icon className="w-5 h-5" />
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                            {testResults[integration.id] && (
-                                                <span className={`text-[9px] font-bold px-1.5 py-0.5 tracking-widest uppercase border ${testResults[integration.id] === 'ok' ? 'text-sf-safe border-sf-safe bg-sf-safe/10' : 'text-sf-critical border-sf-critical bg-sf-critical/10'}`}>
-                                                    {testResults[integration.id] === 'ok' ? 'OK' : 'FAIL'}
-                                                </span>
-                                            )}
-                                            <button onClick={(e) => { e.stopPropagation(); setSelectedIntegration(integration); }} className="p-1.5 hover:bg-sf-surface border border-transparent hover:border-sf-border text-sf-muted hover:text-sf-text transition-colors">
-                                                <Settings2 className="w-4 h-4" />
-                                            </button>
-                                        </div>
-                                    </div>
-
-                                    <div className="flex-1">
-                                        <h3 className="text-sf-text font-bold text-[11px] uppercase tracking-widest mb-1 font-mono">{integration.name}</h3>
-                                        <p className="text-sf-muted text-[10px] font-mono uppercase tracking-widest">{integration.category}</p>
-                                    </div>
-
-                                    <div className="mt-4 pt-3 border-t border-sf-border flex items-center justify-between">
-                                        <div className="flex items-center gap-2 font-mono text-[9px] tracking-widest uppercase font-bold">
-                                            {integration.status === 'connected' ? <CheckCircle2 className="w-3.5 h-3.5 text-sf-safe" /> : integration.status === 'error' ? <AlertCircle className="w-3.5 h-3.5 text-sf-critical" /> : <XCircle className="w-3.5 h-3.5 text-sf-muted" />}
-                                            <span className={integration.status === 'connected' ? 'text-sf-safe' : integration.status === 'error' ? 'text-sf-critical' : 'text-sf-muted'}>
-                                                {integration.status}
-                                            </span>
-                                        </div>
-                                        <div className="flex items-center gap-3">
-                                            <span className="text-[10px] text-sf-muted font-mono">{integration.lastSync}</span>
-                                            <button onClick={(e) => { e.stopPropagation(); handleTestConnection(integration); }} disabled={testingId === integration.id} title="Test connection" className="text-sf-muted hover:text-sf-text transition-colors disabled:opacity-50">
-                                                <RefreshCw className={`w-3.5 h-3.5 ${testingId === integration.id ? 'animate-spin' : ''}`} />
-                                            </button>
-                                        </div>
-                                    </div>
-                                </PanelCard>
+                            : filtered.map((conn) => (
+                                <div key={conn.id} className="sf-panel p-3 flex items-center gap-3">
+                                  <div className={`w-2 h-2 rounded-none ${conn.status === "connected" ? "bg-sf-safe" : conn.status === 'error' ? 'bg-sf-critical' : "bg-sf-muted"}`} />
+                                  <div className="flex-1">
+                                    <div className="text-[12px] text-sf-text font-mono font-bold uppercase tracking-widest">{conn.name || conn.category}</div>
+                                    <div className="text-[10px] font-mono text-sf-muted">{conn.lastSync ? String(conn.lastSync) : "No events"}</div>
+                                  </div>
+                                  <span className={`text-[9px] font-mono px-1 py-0.5 border ${conn.status === "connected" ? "text-sf-safe border-sf-safe" : conn.status === 'error' ? 'text-sf-critical border-sf-critical' : "text-sf-muted border-sf-muted"}`}>
+                                    {conn.status?.toUpperCase()}
+                                  </span>
+                                </div>
                             ))
                         }
                     </div>

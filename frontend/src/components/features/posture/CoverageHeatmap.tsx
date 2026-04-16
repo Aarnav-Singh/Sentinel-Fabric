@@ -92,7 +92,7 @@ export function CoverageHeatmap({ data }: CoverageHeatmapProps) {
             {/* Detail side panel */}
             {selected && (
                 <div
-                    className="absolute top-0 right-0 w-72 rounded-xl p-4 animate-sf-fadeIn z-20 backdrop-blur-xl"
+                    className="absolute top-0 right-0 w-72 rounded-none p-4 animate-sf-fadeIn z-20 backdrop-blur-xl"
                     style={{
                         background: "rgba(10, 15, 24, 0.95)", // sf-surface rgb
                         border: "1px solid var(--sf-border)",
@@ -126,7 +126,7 @@ export function CoverageHeatmap({ data }: CoverageHeatmapProps) {
                         </div>
                     )}
                     {selected.fix && (
-                        <div className="p-3 rounded-lg mt-2 shadow-inner" style={{ background: "rgba(6, 182, 212, 0.05)", border: "1px solid var(--sf-accent)" }}>
+                        <div className="p-3 rounded-none mt-2 shadow-inner" style={{ background: "rgba(6, 182, 212, 0.05)", border: "1px solid var(--sf-accent)" }}>
                             <div className="text-[9px] text-sf-accent font-mono mb-1 uppercase tracking-widest font-bold">RECOMMENDED FIX</div>
                             <div className="text-[11px] text-sf-text leading-relaxed">{selected.fix}</div>
                         </div>

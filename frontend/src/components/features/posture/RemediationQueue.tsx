@@ -52,14 +52,14 @@ export function RemediationQueue({ findings, onAcknowledge, onDismiss }: Remedia
                                 <div className="flex items-center gap-2 mb-1">
                                     <Chip label={f.severity.toUpperCase()} color={severityColors[f.severity]} variant="filled" />
                                     <Chip label={f.domain} color="var(--sf-bg)" />
-                                    <span className="text-[9px] font-space text-sf-text-muted">{effortLabels[f.effort]}</span>
+                                    <span className="text-[9px] font-space text-sf-muted">{effortLabels[f.effort]}</span>
                                 </div>
-                                <div className="text-[12px] font-semibold text-sf-text-primary leading-tight">{f.title}</div>
+                                <div className="text-[12px] font-semibold text-sf-text leading-tight">{f.title}</div>
                             </div>
-                            <span className="text-[9px] font-space text-sf-text-muted shrink-0 uppercase">{f.status}</span>
+                            <span className="text-[9px] font-space text-sf-muted shrink-0 uppercase">{f.status}</span>
                         </div>
 
-                        <p className="text-[11px] text-sf-text-secondary leading-relaxed mb-2">{f.description}</p>
+                        <p className="text-[11px] text-sf-muted leading-relaxed mb-2">{f.description}</p>
 
                         <div className="flex items-center gap-2 flex-wrap">
                             {f.linkedTechniques.map((t) => (
@@ -73,7 +73,7 @@ export function RemediationQueue({ findings, onAcknowledge, onDismiss }: Remedia
                                 <>
                                     <button
                                         onClick={() => onDismiss?.(f.id)}
-                                        className="text-[10px] text-sf-text-muted hover:text-sf-text-secondary cursor-pointer transition-colors px-2 py-0.5"
+                                        className="text-[10px] text-sf-muted hover:text-sf-muted cursor-pointer transition-colors px-2 py-0.5"
                                     >
                                         Dismiss
                                     </button>

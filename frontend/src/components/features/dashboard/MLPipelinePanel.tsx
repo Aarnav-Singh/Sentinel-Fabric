@@ -20,7 +20,7 @@ export function MLPipelinePanel({ scores, metaScore }: MLPipelinePanelProps) {
 
     return (
         <div className="border-b border-sf-border" style={{ padding: "16px 16px 14px" }}>
-            <div className="text-[11px] font-space text-sf-text-secondary tracking-widest uppercase mb-3.5">
+            <div className="text-[11px] font-space text-sf-muted tracking-widest uppercase mb-3.5">
                 5-Stream ML Pipeline
             </div>
 
@@ -48,7 +48,7 @@ export function MLPipelinePanel({ scores, metaScore }: MLPipelinePanelProps) {
                         <div className="text-[10px] font-space text-sf-teal tracking-wider">
                             META-LEARNER OUTPUT
                         </div>
-                        <div className="text-[11px] text-sf-text-muted mt-0.5">Ensemble threat score</div>
+                        <div className="text-[11px] text-sf-muted mt-0.5">Ensemble threat score</div>
                     </div>
                     <div className="text-[28px] font-condensed font-extrabold leading-none" style={{ color: metaColor }}>
                         {Math.round(metaScore * 100)}

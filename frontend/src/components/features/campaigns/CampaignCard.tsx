@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { Chip } from "@/components/ui/Chip";
 
@@ -38,7 +38,7 @@ export function CampaignCard({ campaign, selected = false, onClick }: CampaignCa
     return (
         <div
             onClick={onClick}
-            className="relative overflow-hidden rounded-lg cursor-pointer mb-2.5 transition-all duration-200 hover:-translate-y-[1px] hover:brightness-110"
+            className="relative overflow-hidden rounded-none cursor-pointer mb-2.5 transition-all duration-200 hover:-translate-y-[1px] hover:brightness-110"
             style={{
                 background: selected ? "var(--sf-bg)" : "var(--sf-bg)",
                 border: `1px solid ${selected ? color : "var(--sf-bg)"}`,
@@ -59,14 +59,14 @@ export function CampaignCard({ campaign, selected = false, onClick }: CampaignCa
                 <div className="flex flex-col sm:flex-row justify-between items-start gap-2">
                     <div className="flex-1 min-w-0 w-full">
                         <div className="flex items-center gap-2 mb-1 flex-wrap">
-                            <span className="text-[10px] font-space text-sf-text-muted shrink-0">{campaign.id}</span>
+                            <span className="text-[10px] font-space text-sf-muted shrink-0">{campaign.id}</span>
                             <Chip label={campaign.severity.toUpperCase()} color={color} />
                             <Chip label={campaign.stage} color={color} />
                         </div>
-                        <div className="text-[13px] font-semibold text-sf-text-primary leading-tight">
+                        <div className="text-[13px] font-semibold text-sf-text leading-tight">
                             {campaign.title}
                         </div>
-                        <div className="text-[11px] text-sf-text-secondary mt-1.5 leading-relaxed">
+                        <div className="text-[11px] text-sf-muted mt-1.5 leading-relaxed">
                             {campaign.description}
                         </div>
                     </div>
@@ -74,7 +74,7 @@ export function CampaignCard({ campaign, selected = false, onClick }: CampaignCa
                         <div className="text-[22px] font-condensed font-bold leading-none" style={{ color }}>
                             {campaign.confidence}%
                         </div>
-                        <div className="text-[9px] text-sf-text-muted mt-0.5 ml-2 sm:ml-0">confidence</div>
+                        <div className="text-[9px] text-sf-muted mt-0.5 ml-2 sm:ml-0">confidence</div>
                     </div>
                 </div>
 
@@ -83,8 +83,8 @@ export function CampaignCard({ campaign, selected = false, onClick }: CampaignCa
                     {campaign.tools.map((t) => (
                         <Chip key={t} label={t} color="var(--sf-bg)" />
                     ))}
-                    <div className="ml-auto text-[10px] text-sf-text-muted">
-                        {campaign.events.toLocaleString()} events · {campaign.firstSeen}
+                    <div className="ml-auto text-[10px] text-sf-muted">
+                        {campaign.events.toLocaleString()} events Â· {campaign.firstSeen}
                     </div>
                 </div>
 
@@ -94,7 +94,7 @@ export function CampaignCard({ campaign, selected = false, onClick }: CampaignCa
                         <div key={s} className="flex items-center flex-1">
                             <div className="flex-1 flex flex-col items-center gap-1">
                                 <div
-                                    className="w-2.5 h-2.5 rounded-full transition-all"
+                                    className="w-2.5 h-2.5 rounded-none transition-all"
                                     style={{
                                         background: i <= campaign.currentStage ? (i === campaign.currentStage ? "var(--sf-critical)" : "var(--sf-accent)") : "var(--sf-bg)",
                                         border: `2px solid ${i <= campaign.currentStage ? (i === campaign.currentStage ? "var(--sf-critical)" : "var(--sf-accent)") : "var(--sf-bg)"}`,
@@ -121,3 +121,4 @@ export function CampaignCard({ campaign, selected = false, onClick }: CampaignCa
         </div>
     );
 }
+

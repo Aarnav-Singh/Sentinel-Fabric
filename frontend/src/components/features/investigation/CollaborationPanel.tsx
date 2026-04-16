@@ -45,12 +45,12 @@ interface CollaborationPanelProps {
 // ─── Avatar ───────────────────────────────────────────────────────────────────
 
 const AVATAR_COLORS = [
-  "bg-cyan-500",
-  "bg-emerald-500",
-  "bg-violet-500",
-  "bg-amber-500",
-  "bg-rose-500",
-  "bg-sky-500",
+  "bg-[var(--sf-accent)]",
+  "bg-[var(--sf-safe)]",
+  "bg-[var(--sf-accent-2)]",
+  "bg-[var(--sf-warning)]",
+  "bg-[var(--sf-critical)]",
+  "bg-[var(--sf-accent-2)]",
 ];
 
 function getAvatarColor(userId: string) {
@@ -68,7 +68,7 @@ function Avatar({ userId, name, size = "sm" }: { userId: string; name: string; s
     .slice(0, 2);
   const dim = size === "sm" ? "w-6 h-6 text-[9px]" : "w-8 h-8 text-xs";
   return (
-    <div className={`${dim} ${getAvatarColor(userId)} rounded-full flex items-center justify-center font-bold text-white flex-shrink-0`}>
+    <div className={`${dim} ${getAvatarColor(userId)} rounded-none flex items-center justify-center font-bold text-white flex-shrink-0`}>
       {initials}
     </div>
   );
@@ -77,9 +77,9 @@ function Avatar({ userId, name, size = "sm" }: { userId: string; name: string; s
 // ─── Status dot ───────────────────────────────────────────────────────────────
 
 function StatusDot({ status }: { status: string }) {
-  const color = status === "active" ? "bg-emerald-400" : status === "idle" ? "bg-amber-400" : "bg-slate-500";
+  const color = status === "active" ? "bg-[var(--sf-safe)]" : status === "idle" ? "bg-[var(--sf-warning)]" : "bg-sf-muted";
   return (
-    <span className={`w-2 h-2 rounded-full inline-block flex-shrink-0 ${color} ${status === "active" ? "animate-pulse" : ""}`} />
+    <span className={`w-2 h-2 rounded-none inline-block flex-shrink-0 ${color} ${status === "active" ? "animate-pulse" : ""}`} />
   );
 }
 
@@ -233,29 +233,29 @@ export const CollaborationPanel: React.FC<CollaborationPanelProps> = ({
     <motion.div
       initial={{ opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
-      className={`flex flex-col bg-slate-950/70 border border-slate-800 rounded-xl backdrop-blur-lg overflow-hidden ${className}`}
+      className={`flex flex-col bg-sf-bg/70 border border-sf-border rounded-none backdrop-blur-lg overflow-hidden ${className}`}
     >
       {/* ─── Header ──────────────────────────────────────────────────────── */}
       <div
-        className="flex items-center justify-between px-4 py-3 border-b border-slate-800 bg-slate-900/60 cursor-pointer select-none"
+        className="flex items-center justify-between px-4 py-3 border-b border-sf-border bg-sf-bg/60 cursor-pointer select-none"
         onClick={() => setCollapsed(!collapsed)}
       >
         <div className="flex items-center gap-2">
-          <Users className="w-4 h-4 text-cyan-400" />
-          <span className="text-sm font-semibold text-slate-200">Live Collaboration</span>
+          <Users className="w-4 h-4 text-sf-accent" />
+          <span className="text-sm font-semibold text-sf-text">Live Collaboration</span>
           {activeUserCount > 0 && (
-            <span className="text-[10px] font-mono bg-cyan-500/15 border border-cyan-500/30 text-cyan-400 px-1.5 py-0.5 rounded">
+            <span className="text-[10px] font-mono bg-sf-accent/15 border border-[var(--sf-accent)]/30 text-sf-accent px-1.5 py-0.5 rounded-none">
               {activeUserCount} online
             </span>
           )}
         </div>
         <div className="flex items-center gap-2">
           {connected ? (
-            <Wifi className="w-3.5 h-3.5 text-emerald-400" />
+            <Wifi className="w-3.5 h-3.5 text-[var(--sf-safe)]" />
           ) : (
-            <WifiOff className="w-3.5 h-3.5 text-red-400 animate-pulse" />
+            <WifiOff className="w-3.5 h-3.5 text-[var(--sf-critical)] animate-pulse" />
           )}
-          <ChevronDown className={`w-4 h-4 text-slate-500 transition-transform ${collapsed ? "-rotate-90" : ""}`} />
+          <ChevronDown className={`w-4 h-4 text-sf-muted transition-transform ${collapsed ? "-rotate-90" : ""}`} />
         </div>
       </div>
 
@@ -271,12 +271,12 @@ export const CollaborationPanel: React.FC<CollaborationPanelProps> = ({
           >
             {/* ─── Presence Bar ──────────────────────────────────────────── */}
             {Object.keys(users).length > 0 && (
-              <div className="flex items-center gap-2 px-4 py-2 border-b border-slate-800/50 bg-slate-900/30 flex-wrap">
+              <div className="flex items-center gap-2 px-4 py-2 border-b border-sf-border/50 bg-sf-bg/30 flex-wrap">
                 {Object.entries(users).map(([uid, u]) => (
-                  <div key={uid} className="flex items-center gap-1.5 bg-slate-800/40 px-2 py-1 rounded-full border border-slate-700/50">
+                  <div key={uid} className="flex items-center gap-1.5 bg-sf-surface/40 px-2 py-1 rounded-none border border-sf-border/50">
                     <StatusDot status={u.status} />
                     <Avatar userId={uid} name={u.name} size="sm" />
-                    <span className="text-[11px] text-slate-300 max-w-[80px] truncate">{u.name}</span>
+                    <span className="text-[11px] text-sf-text max-w-[80px] truncate">{u.name}</span>
                   </div>
                 ))}
               </div>
@@ -285,10 +285,10 @@ export const CollaborationPanel: React.FC<CollaborationPanelProps> = ({
             {/* ─── Annotations Feed ──────────────────────────────────────── */}
             <div className="flex-1 overflow-y-auto max-h-[320px] custom-scrollbar p-3 flex flex-col gap-2">
               {loadingHistory && (
-                <p className="text-xs text-slate-500 text-center py-4 animate-pulse">Loading history…</p>
+                <p className="text-xs text-sf-muted text-center py-4 animate-pulse">Loading history…</p>
               )}
               {!loadingHistory && annotations.length === 0 && (
-                <p className="text-xs text-slate-500 text-center py-8">
+                <p className="text-xs text-sf-muted text-center py-8">
                   No notes yet. Be the first to annotate this incident.
                 </p>
               )}
@@ -310,11 +310,11 @@ export const CollaborationPanel: React.FC<CollaborationPanelProps> = ({
                       animate={{ opacity: 1, y: 0 }}
                       className="flex items-center gap-2 self-center"
                     >
-                      <Hash className="w-3 h-3 text-violet-400 flex-shrink-0" />
-                      <span className="text-[11px] bg-violet-500/15 border border-violet-500/30 text-violet-300 px-2 py-0.5 rounded-full">
+                      <Hash className="w-3 h-3 text-[var(--sf-accent-2)] flex-shrink-0" />
+                      <span className="text-[11px] bg-[var(--sf-accent-2)]/15 border border-[var(--sf-accent-2)]/30 text-[var(--sf-accent-2)] px-2 py-0.5 rounded-none">
                         {ann.content}
                       </span>
-                      <span className="text-[10px] text-slate-600">· {userName} · {timeStr}</span>
+                      <span className="text-[10px] text-sf-muted">· {userName} · {timeStr}</span>
                     </motion.div>
                   );
                 }
@@ -329,18 +329,18 @@ export const CollaborationPanel: React.FC<CollaborationPanelProps> = ({
                     <Avatar userId={ann.user_id} name={userName} size="sm" />
                     <div className={`flex flex-col gap-0.5 max-w-[75%] ${isMe ? "items-end" : "items-start"}`}>
                       <div className="flex items-center gap-1.5">
-                        <span className="text-[10px] text-slate-500">{userName}</span>
+                        <span className="text-[10px] text-sf-muted">{userName}</span>
                         {timeStr && (
-                          <span className="text-[9px] text-slate-600 flex items-center gap-0.5">
+                          <span className="text-[9px] text-sf-muted flex items-center gap-0.5">
                             <Clock className="w-2.5 h-2.5" /> {timeStr}
                           </span>
                         )}
                       </div>
                       <div
-                        className={`text-xs px-3 py-2 rounded-xl leading-relaxed whitespace-pre-wrap break-words ${
+                        className={`text-xs px-3 py-2 rounded-none leading-relaxed whitespace-pre-wrap break-words ${
                           isMe
-                            ? "bg-cyan-600/20 border border-cyan-600/30 text-cyan-100 rounded-tr-none"
-                            : "bg-slate-800/60 border border-slate-700/50 text-slate-300 rounded-tl-none"
+                            ? "bg-[var(--sf-accent)]/20 border border-[var(--sf-accent)]/30 text-sf-text rounded-tr-none"
+                            : "bg-sf-surface/60 border border-sf-border/50 text-sf-text rounded-tl-none"
                         }`}
                       >
                         {ann.content}
@@ -357,12 +357,11 @@ export const CollaborationPanel: React.FC<CollaborationPanelProps> = ({
                     {[0, 1, 2].map((n) => (
                       <span
                         key={n}
-                        className="w-1.5 h-1.5 bg-slate-500 rounded-full animate-bounce"
-                        style={{ animationDelay: `${n * 0.15}s` }}
+                        className="w-1.5 h-1.5 bg-sf-muted rounded-none animate-bounce"
                       />
                     ))}
                   </div>
-                  <span className="text-[10px] text-slate-500">
+                  <span className="text-[10px] text-sf-muted">
                     {Array.from(typingUsers)
                       .map((u) => users[u]?.name ?? u)
                       .join(", ")}{" "}
@@ -375,25 +374,25 @@ export const CollaborationPanel: React.FC<CollaborationPanelProps> = ({
             </div>
 
             {/* ─── Input Bar ─────────────────────────────────────────────── */}
-            <div className="p-3 border-t border-slate-800 bg-slate-900/40 flex flex-col gap-2">
+            <div className="p-3 border-t border-sf-border bg-sf-bg/40 flex flex-col gap-2">
               {/* Mode toggle */}
               <div className="flex gap-1">
                 <button
                   onClick={() => setInputMode("note")}
-                  className={`flex items-center gap-1 px-2.5 py-1 rounded text-[10px] font-mono uppercase tracking-wider transition-all border ${
+                  className={`flex items-center gap-1 px-2.5 py-1 rounded-none text-[10px] font-mono uppercase tracking-wider transition-all border ${
                     inputMode === "note"
-                      ? "bg-cyan-500/15 border-cyan-500/40 text-cyan-400"
-                      : "border-slate-700 text-slate-500 hover:text-slate-300"
+                      ? "bg-sf-accent/15 border-[var(--sf-accent)]/40 text-sf-accent"
+                      : "border-sf-border text-sf-muted hover:text-sf-text"
                   }`}
                 >
                   <Pencil className="w-2.5 h-2.5" /> Note
                 </button>
                 <button
                   onClick={() => setInputMode("tag")}
-                  className={`flex items-center gap-1 px-2.5 py-1 rounded text-[10px] font-mono uppercase tracking-wider transition-all border ${
+                  className={`flex items-center gap-1 px-2.5 py-1 rounded-none text-[10px] font-mono uppercase tracking-wider transition-all border ${
                     inputMode === "tag"
-                      ? "bg-violet-500/15 border-violet-500/40 text-violet-400"
-                      : "border-slate-700 text-slate-500 hover:text-slate-300"
+                      ? "bg-[var(--sf-accent-2)]/15 border-[var(--sf-accent-2)]/40 text-[var(--sf-accent-2)]"
+                      : "border-sf-border text-sf-muted hover:text-sf-text"
                   }`}
                 >
                   <Hash className="w-2.5 h-2.5" /> Tag
@@ -409,22 +408,22 @@ export const CollaborationPanel: React.FC<CollaborationPanelProps> = ({
                   placeholder={inputMode === "note" ? "Add a note… (Enter to send)" : "Add a tag (e.g. False Positive)"}
                   rows={2}
                   disabled={!connected}
-                  className="flex-1 bg-slate-800/60 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200 placeholder:text-slate-600 focus:outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/20 resize-none transition-all disabled:opacity-40 custom-scrollbar"
+                  className="flex-1 bg-sf-surface/60 border border-sf-border rounded-none px-3 py-2 text-xs text-sf-text placeholder:text-sf-muted focus:outline-none focus:border-sf-border-active focus:ring-1 focus:ring-sf-accent/20 resize-none transition-all disabled:opacity-40 custom-scrollbar"
                 />
                 <button
                   onClick={send}
                   disabled={!connected || !inputValue.trim()}
-                  className="flex items-center justify-center w-8 h-8 rounded-lg bg-cyan-600/20 border border-cyan-600/40 text-cyan-400 hover:bg-cyan-600/30 transition-all disabled:opacity-30 disabled:cursor-not-allowed flex-shrink-0"
+                  className="flex items-center justify-center w-8 h-8 rounded-none bg-[var(--sf-accent)]/20 border border-[var(--sf-accent)]/40 text-sf-accent hover:bg-[var(--sf-accent)]/30 transition-all disabled:opacity-30 disabled:cursor-not-allowed flex-shrink-0"
                 >
                   <Send className="w-3.5 h-3.5" />
                 </button>
               </div>
 
-              <p className="text-[9px] text-slate-600 leading-none">
+              <p className="text-[9px] text-sf-muted leading-none">
                 {connected ? (
-                  <span className="text-emerald-500">● Connected</span>
+                  <span className="text-[var(--sf-safe)]">● Connected</span>
                 ) : (
-                  <span className="text-red-500">● Reconnecting…</span>
+                  <span className="text-[var(--sf-critical)]">● Reconnecting…</span>
                 )}
                 {" "}· Changes sync in real-time across all analysts
               </p>

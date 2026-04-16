@@ -9,7 +9,7 @@ const DEFAULT_TOOLS = ["Suricata", "Sysmon", "Zeek", "Palo Alto", "Win Event", "
 export function ConnectedSources({ tools = DEFAULT_TOOLS }: ConnectedSourcesProps) {
     return (
         <div className="border-t border-sf-border bg-sf-surface-alt" style={{ padding: "10px 16px" }}>
-            <div className="text-[9px] text-sf-text-muted font-space tracking-wider mb-2">
+            <div className="text-[9px] text-sf-muted font-space tracking-wider mb-2">
                 CONNECTED SOURCES
             </div>
             <div className="flex gap-1.5 flex-wrap">

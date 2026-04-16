@@ -171,7 +171,7 @@ export default function SigmaRulesPage() {
                 {/* Left Sidebar - Rule List */}
                 <div className="w-1/3 border-r border-sf-border flex flex-col bg-sf-surface/10">
                     <div className="p-4 border-b border-sf-border flex justify-between items-center">
-                        <h2 className="text-sm font-medium text-slate-300">Custom Rules</h2>
+                        <h2 className="text-sm font-medium text-sf-text">Custom Rules</h2>
                         <button 
                             onClick={handleNewRule}
                             className="p-1.5 hover:bg-sf-surface rounded text-sf-accent hover:text-sf-accent/80 transition-colors"
@@ -204,7 +204,7 @@ export default function SigmaRulesPage() {
                                     className={`w-full text-left p-3 rounded border transition-colors ${
                                         selectedRule?.id === rule.id 
                                         ? "bg-sf-surface border-sf-accent text-white" 
-                                        : "bg-sf-surface border-sf-border text-sf-muted hover:border-slate-600"
+                                        : "bg-sf-surface border-sf-border text-sf-muted hover:border-sf-text"
                                     }`}
                                 >
                                     <div className="text-sm font-medium truncate">{rule.name}</div>
@@ -243,7 +243,7 @@ export default function SigmaRulesPage() {
                                     {!isEditing && (
                                         <button 
                                             onClick={() => handleDelete(selectedRule.id)}
-                                            className="p-1.5 text-sf-muted hover:text-red-400 rounded transition-colors"
+                                            className="p-1.5 text-sf-muted hover:text-[var(--sf-critical)] rounded transition-colors"
                                             title="Delete Rule"
                                         >
                                             <Trash2 className="w-5 h-5" />
@@ -317,7 +317,7 @@ export default function SigmaRulesPage() {
                                         onChange={(e) => setConditionsText(e.target.value)}
                                         disabled={!isEditing}
                                         rows={6}
-                                        className="w-full bg-sf-surface font-mono text-sm border border-sf-border rounded p-3 text-slate-300 focus:border-sf-accent focus:outline-none disabled:opacity-75"
+                                        className="w-full bg-sf-bg font-mono text-sm border border-sf-border rounded-none p-3 text-sf-text focus:border-sf-accent focus:outline-none disabled:opacity-75"
                                         placeholder='{ "message": "suspicious.*pattern" }'
                                     />
                                     <p className="mt-1 text-xs text-sf-muted">Edit conditions as a raw JSON object string.</p>

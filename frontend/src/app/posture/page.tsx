@@ -6,7 +6,9 @@ import useSWR from 'swr';
 import { PanelCard, AnimatedNumber, StaggerChildren } from '@/components/ui/MotionWrappers';
 import { DataGrid } from '@/components/ui/DataGrid';
 import { Sparkline } from '@/components/ui/Sparkline';
+import { RealSparkline } from '@/components/ui/RealSparkline';
 import { Skeleton } from '@/components/ui/Skeleton';
+import { AmbientBackground } from '@/components/ui/AmbientBackground';
 
 const fetcher = (url: string) => fetch(url).then(r => r.json());
 
@@ -46,30 +48,30 @@ export default function PosturePage() {
   const [sortKey, setSortKey] = useState<SortKey>('priority');
   const [sortAsc, setSortAsc] = useState(true);
 
-  const { data: scoreData, isLoading: scoreLoading } = useSWR<PostureScore>('/api/proxy/api/v1/posture/score', fetcher, { refreshInterval: 10000, keepPreviousData: true });
-  const { data: domainsData, isLoading: domainsLoading } = useSWR<PostureDomainsResponse>('/api/proxy/api/v1/posture/domains', fetcher, { refreshInterval: 10000, keepPreviousData: true });
-  const { data: coverageData, isLoading: coverageLoading } = useSWR<PostureCoverageResponse>('/api/proxy/api/v1/posture/coverage', fetcher, { refreshInterval: 30000, keepPreviousData: true });
+  const { data: scoreData, error: scoreError, isLoading: scoreLoading } = useSWR<PostureScore>('/api/proxy/api/v1/posture/score', fetcher, { refreshInterval: 10000, keepPreviousData: true });
+  const { data: domainsData, error: domainsError, isLoading: domainsLoading } = useSWR<PostureDomainsResponse>('/api/proxy/api/v1/posture/domains', fetcher, { refreshInterval: 10000, keepPreviousData: true });
+  const { data: coverageData, error: coverageError, isLoading: coverageLoading } = useSWR<PostureCoverageResponse>('/api/proxy/api/v1/posture/coverage', fetcher, { refreshInterval: 30000, keepPreviousData: true });
   const { data: remediationData, isLoading: remediationLoading } = useSWR<RemediationResponse>('/api/proxy/api/v1/posture/remediation', fetcher, { refreshInterval: 10000, keepPreviousData: true });
-  const { data: historyData, isLoading: historyLoading } = useSWR<HistoryResponse>('/api/proxy/api/v1/posture/history', fetcher, { refreshInterval: 60000, keepPreviousData: true });
+  const { data: historyData, error: historyError, isLoading: historyLoading } = useSWR<HistoryResponse>('/api/proxy/api/v1/posture/history', fetcher, { refreshInterval: 60000, keepPreviousData: true });
 
   const isInitialLoading = scoreLoading && !scoreData && domainsLoading && !domainsData;
 
   const score = scoreData ?? { composite: 71, domains: {}, last_evaluated: 0 };
-  const domains = domainsData?.domains ?? [
-      { id: "1", name: "IAM", weight: 0.2, score: 92, description: "", top_findings: [], trend: "up" },
-      { id: "2", name: "Network", weight: 0.3, score: 68, description: "", top_findings: [], trend: "stable" },
+  const domains = domainsError ? [
+      { id: "1", name: "IAM", weight: 0.2, score: 92, description: "", top_findings: [], trend: "up" as const },
+      { id: "2", name: "Network", weight: 0.3, score: 68, description: "", top_findings: [], trend: "stable" as const },
       { id: "3", name: "Compute", weight: 0.2, score: 85, description: "", top_findings: [], trend: "up" },
-      { id: "4", name: "Data", weight: 0.2, score: 55, description: "", top_findings: [], trend: "down" },
-      { id: "5", name: "AppSec", weight: 0.1, score: 72, description: "", top_findings: [], trend: "stable" }
-  ];
+      { id: "4", name: "Data", weight: 0.2, score: 55, description: "", top_findings: [], trend: "down" as const },
+      { id: "5", name: "AppSec", weight: 0.1, score: 72, description: "", top_findings: [], trend: "stable" as const }
+  ] : (domainsData?.domains ?? []);
   const tactics = coverageData?.tactics ?? [];
   const findings = remediationData?.findings ?? [];
   
   // Create solid demo data if none exists
-  const historyPoints = historyData?.data_points?.length ? historyData.data_points : Array.from({ length: 30 }, (_, i) => ({
+  const historyPoints = historyError ? Array.from({ length: 30 }, (_, i) => ({
       date: `14:${i<10?'0':''}${i}`,
       score: 62 + Math.round(Math.sin(i * 0.4) * 7 + i * 0.3) + Math.random() * 5
-  }));
+  })) : (historyData?.data_points ?? []);
 
   const calculatedComposite = domains.reduce((sum, d) => sum + (d.score ?? 0) * (d.weight ?? 0.2), 0);
   const compositeScore = typeof score?.composite === 'number' && !isNaN(score.composite) ? score.composite : (calculatedComposite > 0 ? calculatedComposite : 71);
@@ -84,8 +86,10 @@ export default function PosturePage() {
   });
 
   return (
-    <div className="flex-1 overflow-auto custom-scrollbar p-6 space-y-6">
-      
+    <div className="flex-1 overflow-auto custom-scrollbar p-6 space-y-6 relative bg-transparent flex flex-col min-h-0">
+      <AmbientBackground variant="dotgrid" />
+      <div className="relative z-10 w-full max-w-[1600px] mx-auto min-h-0 flex flex-col gap-6">
+
       {/* ── Hero: Composite Score + 30-day Sparkline ── */}
       <div className="flex flex-col md:flex-row gap-6">
         <PanelCard className="flex-1 p-6 flex flex-col justify-between overflow-hidden relative group">
@@ -102,13 +106,14 @@ export default function PosturePage() {
               </div>
               <div>
                 <h2 className="text-[10px] font-mono tracking-widest text-sf-muted uppercase">Global Posture Score</h2>
-                <div className={`text-6xl font-mono mt-2 ${scoreColor}`}>
-                    <AnimatedNumber value={Math.round(compositeScore)} />
+                <div className={`flex items-baseline gap-2 mt-2`}>
+                    <span className={`text-[72px] font-extralight leading-none ${scoreColor}`} style={{ fontFamily: "var(--font-inter, sans-serif)" }}>
+                        <AnimatedNumber value={Math.round(compositeScore)} />
+                    </span>
+                    <span className="text-[16px] text-sf-muted">/100</span>
                 </div>
               </div>
-              <div className="w-full h-8 mt-6">
-                  <Sparkline data={historyPoints.map(p => p.score)} width={300} height={32} color={compositeScore > 80 ? "var(--sf-safe)" : compositeScore > 60 ? "var(--sf-warning)" : "var(--sf-critical)"} />
-              </div>
+              <RealSparkline source="posture" width={400} height={48} className="mt-4" />
             </>
           )}
         </PanelCard>
@@ -129,9 +134,10 @@ export default function PosturePage() {
                     const domainScore = domain.score ?? 0;
                     const ringColor = domainScore > 80 ? 'var(--sf-safe)' : domainScore > 60 ? 'var(--sf-warning)' : 'var(--sf-critical)';
                     return (
-                        <PanelCard key={domain.id} className="p-3 flex flex-col justify-between">
+                        <PanelCard key={domain.id} className="p-3 flex flex-col justify-between relative">
+                            {domainsError && <span className="absolute top-2 left-2 text-[8px] bg-sf-warning/20 border border-sf-warning/40 text-sf-warning px-1 font-mono">[DEMO]</span>}
                             <div className="flex items-center justify-between">
-                                <span className="text-[10px] font-mono font-bold uppercase text-sf-muted">{domain.name}</span>
+                                <span className={`text-[10px] font-mono font-bold uppercase text-sf-muted ${domainsError ? 'ml-10' : ''}`}>{domain.name}</span>
                                 <TrendIcon trend={domain.trend} />
                             </div>
                             <div className="text-3xl font-mono text-sf-text my-2" style={{ color: ringColor }}>
@@ -219,6 +225,7 @@ export default function PosturePage() {
             )}
           </div>
       </PanelCard>
+      </div>
 
     </div>
   );

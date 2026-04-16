@@ -36,9 +36,9 @@ async function apiFetch(path: string, opts: RequestInit = {}) {
 }
 
 const ROLE_BADGE: Record<string, string> = {
-    admin: "text-red-400 bg-red-400/10 border-red-400/30",
-    analyst: "text-cyan-400 bg-cyan-400/10 border-cyan-400/30",
-    viewer: "text-sf-muted bg-slate-400/10 border-slate-400/30",
+    admin: "text-[var(--sf-critical)] bg-[var(--sf-critical)]/10 border-[var(--sf-critical)]/30",
+    analyst: "text-[var(--sf-accent)] bg-[var(--sf-accent)]/10 border-[var(--sf-accent)]/30",
+    viewer: "text-sf-muted bg-sf-muted/10 border-sf-border/30",
 };
 
 export default function AdminPage() {
@@ -112,14 +112,14 @@ export default function AdminPage() {
                 </div>
                 <button
                     onClick={() => setShowCreate(true)}
-                    className="px-4 py-2 bg-sf-accent text-sf-bg font-bold rounded hover:bg-sf-accent/90 transition-colors flex items-center gap-2 text-sm"
+                    className="px-4 py-2 bg-sf-accent text-sf-bg font-bold rounded-none hover:bg-sf-accent/90 transition-colors flex items-center gap-2 text-[10px] font-mono tracking-widest uppercase"
                 >
                     <Plus className="w-4 h-4" /> Create User
                 </button>
             </header>
 
             {error && (
-                <div className="mb-4 px-4 py-3 rounded bg-sf-critical/10 border border-sf-critical/30 flex items-center justify-between">
+                <div className="mb-4 px-4 py-3 rounded-none bg-sf-critical/10 border border-sf-critical/30 flex items-center justify-between">
                     <div className="flex items-center gap-3">
                         <AlertCircle className="w-4 h-4 text-sf-critical" />
                         <span className="text-[11px] font-mono uppercase tracking-wide text-sf-critical font-bold">
@@ -128,7 +128,7 @@ export default function AdminPage() {
                     </div>
                     <button 
                         onClick={() => setError(null)} 
-                        className="text-[10px] font-mono uppercase tracking-widest text-sf-muted hover:text-white transition-colors border border-sf-border bg-sf-surface px-2 py-1 rounded"
+                        className="text-[10px] font-mono uppercase tracking-widest text-sf-muted hover:text-white transition-colors border border-sf-border bg-sf-surface px-2 py-1 rounded-none"
                     >
                         Dismiss
                     </button>
@@ -137,28 +137,28 @@ export default function AdminPage() {
 
             {/* Create User Modal */}
             {showCreate && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-                    <div className="bg-sf-surface border border-sf-border rounded-xl p-6 w-full max-w-md space-y-4">
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
+                    <div className="sf-panel border border-sf-border p-6 w-full max-w-md space-y-4">
                         <h2 className="text-lg font-bold text-white">Create New User</h2>
                         <input
                             placeholder="Email" value={form.email}
                             onChange={e => setForm({ ...form, email: e.target.value })}
-                            className="w-full px-3 py-2 bg-sf-surface border border-sf-border rounded text-white text-sm focus:outline-none focus:border-sf-accent"
+                            className="w-full px-3 py-2 bg-sf-surface border border-sf-border rounded-none text-white text-sm focus:outline-none focus:border-sf-accent"
                         />
                         <input
                             placeholder="Display Name" value={form.display_name}
                             onChange={e => setForm({ ...form, display_name: e.target.value })}
-                            className="w-full px-3 py-2 bg-sf-surface border border-sf-border rounded text-white text-sm focus:outline-none focus:border-sf-accent"
+                            className="w-full px-3 py-2 bg-sf-surface border border-sf-border rounded-none text-white text-sm focus:outline-none focus:border-sf-accent"
                         />
                         <input
                             type="password" placeholder="Password" value={form.password}
                             onChange={e => setForm({ ...form, password: e.target.value })}
-                            className="w-full px-3 py-2 bg-sf-surface border border-sf-border rounded text-white text-sm focus:outline-none focus:border-sf-accent"
+                            className="w-full px-3 py-2 bg-sf-surface border border-sf-border rounded-none text-white text-sm focus:outline-none focus:border-sf-accent"
                         />
                         <select
                             value={form.role}
                             onChange={e => setForm({ ...form, role: e.target.value })}
-                            className="w-full px-3 py-2 bg-sf-surface border border-sf-border rounded text-white text-sm focus:outline-none focus:border-sf-accent"
+                            className="w-full px-3 py-2 bg-sf-surface border border-sf-border rounded-none text-white text-sm focus:outline-none focus:border-sf-accent"
                         >
                             <option value="viewer">Viewer</option>
                             <option value="analyst">Analyst</option>
@@ -167,13 +167,13 @@ export default function AdminPage() {
                         <div className="flex gap-3 pt-2">
                             <button
                                 onClick={createUser}
-                                className="flex-1 px-4 py-2 bg-sf-accent text-sf-bg font-bold rounded text-sm hover:bg-sf-accent/90"
+                                className="flex-1 px-4 py-2 bg-sf-accent text-sf-bg font-bold rounded-none text-[10px] font-mono tracking-widest uppercase hover:bg-sf-accent/90 transition-colors"
                             >
                                 Create
                             </button>
                             <button
                                 onClick={() => setShowCreate(false)}
-                                className="flex-1 px-4 py-2 bg-sf-surface border border-sf-border text-slate-300 rounded text-sm hover:bg-sf-surface/80"
+                                className="flex-1 px-4 py-2 bg-sf-surface border border-sf-border text-sf-text rounded-none text-[10px] font-mono tracking-widest uppercase hover:bg-sf-surface/80 transition-colors"
                             >
                                 Cancel
                             </button>
@@ -189,12 +189,12 @@ export default function AdminPage() {
                     placeholder="Search users..."
                     value={search}
                     onChange={e => setSearch(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 bg-sf-surface border border-sf-border rounded text-white text-sm focus:outline-none focus:border-sf-accent"
+                    className="w-full pl-10 pr-4 py-2 bg-sf-surface border border-sf-border rounded-none text-sf-text text-[10px] font-mono focus:outline-none focus:border-sf-accent uppercase tracking-widest"
                 />
             </div>
 
             {/* Users Table */}
-            <div className="bg-sf-surface border border-sf-border rounded-xl overflow-hidden">
+            <div className="sf-panel border border-sf-border">
                 <table className="w-full text-left text-sm">
                     <thead className="bg-sf-surface/50 text-sf-muted uppercase text-[10px] tracking-wider">
                         <tr>
@@ -205,7 +205,7 @@ export default function AdminPage() {
                             <th className="px-6 py-4 font-medium">Actions</th>
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-sf-border text-slate-300">
+                    <tbody className="divide-y divide-sf-border text-sf-text">
                         {loading ? (
                             <tr><td colSpan={5} className="px-6 py-12 text-center text-sf-muted">Loading users...</td></tr>
                         ) : filtered.length === 0 ? (
@@ -214,7 +214,7 @@ export default function AdminPage() {
                             <tr key={user.id} className="hover:bg-sf-surface/30 transition-colors">
                                 <td className="px-6 py-4">
                                     <div className="flex items-center gap-3">
-                                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-sf-accent/30 to-sf-accent/10 border border-sf-accent/30 flex items-center justify-center">
+                                        <div className="w-8 h-8 rounded-none bg-gradient-to-br from-sf-accent/30 to-sf-accent/10 border border-sf-accent/30 flex items-center justify-center">
                                             <span className="text-xs font-bold text-sf-accent">
                                                 {(user.display_name || user.email).charAt(0).toUpperCase()}
                                             </span>
@@ -229,7 +229,7 @@ export default function AdminPage() {
                                     <select
                                         value={user.role}
                                         onChange={e => updateRole(user.email, e.target.value)}
-                                        className={`px-2 py-0.5 rounded text-[10px] uppercase font-bold border bg-transparent cursor-pointer ${ROLE_BADGE[user.role] || ROLE_BADGE.viewer}`}
+                                        className={`px-2 py-0.5 rounded-none text-[10px] uppercase font-bold border bg-transparent cursor-pointer ${ROLE_BADGE[user.role] || ROLE_BADGE.viewer}`}
                                     >
                                         <option value="viewer">Viewer</option>
                                         <option value="analyst">Analyst</option>
@@ -237,17 +237,17 @@ export default function AdminPage() {
                                     </select>
                                 </td>
                                 <td className="px-6 py-4">
-                                    <span className={`text-[10px] font-bold uppercase ${user.mfa_enabled ? "text-emerald-400" : "text-sf-muted"}`}>
-                                        {user.mfa_enabled ? "✓ Enabled" : "Disabled"}
+                                    <span className={`text-[10px] font-bold uppercase ${user.mfa_enabled ? "text-[var(--sf-safe)]" : "text-sf-muted"}`}>
+                                        {user.mfa_enabled ? "âœ“ Enabled" : "Disabled"}
                                     </span>
                                 </td>
                                 <td className="px-6 py-4">
-                                    <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                                    <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-none text-[10px] font-bold ${
                                         user.is_active
-                                            ? "text-emerald-400 bg-emerald-400/10"
-                                            : "text-red-400 bg-red-400/10"
+                                            ? "text-[var(--sf-safe)] bg-[var(--sf-safe)]/10"
+                                            : "text-[var(--sf-critical)] bg-[var(--sf-critical)]/10"
                                     }`}>
-                                        <span className={`w-1.5 h-1.5 rounded-full ${user.is_active ? "bg-emerald-400" : "bg-red-400"}`} />
+                                        <span className={`w-1.5 h-1.5 rounded-none ${user.is_active ? "bg-[var(--sf-safe)]" : "bg-[var(--sf-critical)]"}`} />
                                         {user.is_active ? "Active" : "Disabled"}
                                     </span>
                                 </td>
@@ -256,8 +256,8 @@ export default function AdminPage() {
                                         onClick={() => toggleActive(user.email, user.is_active)}
                                         className={`text-xs font-semibold flex items-center gap-1 ${
                                             user.is_active
-                                                ? "text-red-400 hover:text-red-300"
-                                                : "text-emerald-400 hover:text-emerald-300"
+                                                ? "text-[var(--sf-critical)] hover:opacity-80"
+                                                : "text-[var(--sf-safe)] hover:opacity-80"
                                         }`}
                                     >
                                         {user.is_active ? <UserX className="w-3 h-3" /> : <UserCheck className="w-3 h-3" />}
@@ -272,3 +272,4 @@ export default function AdminPage() {
         </div>
     );
 }
+

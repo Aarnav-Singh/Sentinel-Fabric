@@ -36,7 +36,7 @@ export function EntityPanel() {
             animate={{ x: 0, y: 0 }}
             exit={{ x: '100%', opacity: 0 }}
             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            className="fixed right-4 top-16 bottom-16 w-full max-w-md bg-sf-bg border border-sf-border shadow-2xl overflow-hidden flex flex-col z-50 rounded-lg pointer-events-auto"
+            className="fixed right-4 top-16 bottom-16 w-full max-w-md bg-sf-bg border border-sf-border shadow-2xl overflow-hidden flex flex-col z-50 rounded-none pointer-events-auto"
           >
             {/* Header / Drag Handle */}
             <div className="flex flex-col bg-sf-surface border-b border-sf-border cursor-move">

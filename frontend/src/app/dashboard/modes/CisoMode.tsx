@@ -4,12 +4,9 @@ import React from 'react';
 import { ShieldAlert, Activity, CheckCircle2, XCircle, Terminal, Maximize2, Shield } from "lucide-react";
 import { motion } from "framer-motion";
 import { StaggerChildren, AnimatedNumber, PanelCard } from "@/components/ui/MotionWrappers";
-import { Sparkline } from "@/components/ui/Sparkline";
+import { RealSparkline } from "@/components/ui/RealSparkline";
 import { VectorMap } from "@/components/ui/VectorMap";
 import { DashboardModeProps } from './types';
-
-const DEMO_HISTORY = Array.from({ length: 30 }, (_, i) => 62 + Math.round(Math.sin(i * 0.4) * 7 + i * 0.3) + Math.random() * 5);
-const SPARK_CAMPAIGNS = Array.from({ length: 30 }, (_, i) => 10 + Math.round(Math.cos(i * 0.6) * 3 + i * 0.5) + Math.random() * 2);
 
 export function CisoMode({ metrics, threatMapData, setMaximizedWidget }: DashboardModeProps) {
     return (
@@ -23,7 +20,7 @@ export function CisoMode({ metrics, threatMapData, setMaximizedWidget }: Dashboa
                         <AnimatedNumber value={Math.round(metrics.posture_score)} /><span className="text-lg text-sf-muted">/100</span>
                     </div>
                     <div className="h-6 w-full mt-1 opacity-40 z-10">
-                        <Sparkline data={[...DEMO_HISTORY].reverse().map(v => v + Math.random())} width={300} height={24} color="var(--sf-safe)" />
+                        <RealSparkline source="posture" width={300} height={24} />
                     </div>
                 </PanelCard>
 
@@ -35,7 +32,7 @@ export function CisoMode({ metrics, threatMapData, setMaximizedWidget }: Dashboa
                         <AnimatedNumber value={metrics.critical_campaigns} />
                     </div>
                     <div className="h-6 w-full mt-1 opacity-40 z-10">
-                        <Sparkline data={Array.from({length: 20}, () => Math.random() * 10)} width={300} height={24} color="var(--sf-critical)" />
+                        <RealSparkline source="eps" width={300} height={24} />
                     </div>
                 </PanelCard>
 
@@ -47,7 +44,7 @@ export function CisoMode({ metrics, threatMapData, setMaximizedWidget }: Dashboa
                         <AnimatedNumber value={metrics.active_campaigns} />
                     </div>
                     <div className="h-6 w-full mt-1 opacity-40 z-10">
-                        <Sparkline data={[...SPARK_CAMPAIGNS].map(v => v + Math.random())} width={300} height={24} color="var(--sf-warning)" />
+                        <RealSparkline source="campaigns" width={300} height={24} />
                     </div>
                 </PanelCard>
             </div>
@@ -58,7 +55,7 @@ export function CisoMode({ metrics, threatMapData, setMaximizedWidget }: Dashboa
                         <h2 className="text-xs text-sf-muted font-mono tracking-widest bg-sf-bg border border-sf-border px-3 py-1">GLOBAL THREAT TOPOLOGY</h2>
                     </div>
                     <div className="absolute top-4 right-4 z-10 flex gap-2">
-                        <button onClick={() => setMaximizedWidget('map')} className="text-sf-muted hover:text-white transition-colors bg-sf-bg/80 backdrop-blur border border-sf-border p-2 rounded hover:bg-sf-surface">
+                        <button onClick={() => setMaximizedWidget('map')} className="text-sf-muted hover:text-white transition-colors bg-sf-bg/80 backdrop-blur border border-sf-border p-2 rounded-none hover:bg-sf-surface">
                             <Maximize2 className="w-4 h-4" />
                         </button>
                     </div>

@@ -43,7 +43,7 @@ export function ConfirmDialog({
           onMouseDown={onCancel}
         >
           <motion.div
-            className="w-full max-w-md bg-[var(--sf-surface)] border border-white/10 rounded-2xl shadow-2xl flex flex-col relative"
+            className="w-full max-w-md bg-[var(--sf-surface)] border border-white/10 rounded-none shadow-2xl flex flex-col relative"
             initial={{ scale: 0.95, opacity: 0, y: 20 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.95, opacity: 0, y: 20 }}
@@ -53,7 +53,7 @@ export function ConfirmDialog({
             <header className={`p-6 border-b border-white/10 flex items-center justify-between rounded-t-2xl ${dangerous ? 'border-t-2 border-t-sf-critical' : ''}`}>
               <div className="flex items-center gap-3">
                 {dangerous && (
-                  <div className="w-10 h-10 rounded-lg bg-sf-critical/10 border border-sf-critical/20 flex items-center justify-center">
+                  <div className="w-10 h-10 rounded-none bg-sf-critical/10 border border-sf-critical/20 flex items-center justify-center">
                     <AlertTriangle className="w-5 h-5 text-sf-critical" />
                   </div>
                 )}
@@ -61,7 +61,7 @@ export function ConfirmDialog({
                   <h2 className="text-xl font-bold tracking-wide text-sf-text">{title}</h2>
                 </div>
               </div>
-              <button onClick={onCancel} className="p-2 text-sf-muted hover:text-white hover:bg-white/5 rounded-lg transition-colors">
+              <button onClick={onCancel} className="p-2 text-sf-muted hover:text-white hover:bg-white/5 rounded-none transition-colors">
                 <X className="w-5 h-5" />
               </button>
             </header>

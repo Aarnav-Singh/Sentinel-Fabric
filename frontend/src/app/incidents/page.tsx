@@ -3,13 +3,14 @@
 import React, { useState } from 'react';
 import useSWR from 'swr';
 import { AlertCircle } from 'lucide-react';
+import { Badge } from '@/components/ui/Badge';
 
 const fetcher = (url: string) => fetch(url).then(r => r.json());
 
 export default function IncidentsPage() {
-  const { data, isLoading } = useSWR('/api/proxy/api/v1/posture/remediation', fetcher, { refreshInterval: 30000 });
+  const { data, isLoading } = useSWR('/api/proxy/api/v1/findings?status=escalated', fetcher, { refreshInterval: 30000 });
   const [activeTab, setActiveTab] = useState<'active' | 'archived'>('active');
-  const findings = data?.findings ?? [];
+  const incidents = data?.findings ?? [];
 
   return (
     <div className="flex-1 p-6 overflow-auto custom-scrollbar">
@@ -39,22 +40,30 @@ export default function IncidentsPage() {
         </div>
 
         {isLoading ? (
-          <div className="animate-pulse bg-sf-surface/60 h-64 rounded-xl" />
+          <div className="animate-pulse bg-sf-surface/60 h-64 rounded-none border border-sf-border" />
         ) : (
-          <div className="space-y-4">
+          <div className="relative pl-6">
+            {/* Vertical line */}
+            <div className="absolute left-2 top-0 bottom-0 w-px bg-sf-border" />
             {activeTab === 'active' ? (
-                findings.length > 0 ? findings.map((f: any) => (
-                <div key={f.id} className="bg-sf-surface/70 border border-sf-accent/20 p-5 rounded-xl flex items-start gap-4 shadow-[0_4px_20px_rgba(0,0,0,0.5)]">
-                    <AlertCircle className={`w-6 h-6 mt-0.5 flex-shrink-0 ${f.severity === 'critical' ? 'text-red-500 filter drop-shadow-[0_0_5px_rgba(239,68,68,0.8)]' : 'text-orange-500 filter drop-shadow-[0_0_5px_rgba(249,115,22,0.8)]'}`} />
-                    <div className="flex-1">
-                    <h3 className="font-bold text-slate-200 text-base">{f.title}</h3>
-                    <p className="text-sf-muted text-sm mt-1">{f.description}</p>
-                    <div className="flex flex-wrap gap-2 mt-3">
-                        <span className="text-[10px] uppercase bg-sf-bg px-2 py-1 rounded text-sf-accent border border-sf-accent/20 font-mono tracking-wider">{f.id}</span>
-                        <span className="text-[10px] uppercase bg-sf-bg px-2 py-1 rounded text-sf-muted border border-sf-border/50 font-mono tracking-wider">Effort: {f.effort}</span>
-                        <span className="text-[10px] uppercase bg-sf-bg px-2 py-1 rounded text-sf-muted border border-sf-border/50 font-mono tracking-wider">Status: {f.status.replace('_', ' ')}</span>
+                incidents.length > 0 ? incidents.map((inc: any) => (
+                <div key={inc.id} className="relative mb-4 pl-4">
+                  {/* Timeline dot */}
+                  <div className={`absolute -left-[18px] w-2.5 h-2.5 border-2 bg-sf-bg ${inc.severity === "critical" ? "border-sf-critical" : inc.severity === "high" ? "border-sf-warning" : "border-sf-border"}`} />
+
+                  <div className="sf-panel p-3 hover:border-sf-border-active transition-colors cursor-pointer">
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center gap-2">
+                        <Badge label={inc.severity?.toUpperCase() || "UNKNOWN"} severity={inc.severity || "info"} />
+                        <span className="text-[12px] font-mono text-sf-muted">{inc.id?.slice(0, 12) || "INC-????"}</span>
+                      </div>
+                      <span className="text-[10px] font-mono text-sf-muted">{inc.created_at ? new Date(inc.created_at).toLocaleString() : "—"}</span>
                     </div>
-                    </div>
+                    <div className="text-[13px] text-sf-text">{inc.summary || inc.description || inc.title || "Security incident"}</div>
+                    {inc.assigned_to && (
+                      <div className="text-[10px] text-sf-muted mt-1">Assigned: {inc.assigned_to}</div>
+                    )}
+                  </div>
                 </div>
                 )) : <p className="text-sf-muted text-[10px] font-mono tracking-widest uppercase">NO ACTIVE INCIDENTS.</p>
             ) : (

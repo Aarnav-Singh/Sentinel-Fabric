@@ -42,123 +42,73 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-sf-bg flex flex-col justify-center items-center p-4 relative overflow-hidden font-mono text-[10px] uppercase tracking-widest text-sf-muted">
-      
-      {/* Background grid */}
-      <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:32px_32px] pointer-events-none" />
+    <div className="min-h-screen bg-sf-bg flex items-center justify-center relative overflow-hidden">
+      {/* Ambient dot-grid background */}
+      <div
+        className="absolute inset-0 z-0 pointer-events-none animate-ambient-drift"
+        style={{
+          backgroundImage: "radial-gradient(circle, rgba(99,102,241,0.08) 1px, transparent 1px)",
+          backgroundSize: "24px 24px",
+        }}
+      />
+      {/* Vignette */}
+      <div className="absolute inset-0 z-0 pointer-events-none bg-[radial-gradient(ellipse_at_center,transparent_40%,var(--sf-bg)_100%)]" />
 
-      {/* Login Terminal */}
-      <AnimatePresence mode="wait">
-        {!success ? (
-          <motion.div
-            key="login-card"
-            initial={{ opacity: 0, scale: 0.98 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.98 }}
-            transition={{ duration: 0.2 }}
-            className="w-full max-w-sm relative z-10"
-          >
-            <PanelCard className="p-0 overflow-hidden rounded-none border-[1px] border-sf-border shadow-[0_0_30px_rgba(0,0,0,0.8)]">
-                
-              {/* Header Box */}
-              <div className="p-6 border-b border-sf-border bg-sf-surface flex flex-col items-center">
-                  <div className="w-12 h-12 border border-sf-border bg-sf-bg flex items-center justify-center mb-4">
-                      <Shield className="w-5 h-5 text-sf-accent" />
-                  </div>
-                  <h1 className="text-sm font-bold text-sf-text tracking-widest">UMBRIX</h1>
-                  <p className="text-[9px] text-sf-muted mt-1 tracking-widest">TERMINAL ACCESS REQUIRED</p>
-              </div>
+      {/* Panel */}
+      <div className="relative z-10 w-full max-w-xs mx-4" style={{ boxShadow: "0 0 60px rgba(109,40,217,0.15)" }}>
+        <div className="sf-panel-elevated p-8">
+          {/* Logo */}
+          <div className="flex flex-col items-center mb-8">
+            <svg width="40" height="40" viewBox="0 0 20 20" className="text-sf-accent mb-3" fill="none">
+              <polygon points="10,1 19,6 19,14 10,19 1,14 1,6" stroke="currentColor" strokeWidth="1.5" fill="none"/>
+              <line x1="10" y1="1" x2="10" y2="19" stroke="currentColor" strokeWidth="1.5"/>
+            </svg>
+            <h1 className="text-[28px] font-medium text-sf-text leading-none">UMBRIX</h1>
+            <p className="text-[12px] text-sf-muted mt-1 uppercase tracking-widest font-mono">Operations Terminal</p>
+          </div>
 
-              <div className="p-6 bg-sf-bg relative">
-                   <form onSubmit={handleLogin} className="space-y-4">
-                        <motion.div custom={0} initial="hidden" animate="visible" variants={formFieldVariants} className="space-y-1.5 flex flex-col">
-                            <label className="text-[10px] font-bold text-sf-muted tracking-widest uppercase">ANALYST ID</label>
-                            <div className="relative">
-                                <Command className="absolute left-3 top-1/2 -translate-y-1/2 w-3 h-3 text-sf-muted" />
-                                <input
-                                    type="text"
-                                    required
-                                    placeholder="admin"
-                                    value={username}
-                                    onChange={(e) => setUsername(e.target.value)}
-                                    className="w-full bg-sf-surface border border-sf-border py-2 pl-9 pr-3 text-[11px] text-sf-text focus:border-sf-accent focus:ring-0 outline-none transition-colors placeholder:text-sf-muted/30"
-                                    disabled={isLoading}
-                                    style={{ fontFamily: 'monospace' }}
-                                />
-                            </div>
-                        </motion.div>
-
-                        <motion.div custom={1} initial="hidden" animate="visible" variants={formFieldVariants} className="space-y-1.5 flex flex-col">
-                            <label className="text-[10px] font-bold text-sf-muted tracking-widest uppercase">ACCESS PIN</label>
-                            <div className="relative">
-                                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-3 h-3 text-sf-muted" />
-                                <input
-                                    type="password"
-                                    required
-                                    placeholder="••••••••"
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
-                                    className="w-full bg-sf-surface border border-sf-border py-2 pl-9 pr-3 text-[11px] text-sf-text focus:border-sf-accent focus:ring-0 outline-none transition-colors placeholder:text-sf-muted/30 tracking-widest"
-                                    disabled={isLoading}
-                                    style={{ fontFamily: 'monospace' }}
-                                />
-                            </div>
-                        </motion.div>
-
-                        <AnimatePresence>
-                        {error && (
-                            <motion.div
-                                initial={{ opacity: 0, height: 0 }}
-                                animate={{ opacity: 1, height: "auto" }}
-                                exit={{ opacity: 0, height: 0 }}
-                                className="bg-sf-critical text-sf-bg font-bold text-[9px] px-3 py-2 text-center"
-                            >
-                                ERR: {error}
-                            </motion.div>
-                        )}
-                        </AnimatePresence>
-
-                        <motion.div custom={2} initial="hidden" animate="visible" variants={formFieldVariants} className="pt-2">
-                             <button
-                                type="submit"
-                                disabled={isLoading}
-                                className="w-full flex items-center justify-center gap-2 border border-sf-accent bg-sf-accent/10 hover:bg-sf-accent hover:text-black text-sf-accent min-h-[40px] font-bold transition-colors disabled:opacity-50"
-                            >
-                                {isLoading ? (
-                                    <span className="flex gap-2 items-center"><span className="w-3 h-3 border border-current border-t-transparent animate-spin rounded-full" /> AUTHENTICATING</span>
-                                ) : (
-                                    <span className="flex gap-2 items-center text-[10px]">VERIFY <ArrowRight className="w-3 h-3" /></span>
-                                )}
-                            </button>
-                        </motion.div>
-                   </form>
-              </div>
-
-               <div className="px-4 py-3 bg-sf-surface border-t border-sf-border flex items-center justify-between">
-                   <div className="flex gap-2">
-                        <span className="text-[9px] bg-sf-bg px-1 border border-sf-border text-sf-muted">NODE: US-E1</span>
-                   </div>
-                   <div className="flex items-center gap-1.5">
-                       <span className="w-1.5 h-1.5 border border-sf-safe bg-sf-safe/50 animate-pulse-fast" />
-                       <span className="text-[9px] text-sf-muted">SYS.ON</span>
-                   </div>
-               </div>
-            </PanelCard>
-          </motion.div>
-        ) : (
-          <motion.div
-            key="success-indicator"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="flex flex-col items-center gap-4 relative z-10"
-          >
-            <div className="w-12 h-12 bg-sf-safe border border-sf-safe flex items-center justify-center text-black shadow-[0_0_20px_var(--sf-safe)]">
-                <Shield className="w-6 h-6" />
+          {/* Form */}
+          <form onSubmit={handleLogin} className="flex flex-col gap-4">
+            <div>
+              <label className="block text-[10px] font-medium text-sf-muted uppercase tracking-widest mb-1.5 font-mono">Identifier</label>
+              <input
+                type="text"
+                value={username}
+                onChange={e => setUsername(e.target.value)}
+                className="w-full bg-sf-bg border border-sf-border text-sf-text text-[13px] px-3 h-9 focus:outline-none focus:border-sf-border-active placeholder:text-sf-muted/40 font-mono"
+                autoComplete="username"
+              />
             </div>
-            <p className="text-sf-safe font-mono font-bold text-[11px] tracking-widest">ACCESS GRANTED</p>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            <div>
+              <label className="block text-[10px] font-medium text-sf-muted uppercase tracking-widest mb-1.5 font-mono">Passphrase</label>
+              <input
+                type="password"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                className="w-full bg-sf-bg border border-sf-border text-sf-text text-[13px] px-3 h-9 focus:outline-none focus:border-sf-border-active placeholder:text-sf-muted/40 font-mono"
+                autoComplete="current-password"
+              />
+            </div>
+            {error && <p className="text-sf-critical text-[11px] font-mono">{error}</p>}
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="w-full h-9 bg-sf-accent hover:bg-sf-accent/90 text-sf-bg text-[13px] font-medium transition-colors disabled:opacity-50 font-mono tracking-widest uppercase mt-2 rounded-[2px]"
+            >
+              {isLoading ? "Authenticating…" : "Access Platform"}
+            </button>
+          </form>
+
+          {/* Footer */}
+          <div className="mt-6 pt-4 border-t border-sf-border/50 flex justify-between text-[9px] font-mono text-sf-muted">
+            <span className="flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 bg-sf-safe rounded-[1px] animate-pulse-fast inline-block"></span>
+              PIPELINE ACTIVE
+            </span>
+            <span>US-E1</span>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

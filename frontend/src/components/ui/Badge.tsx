@@ -5,11 +5,12 @@ import { AlertOctagon, AlertTriangle, AlertCircle, Info, Hash } from "lucide-rea
 interface BadgeProps {
     label: string;
     severity?: "critical" | "high" | "medium" | "low" | "info";
+    size?: "sm" | "md" | "lg";
     className?: string;
     pulse?: boolean;
 }
 
-export function Badge({ label, severity = "info", className = "", pulse = false }: BadgeProps) {
+export function Badge({ label, severity = "info", size = "sm", className = "", pulse = false }: BadgeProps) {
     const variants = {
         critical: "bg-sf-critical/15 border-sf-critical text-sf-critical",
         high: "bg-sf-warning/15 border-sf-warning text-sf-warning",
@@ -33,10 +34,16 @@ export function Badge({ label, severity = "info", className = "", pulse = false 
 
     const shouldPulse = pulse || severity === "critical" || severity === "high";
     const glowClass = shouldPulse ? (glowMap[severity] || "") : "";
+    
+    const sizeClass = {
+        sm: "text-[10px] px-1.5 py-0.5",
+        md: "text-[12px] px-2 py-1 h-6",
+        lg: "text-[14px] px-3 py-1.5 h-8"
+    }[size];
 
     return (
         <span
-            className={`inline-flex items-center text-[10px] font-mono tracking-wider leading-none px-1.5 py-0.5 rounded-[2px] border backdrop-blur-sm ${variants[severity]} ${glowClass} ${className}`}
+            className={`inline-flex items-center font-mono tracking-wider leading-none rounded-[2px] border backdrop-blur-sm ${sizeClass} ${variants[severity]} ${glowClass} ${className}`}
         >
             {iconMap[severity]}
             {label}

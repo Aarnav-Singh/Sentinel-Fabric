@@ -28,7 +28,7 @@ export function StreamBar({ abbr, description, score, color = "var(--sf-accent)"
             <div className="flex justify-between items-center mb-1">
                 <div className="flex items-center gap-2">
                     <span
-                        className="inline-flex items-center justify-center w-8 h-4 rounded-sm text-[9px] font-mono tracking-wider"
+                        className="inline-flex items-center justify-center w-8 h-4 rounded-none text-[9px] font-mono tracking-wider"
                         style={{
                             background: `color-mix(in srgb, ${color} 20%, transparent)`,
                             border: `1px solid color-mix(in srgb, ${color} 60%, transparent)`,
@@ -43,9 +43,9 @@ export function StreamBar({ abbr, description, score, color = "var(--sf-accent)"
                     {Math.round(animated * 100)}%
                 </span>
             </div>
-            <div className="h-1 bg-sf-surface-raised rounded-sm overflow-hidden">
+            <div className="h-1 bg-sf-surface-raised rounded-none overflow-hidden">
                 <div
-                    className="h-full rounded-sm transition-[width] duration-100 ease-linear"
+                    className="h-full rounded-none transition-[width] duration-100 ease-linear"
                     style={{
                         width: `${animated * 100}%`,
                         background: `linear-gradient(90deg, color-mix(in srgb, ${color} 80%, transparent), ${color})`,

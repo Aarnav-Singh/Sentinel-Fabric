@@ -12,6 +12,7 @@ interface PipelineStatus {
 interface EventStreamContextType {
     lastEvent: Record<string, unknown> | null;
     eventsRate: number;
+    epsHistory: number[];
     pipelineStatus: PipelineStatus | null;
 }
 
@@ -22,6 +23,7 @@ const fetcher = (url: string) => fetch(url).then(res => res.json());
 export function EventStreamProvider({ children }: { children: React.ReactNode }) {
     const [lastEvent, setLastEvent] = useState<Record<string, unknown> | null>(null);
     const [eventsRate, setEventsRate] = useState(0);
+    const [epsHistory, setEpsHistory] = useState<number[]>(Array(60).fill(0));
     const [lastEventCount, setLastEventCount] = useState(0);
 
     const { data: pipelineStatus } = useSWR<PipelineStatus>('/api/proxy/api/v1/pipeline/status', fetcher, { 
@@ -33,7 +35,9 @@ export function EventStreamProvider({ children }: { children: React.ReactNode })
         if (pipelineStatus?.events_processed !== undefined) {
             const currentCount = pipelineStatus.events_processed;
             if (lastEventCount > 0 && currentCount >= lastEventCount) {
-                setEventsRate(Math.max(0, Math.floor((currentCount - lastEventCount) / 5)));
+                const newRate = Math.max(0, Math.floor((currentCount - lastEventCount) / 5));
+                setEventsRate(newRate);
+                setEpsHistory(prev => [...prev.slice(-59), newRate]);
             }
             setLastEventCount(currentCount);
         }
@@ -45,7 +49,7 @@ export function EventStreamProvider({ children }: { children: React.ReactNode })
     });
 
     return (
-        <EventStreamContext.Provider value={{ lastEvent, eventsRate, pipelineStatus: pipelineStatus || null }}>
+        <EventStreamContext.Provider value={{ lastEvent, eventsRate, epsHistory, pipelineStatus: pipelineStatus || null }}>
             {children}
         </EventStreamContext.Provider>
     );

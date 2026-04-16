@@ -41,7 +41,7 @@ export function CommandPalette() {
         onClick={close} 
       />
       <Command 
-        className="relative w-full max-w-2xl bg-sf-surface border border-sf-border shadow-2xl rounded-xl overflow-hidden font-sans"
+        className="relative w-full max-w-2xl bg-sf-surface border border-sf-border shadow-2xl rounded-none overflow-hidden font-sans"
         filter={(value, search) => {
           let cleanSearch = search;
           if (search.startsWith('>') || search.startsWith('/')) {

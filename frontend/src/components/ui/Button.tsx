@@ -23,7 +23,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
                 whileTap={{ scale: 0.97 }}
                 transition={{ type: "spring", stiffness: 400, damping: 17 }}
                 className={cn(
-                    "inline-flex justify-center items-center h-9 px-4 rounded font-mono text-[10px] uppercase tracking-widest font-bold transition-all duration-[150ms]",
+                    "inline-flex justify-center items-center h-9 px-4 rounded-none font-mono text-[10px] uppercase tracking-widest font-bold transition-all duration-[150ms]",
                     variants[variant],
                     className
                 )}

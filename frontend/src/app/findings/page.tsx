@@ -15,6 +15,7 @@ const fetcher = (url: string) => fetch(url).then(r => r.json());
 
 import { FindingHistoryModal } from '@/components/features/findings/FindingHistoryModal';
 import { QuickActions } from '@/components/features/actions/QuickActions';
+import { ConfirmActionDialog } from "@/components/ui/ConfirmActionDialog";
 
 // ─── Types ───────────────────────────────────────────────
 interface CveContext { cve_id: string; cvss_score?: number; severity?: string; description?: string; patch_available?: boolean; }
@@ -73,6 +74,7 @@ export default function FindingsPage() {
   const [selectedFindingId, setSelectedFindingId] = useState<string | null>(null);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [lastUpdated, setLastUpdated] = useState(Date.now());
+  const [dialogState, setDialogState] = useState<{open: boolean; action: string; finding: any} | null>(null);
   const { toast } = useToast();
 
   const { data, isLoading, mutate } = useSWR<FindingsResponse | Finding[]>('/api/proxy/api/v1/findings', fetcher, { refreshInterval: 10000 });
@@ -254,24 +256,21 @@ export default function FindingsPage() {
                                     render: (_, row) => {
                                         const isResolved = row.status === 'approved' || row.status === 'dismissed';
                                         return (
-                                            <div className="flex gap-1 justify-end">
+                                            <div className="flex gap-1 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
                                                 {!isResolved && (
                                                     <>
-                                                        <button 
-                                                            className="px-2 py-1 bg-sf-surface border border-sf-safe hover:bg-sf-safe hover:text-black text-[9px] text-sf-safe transition-colors font-bold uppercase"
-                                                            onClick={(e) => { e.stopPropagation(); handleAction(row.id, 'approve'); }}
-                                                            title="Confirm (True Positive)"
-                                                        >CONFIRM</button>
-                                                         <button 
-                                                            className="px-2 py-1 bg-sf-surface border border-sf-border hover:bg-sf-disabled hover:text-black text-[9px] text-sf-muted transition-colors font-bold uppercase"
-                                                            onClick={(e) => { e.stopPropagation(); handleAction(row.id, 'dismiss'); }}
-                                                            title="Override (False Positive)"
-                                                        >OVERRIDE</button>
-                                                            <button 
-                                                            className="px-2 py-1 bg-sf-surface border border-sf-critical text-[9px] text-sf-critical transition-colors hover:bg-sf-critical hover:text-black font-bold uppercase"
-                                                            onClick={(e) => { e.stopPropagation(); handleAction(row.id, 'escalate'); }}
-                                                            title="Escalate"
-                                                        >ESC</button>
+<button
+    onClick={(e) => { e.stopPropagation(); setDialogState({ open: true, action: "confirm", finding: row }); }}
+    className="text-[10px] font-mono px-2 h-6 border border-sf-safe text-sf-safe hover:bg-sf-safe/10 uppercase font-bold"
+  >Confirm</button>
+  <button
+    onClick={(e) => { e.stopPropagation(); setDialogState({ open: true, action: "override", finding: row }); }}
+    className="text-[10px] font-mono px-2 h-6 border border-sf-muted text-sf-muted hover:bg-sf-surface uppercase font-bold"
+  >Override</button>
+  <button
+    onClick={(e) => { e.stopPropagation(); setDialogState({ open: true, action: "escalate", finding: row }); }}
+    className="text-[10px] font-mono px-2 h-6 border border-sf-critical text-sf-critical hover:bg-sf-critical/10 uppercase font-bold"
+  >Escalate</button>
                                                     </>
                                                 )}
                                             </div>
@@ -307,8 +306,11 @@ export default function FindingsPage() {
                         <line x1="0" y1="50%" x2="100%" y2="50%" />
                         <line x1="50%" y1="0" x2="50%" y2="100%" />
                         {filtered.map((f, i) => {
-                            const cx = `${10 + (Math.abs(Math.sin((f.id.charCodeAt(0)||0) * i)) * 80)}%`;
-                            const cy = `${10 + (Math.abs(Math.cos((f.id.charCodeAt(f.id.length-1)||0) * i)) * 80)}%`;
+                            const SEVERITY_ORDER: Record<string, number> = { critical: 4, high: 3, medium: 2, low: 1, info: 0 };
+                            const x = (getMlScore(f) ?? 0) * 80 + 10;
+                            const y = 90 - ((SEVERITY_ORDER[f.severity] ?? 0) / 4 * 80);
+                            const cx = `${x}%`;
+                            const cy = `${y}%`;
                             const unresolved = f.status !== 'approved' && f.status !== 'dismissed';
                             return (
                                 <circle 
@@ -354,6 +356,19 @@ export default function FindingsPage() {
         onClose={() => setIsHistoryOpen(false)}
         findingId={selectedFindingId}
       />
+      {dialogState && (
+        <ConfirmActionDialog
+          isOpen={dialogState.open}
+          onClose={() => setDialogState(null)}
+          action={dialogState.action.toUpperCase()}
+          description={`${dialogState.action} finding: ${dialogState.finding.title || dialogState.finding.id}`}
+          endpoint={`/api/proxy/api/v1/findings/${dialogState.finding.id}/action`}
+          body={{ action: dialogState.action }}
+          variant={dialogState.action === "escalate" ? "danger" : "default"}
+          allowComment={true}
+          onSuccess={() => mutate()}
+        />
+      )}
     </div>
   );
 }

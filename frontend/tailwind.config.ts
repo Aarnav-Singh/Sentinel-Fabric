@@ -11,23 +11,24 @@ const config: Config = {
     extend: {
       colors: {
         sf: {
-          bg: "#0a0a0c",
-          surface: "#111115",
-          "surface-raised": "#15151a",
-          card: "#111115",
-          accent: "#0d9488",
-          "accent-2": "#475569",
-          critical: "#dc2626",
-          warning: "#d97706",
-          safe: "#059669",
-          data: "#0d9488",
-          muted: "#64748b",
-          text: "#e2e8f0",
+          bg:              'rgb(var(--sf-bg) / <alpha-value>)',
+          surface:         'rgb(var(--sf-surface) / <alpha-value>)',
+          'surface-2':     'rgb(var(--sf-surface-2) / <alpha-value>)',
+          border:          'rgb(var(--sf-border) / <alpha-value>)',
+          'border-active': 'rgb(var(--sf-border-active) / <alpha-value>)',
+          accent:          'rgb(var(--sf-accent) / <alpha-value>)',
+          'accent-2':      'rgb(var(--sf-accent-2) / <alpha-value>)',
+          text:            'rgb(var(--sf-text) / <alpha-value>)',
+          muted:           'rgb(var(--sf-muted) / <alpha-value>)',
+          critical:        'rgb(var(--sf-critical) / <alpha-value>)',
+          warning:         'rgb(var(--sf-warning) / <alpha-value>)',
+          safe:            'rgb(var(--sf-safe) / <alpha-value>)',
+          disabled:        'rgb(var(--sf-disabled) / <alpha-value>)',
         },
       },
       borderColor: {
-        sf: "var(--sf-border)",
-        "sf-active": "var(--sf-border-active)",
+        sf: "rgb(var(--sf-border))",
+        "sf-active": "rgb(var(--sf-border-active))",
       },
       transitionDuration: {
         "sf-fast": "150ms",
@@ -52,6 +53,10 @@ const config: Config = {
         "sf-pulse": "sf-pulse 2s infinite ease-out",
         "sf-pulse-red": "sf-pulse-red 2s infinite ease-out",
         "sf-shimmer": "sf-shimmer-sweep 2s linear infinite",
+        'threat-pulse':   'threat-pulse var(--pulse-rate, 2s) ease-in-out infinite',
+        'incident-sweep': 'incident-sweep 4s linear infinite',
+        'ambient-drift':  'ambient-drift 20s ease-in-out infinite alternate',
+        'state-in':       'state-in 0.8s ease-out both',
       },
       keyframes: {
         "sf-blink": {
@@ -73,6 +78,22 @@ const config: Config = {
         "sf-shimmer-sweep": {
           "0%": { transform: "translateX(-100%)" },
           "100%": { transform: "translateX(100%)" },
+        },
+        'threat-pulse': {
+          '0%, 100%': { boxShadow: '0 0 0 0 var(--sf-accent-glow, transparent)' },
+          '50%':       { boxShadow: '0 0 0 8px transparent' },
+        },
+        'incident-sweep': {
+          '0%':   { transform: 'translateX(-100%)' },
+          '100%': { transform: 'translateX(200%)' },
+        },
+        'ambient-drift': {
+          '0%':   { transform: 'translate(0, 0)' },
+          '100%': { transform: 'translate(8px, 8px)' },
+        },
+        'state-in': {
+          from: { opacity: '0', transform: 'translateY(-4px)' },
+          to:   { opacity: '1', transform: 'translateY(0)' },
         },
       },
     },

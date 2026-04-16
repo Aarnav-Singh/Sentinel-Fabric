@@ -31,14 +31,14 @@ async function apiFetch(path: string) {
 }
 
 const ACTION_COLORS: Record<string, string> = {
-    login_success: "text-emerald-400",
-    login_failed: "text-red-400",
+    login_success: "text-[var(--sf-safe)]",
+    login_failed: "text-[var(--sf-critical)]",
     logout_success: "text-sf-muted",
-    mfa_enabled_with_backup_codes: "text-cyan-400",
-    admin_user_created: "text-blue-400",
-    admin_user_deactivated: "text-orange-400",
-    report_csv_generated: "text-purple-400",
-    report_pdf_generated: "text-purple-400",
+    mfa_enabled_with_backup_codes: "text-[var(--sf-accent)]",
+    admin_user_created: "text-[var(--sf-accent-2)]",
+    admin_user_deactivated: "text-[var(--sf-warning)]",
+    report_csv_generated: "text-[var(--sf-accent-2)]",
+    report_pdf_generated: "text-[var(--sf-accent-2)]",
 };
 
 export default function AuditPage() {
@@ -87,7 +87,7 @@ export default function AuditPage() {
                         placeholder="Filter by action or user..."
                         value={search}
                         onChange={e => { setSearch(e.target.value); setPage(1); }}
-                        className="w-full pl-10 pr-4 py-2 bg-sf-surface border border-sf-border rounded text-white text-sm focus:outline-none focus:border-sf-accent"
+                        className="w-full pl-10 pr-4 py-2 bg-sf-surface border border-sf-border rounded-none text-sf-text text-[10px] font-mono focus:outline-none focus:border-sf-accent uppercase tracking-widest"
                     />
                 </div>
                 <div className="flex items-center gap-2 text-sm text-sf-muted">
@@ -95,7 +95,7 @@ export default function AuditPage() {
                     <button
                         onClick={() => setPage(p => Math.max(1, p - 1))}
                         disabled={page <= 1}
-                        className="p-1 rounded hover:bg-sf-surface disabled:opacity-30"
+                        className="p-1 rounded-none hover:bg-sf-surface disabled:opacity-30"
                     >
                         <ChevronLeft className="w-4 h-4" />
                     </button>
@@ -103,7 +103,7 @@ export default function AuditPage() {
                     <button
                         onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                         disabled={page >= totalPages}
-                        className="p-1 rounded hover:bg-sf-surface disabled:opacity-30"
+                        className="p-1 rounded-none hover:bg-sf-surface disabled:opacity-30"
                     >
                         <ChevronRight className="w-4 h-4" />
                     </button>
@@ -111,7 +111,7 @@ export default function AuditPage() {
             </div>
 
             {/* Audit Table */}
-            <div className="bg-sf-surface border border-sf-border rounded-xl overflow-hidden">
+            <div className="sf-panel border border-sf-border rounded-none overflow-hidden">
                 <table className="w-full text-left text-sm">
                     <thead className="bg-sf-surface/50 text-sf-muted uppercase text-[10px] tracking-wider">
                         <tr>
@@ -122,7 +122,7 @@ export default function AuditPage() {
                             <th className="px-6 py-4 font-medium">Detail</th>
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-sf-border text-slate-300">
+                    <tbody className="divide-y divide-sf-border text-sf-text">
                         {loading ? (
                             <tr><td colSpan={5} className="px-6 py-12 text-center text-sf-muted">Loading audit trail...</td></tr>
                         ) : entries.length === 0 ? (
@@ -134,7 +134,7 @@ export default function AuditPage() {
                                     {new Date(entry.timestamp).toLocaleString()}
                                 </td>
                                 <td className="px-6 py-3">
-                                    <span className={`font-mono text-xs font-bold ${ACTION_COLORS[entry.action] || "text-slate-300"}`}>
+                                    <span className={`font-mono text-xs font-bold ${ACTION_COLORS[entry.action] || "text-sf-text"}`}>
                                         {entry.action}
                                     </span>
                                 </td>
@@ -144,8 +144,8 @@ export default function AuditPage() {
                                         {entry.user}
                                     </span>
                                 </td>
-                                <td className="px-6 py-3 font-mono text-xs text-sf-muted">{entry.client_ip || "—"}</td>
-                                <td className="px-6 py-3 text-xs text-sf-muted max-w-xs truncate">{entry.detail || "—"}</td>
+                                <td className="px-6 py-3 font-mono text-xs text-sf-muted">{entry.client_ip || "â€”"}</td>
+                                <td className="px-6 py-3 text-xs text-sf-muted max-w-xs truncate">{entry.detail || "â€”"}</td>
                             </tr>
                         ))}
                     </tbody>
@@ -154,3 +154,4 @@ export default function AuditPage() {
         </div>
     );
 }
+
