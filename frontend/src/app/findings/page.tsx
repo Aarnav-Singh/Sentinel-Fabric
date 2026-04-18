@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { Target, ExternalLink, Database, Clock, ShieldAlert, Users, Server, UserPlus, Zap, Filter, Radio, Brain, Bug, Maximize2, Activity, Shield, Skull } from 'lucide-react';
+import { Target, ExternalLink, Database, Clock, ShieldAlert, Users, Server, UserPlus, Zap, Filter, Radio, Brain, Bug, Maximize2, Activity, Shield, Skull, Search } from 'lucide-react';
 import useSWR from 'swr';
 import { FadeIn, SlideIn, ShimmerSkeleton, AnimatedNumber, PanelCard } from '@/components/ui/MotionWrappers';
 import { useToast } from '@/components/ui/Toast';
