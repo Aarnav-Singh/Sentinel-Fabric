@@ -341,8 +341,11 @@ class PipelineService:
         rag_context = {}
         if self._pg and self._ch:
             try:
-                rag_context = await self._agentic_rag.retrieve_context(event.metadata.tenant_id, event)
-            except Exception as e:
+                rag_context = await asyncio.wait_for(
+                    self._agentic_rag.retrieve_context(event.metadata.tenant_id, event),
+                    timeout=3.0,
+                )
+            except (asyncio.TimeoutError, Exception) as e:
                 logger.warning("agentic_rag_failed", event_id=event.event_id, error=str(e))
 
         # Step 8: Narrative generation (await if LLM engine, sync if template)
@@ -491,7 +494,7 @@ class PipelineService:
     async def _correlate_campaign(self, event: CanonicalEvent) -> None:
         """Step 4: Campaign correlation engine."""
         from app.services.campaign_engine import CampaignEngine
-        engine = CampaignEngine(self._redis, postgres=self._postgres)
+        engine = CampaignEngine(self._redis, postgres=self._pg)
         campaign_id = await engine.correlate(event)
         if campaign_id:
             event.campaign_id = campaign_id
@@ -502,11 +505,17 @@ class PipelineService:
         
         asset_crit = 0.5
         if event.source_entity:
-            # Dynamic lookup of asset criticality
-            asset_crit = await AssetInventory.get_criticality(
-                tenant_id=event.metadata.tenant_id,
-                asset_ref=event.source_entity.identifier
-            )
+            # Dynamic lookup of asset criticality — hard timeout to prevent stall
+            try:
+                asset_crit = await asyncio.wait_for(
+                    AssetInventory.get_criticality(
+                        tenant_id=event.metadata.tenant_id,
+                        asset_ref=event.source_entity.identifier
+                    ),
+                    timeout=3.0,
+                )
+            except (asyncio.TimeoutError, Exception) as e:
+                logger.debug("asset_criticality_skipped", error=str(e))
             event.source_entity.asset_criticality = asset_crit
             
         event_count = (entity_state or {}).get("event_count", 0)

@@ -288,6 +288,10 @@ class PostgresRepository(CollaborationAuditMixin):
             echo=settings.debug,
             pool_size=10,
             max_overflow=20,
+            connect_args={
+                "timeout": 5,           # connection establishment timeout (seconds)
+                "command_timeout": 10,  # per-query timeout (seconds)
+            },
         )
         self._session_factory = async_sessionmaker(self._engine, expire_on_commit=False)
         async with self._engine.begin() as conn:
@@ -314,6 +318,10 @@ class PostgresRepository(CollaborationAuditMixin):
             echo=settings.debug,
             pool_size=10,
             max_overflow=20,
+            connect_args={
+                "timeout": 5,
+                "command_timeout": 10,
+            },
         )
         self._session_factory = async_sessionmaker(self._engine, expire_on_commit=False)
         

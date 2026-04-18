@@ -225,19 +225,23 @@ async def burst_events(
     request: Request = None,
     claims: dict | None = Depends(_optional_claims),
 ) -> dict:
-    """Inject a burst of N events immediately."""
+    """Inject a burst of N events immediately (concurrent processing)."""
     if claims:
         AuditLogger.log("simulation_burst", request=request, claims=claims, detail=f"count={count}")
     pipeline = get_app_pipeline()
-    processed = 0
+    capped = min(count, 100)
 
-    for _ in range(min(count, 100)):
+    async def _process_one() -> bool:
         try:
             event = _generate_event()
             await pipeline.process(event)
-            processed += 1
+            return True
         except Exception as exc:
             logger.warning("burst_event_failed", error=str(exc))
+            return False
+
+    results = await asyncio.gather(*[_process_one() for _ in range(capped)])
+    processed = sum(1 for ok in results if ok)
 
     return {"status": "burst_complete", "events_processed": processed}
 

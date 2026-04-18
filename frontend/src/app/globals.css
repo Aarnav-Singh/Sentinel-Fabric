@@ -5,125 +5,89 @@
 @tailwind utilities;
 
 @layer base {
-  /* ── Nominal (default) ─────────────────────────────────────── */
-  /* All color vars are RGB channels (no rgb() wrapper) so Tailwind  */
-  /* opacity modifiers like bg-sf-accent/10 compile correctly.       */
   :root {
-    --sf-bg:            6 6 15;
-    --sf-surface:       12 12 26;
-    --sf-surface-2:     17 17 42;
-    --sf-border:        30 27 75;
-    --sf-border-active: 76 29 149;
-    --sf-accent:        124 58 237;
-    --sf-accent-2:      67 56 202;
-    --sf-text:          226 232 240;
-    --sf-muted:         99 102 241;
+    /* Surface hierarchy */
+    --ng-base:        14 14 14;    /* #0e0e0e — void */
+    --ng-low:         19 19 19;    /* #131313 */
+    --ng-mid:         25 25 25;    /* #191919 */
+    --ng-high:        31 31 31;    /* #1f1f1f */
+    --ng-highest:     38 38 38;    /* #262626 */
 
-    /* Invariants — never change */
-    --sf-critical:  220 38 38;
-    --sf-warning:   217 119 6;
-    --sf-safe:      5 150 105;
-    --sf-disabled:  55 65 81;
+    /* Neon accents */
+    --ng-cyan:        193 255 254; /* #c1fffe — primary text/icons */
+    --ng-cyan-bright: 0 255 255;   /* #00ffff — CTAs, active states */
+    --ng-magenta:     255 81 250;  /* #ff51fa — secondary, alerts */
+    --ng-lime:        105 253 93;  /* #69fd5d — success, safe */
+    --ng-error:       255 113 108; /* #ff716c — critical, danger */
 
-    /* Glow — kept as box-shadow value string, not a color */
-    --sf-accent-glow: transparent;
-
-    /* Animation speed — driven by EPS in JS */
-    --pulse-rate: 2s;
+    /* Typography */
+    --ng-on:          255 255 255; /* #ffffff — primary text */
+    --ng-muted:       171 171 171; /* #ababab — secondary text */
+    --ng-outline:     117 117 117; /* #757575 */
+    --ng-outline-dim: 72 72 72;    /* #484848 — ghost borders */
   }
 
-  /* ── Elevated ──────────────────────────────────────────────── */
   [data-threat="elevated"] {
-    --sf-bg:            8 8 9;
-    --sf-surface:       19 13 7;
-    --sf-surface-2:     26 17 8;
-    --sf-border:        146 64 14;
-    --sf-border-active: 217 119 6;
-    --sf-accent:        245 158 11;
-    --sf-accent-2:      180 83 9;
-    --sf-text:          254 243 199;
-    --sf-muted:         120 113 108;
-    --sf-accent-glow:   0 0 20px rgba(245,158,11,0.12);
+    --ng-magenta:     255 159 11;
+    --ng-cyan-bright: 245 158 11;
   }
 
-  /* ── Incident ──────────────────────────────────────────────── */
   [data-threat="incident"] {
-    --sf-bg:            10 4 4;
-    --sf-surface:       19 6 6;
-    --sf-surface-2:     26 7 7;
-    --sf-border:        127 29 29;
-    --sf-border-active: 239 68 68;
-    --sf-accent:        239 68 68;
-    --sf-accent-2:      185 28 28;
-    --sf-text:          254 242 242;
-    --sf-muted:         159 18 57;
-    --sf-accent-glow:   0 0 24px rgba(239,68,68,0.2);
+    --ng-error:       239 68 68;
+    --ng-cyan-bright: 239 68 68;
   }
 
   body {
-    background-color: rgb(var(--sf-bg));
-    color: rgb(var(--sf-text));
+    background-color: rgb(var(--ng-base));
+    color: rgb(var(--ng-on));
   }
 
-  /* Scanline overlay - strict / less visible */
-  @media (prefers-reduced-motion: no-preference) {
-    body::after {
-      content: '';
-      position: fixed; 
-      inset: 0; 
-      pointer-events: none; 
-      z-index: 9999;
-      background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px);
-    }
+  /* Background grid overlay */
+  /* Replaces old scanline::after */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    background-image:
+      linear-gradient(rgb(var(--ng-outline-dim) / 0.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgb(var(--ng-outline-dim) / 0.06) 1px, transparent 1px);
+    background-size: 32px 32px;
   }
 }
 
 @layer utilities {
-  /* ─── Panel Utilities ─────────────────────────────────── */
-  .sf-panel {
-    background: rgb(var(--sf-surface) / 0.80);
-    backdrop-filter: blur(4px);
-    border: 1px solid rgb(var(--sf-border));
-    border-top: 1px solid rgba(255,255,255,0.04);
-    border-radius: 0px !important;
+  /* Glassmorphic floating panel */
+  .ng-glass {
+    background: rgb(var(--ng-base) / 0.60);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgb(var(--ng-cyan) / 0.30);
+    box-shadow: 0 8px 32px rgb(var(--ng-cyan-bright) / 0.05);
   }
 
-  .sf-panel-elevated {
-    background: rgb(var(--sf-surface-2) / 0.90);
-    backdrop-filter: blur(8px);
-    border: 1px solid rgb(var(--sf-border));
-  }
+  /* Surface tiers */
+  .ng-surface        { background: rgb(var(--ng-low)); }
+  .ng-surface-mid    { background: rgb(var(--ng-mid)); }
+  .ng-surface-high   { background: rgb(var(--ng-high)); }
+  .ng-surface-highest{ background: rgb(var(--ng-highest)); }
 
-  .sf-panel-ambient {
-    background: transparent;
-    border: 1px solid rgb(var(--sf-border) / 0.30);
-  }
+  /* Ghost border */
+  .ng-ghost-border   { border: 1px solid rgb(var(--ng-outline-dim) / 0.15); }
 
+  /* Glow effects */
+  .ng-glow-cyan    { box-shadow: 0 0 8px rgb(var(--ng-cyan-bright) / 0.25), 0 0 24px rgb(var(--ng-cyan-bright) / 0.10); }
+  .ng-glow-magenta { box-shadow: 0 0 8px rgb(var(--ng-magenta) / 0.25); }
+  .ng-glow-lime    { box-shadow: 0 0 8px rgb(var(--ng-lime) / 0.25); }
+  .ng-glow-error   { box-shadow: 0 0 8px rgb(var(--ng-error) / 0.25); }
 
-
-
-  .sf-glow-accent {
-    box-shadow: 0 0 8px rgba(13, 148, 136, 0.25);
-  }
-  
-  .sf-glow-critical {
-    box-shadow: 0 0 8px rgba(220, 38, 38, 0.3);
-  }
-
-  .node-map-bg {
-    background-image: 
-      linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
-    background-size: 24px 24px;
-    background-color: rgb(var(--sf-bg));
-  }
-
-  /* ─── Shimmer Skeleton (Strict) ─────────────────────────────────── */
+  /* Shimmer Skeleton (Strict) */
   .sf-shimmer {
     position: relative;
     overflow: hidden;
-    background: rgb(var(--sf-border));
-    border-radius: 2px;
+    background: rgb(var(--ng-outline-dim));
+    border-radius: 0px;
   }
 
   .sf-shimmer::after {
@@ -133,9 +97,9 @@
     background: linear-gradient(
       90deg,
       transparent 0%,
-      rgba(255, 255, 255, 0.05) 20%,
-      rgba(255, 255, 255, 0.1) 50%,
-      rgba(255, 255, 255, 0.05) 80%,
+      rgba(193, 255, 254, 0.05) 20%,
+      rgba(193, 255, 254, 0.1) 50%,
+      rgba(193, 255, 254, 0.05) 80%,
       transparent 100%
     );
     animation: sf-shimmer-sweep 1.5s linear infinite;
@@ -153,14 +117,17 @@
   0%, 100% { box-shadow: 0 0 0 0 var(--sf-accent-glow, transparent); }
   50%       { box-shadow: 0 0 0 8px transparent; }
 }
+
 @keyframes incident-sweep {
   0%   { transform: translateX(-100%); }
   100% { transform: translateX(200%); }
 }
+
 @keyframes ambient-drift {
   0%   { transform: translate(0, 0); }
   100% { transform: translate(8px, 8px); }
 }
+
 @keyframes state-in {
   from { opacity: 0; transform: translateY(-4px); }
   to   { opacity: 1; transform: translateY(0); }
@@ -168,9 +135,9 @@
 
 /* ─── Scrollbar ──────────────────────────────────────────── */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: var(--sf-bg); border-left: 1px solid var(--sf-border); }
-::-webkit-scrollbar-thumb { background: rgb(var(--sf-border)); border-radius: 0px; }
-::-webkit-scrollbar-thumb:hover { background: rgb(var(--sf-accent-2)); }
+::-webkit-scrollbar-track { background: rgb(var(--ng-base)); border-left: 1px solid rgb(var(--ng-outline-dim) / 0.3); }
+::-webkit-scrollbar-thumb { background: rgb(var(--ng-outline-dim)); border-radius: 0px; }
+::-webkit-scrollbar-thumb:hover { background: rgb(var(--ng-cyan) / 0.5); }
 
 /* ─── Reduced Motion ─────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {

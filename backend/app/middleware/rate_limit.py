@@ -42,10 +42,10 @@ class RateLimiter:
         # Use a Redis sorted set for the sliding window
         try:
             # 1. Remove old timestamps outside the window
-            await self._redis._redis.zremrangebyscore(key, 0, now - window_seconds)
+            await self._redis.client.zremrangebyscore(key, 0, now - window_seconds)
             
             # 2. Count requests in the current window
-            request_count = await self._redis._redis.zcard(key)
+            request_count = await self._redis.client.zcard(key)
             
             if request_count >= limit:
                 logger.warning("rate_limit_exceeded", identifier=key_id, path=request.url.path)
@@ -55,10 +55,10 @@ class RateLimiter:
                 )
             
             # 3. Add the current request timestamp
-            await self._redis._redis.zadd(key, {str(now): now})
+            await self._redis.client.zadd(key, {str(now): now})
             
             # 4. Set expiration on the key to ensure it cleans up
-            await self._redis._redis.expire(key, window_seconds)
+            await self._redis.client.expire(key, window_seconds)
             
         except Exception as exc:
             if isinstance(exc, HTTPException):
@@ -85,12 +85,12 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             try:
                 from app.dependencies import get_app_ratelimiter
                 # We can import here to avoid circular imports during startup
-                from app.middleware.tenant_isolation import get_tenant
+                from app.middleware.tenant_isolation import get_current_tenant_or_default
                 
                 limiter = get_app_ratelimiter()
                 # Determine tenant or fallback to IP
                 try:
-                    tenant_id = get_tenant()
+                    tenant_id = get_current_tenant_or_default()
                     identifier = f"tenant:{tenant_id}"
                 except LookupError:
                     identifier = f"ip:{request.client.host if request.client else 'unknown'}"
@@ -105,7 +105,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
                 # Add rate-limit headers
                 key = f"rate_limit:{request.url.path}:{identifier}"
                 try:
-                    remaining = max(0, limit - int(await limiter._redis._redis.zcard(key)))
+                    remaining = max(0, limit - int(await limiter._redis.client.zcard(key)))
                 except Exception:
                     remaining = limit
                 response.headers["X-RateLimit-Limit"] = str(limit)

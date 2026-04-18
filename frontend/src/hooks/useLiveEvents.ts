@@ -9,48 +9,48 @@
 import { useEffect, useCallback, useRef } from "react";
 
 interface UseLiveEventsOptions {
-    tenantId?: string;
-    onEvent?: (event: Record<string, unknown>) => void;
+ tenantId?: string;
+ onEvent?: (event: Record<string, unknown>) => void;
 }
 
 export function useLiveEvents({ tenantId = "default", onEvent }: UseLiveEventsOptions = {}) {
-    const eventSourceRef = useRef<EventSource | null>(null);
-    const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
+ const eventSourceRef = useRef<EventSource | null>(null);
+ const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
 
-    const onEventRef = useRef(onEvent);
-    useEffect(() => {
-        onEventRef.current = onEvent;
-    }, [onEvent]);
+ const onEventRef = useRef(onEvent);
+ useEffect(() => {
+ onEventRef.current = onEvent;
+ }, [onEvent]);
 
-    const connect = useCallback(() => {
-        // Close any existing connection
-        eventSourceRef.current?.close();
-        clearTimeout(reconnectTimeoutRef.current);
+ const connect = useCallback(() => {
+ // Close any existing connection
+ eventSourceRef.current?.close();
+ clearTimeout(reconnectTimeoutRef.current);
 
-        const es = new EventSource(`/api/stream/${tenantId}`);
-        eventSourceRef.current = es;
+ const es = new EventSource(`/api/stream/${tenantId}`);
+ eventSourceRef.current = es;
 
-        es.onmessage = (e) => {
-            try {
-                const data = JSON.parse(e.data);
-                onEventRef.current?.(data);
-            } catch {
-                // Ignore heartbeat/malformed messages
-            }
-        };
+ es.onmessage = (e) => {
+ try {
+ const data = JSON.parse(e.data);
+ onEventRef.current?.(data);
+ } catch {
+ // Ignore heartbeat/malformed messages
+ }
+ };
 
-        es.onerror = () => {
-            es.close();
-            // Reconnect after 3 seconds
-            reconnectTimeoutRef.current = setTimeout(connect, 3000);
-        };
-    }, [tenantId]);
+ es.onerror = () => {
+ es.close();
+ // Reconnect after 3 seconds
+ reconnectTimeoutRef.current = setTimeout(connect, 3000);
+ };
+ }, [tenantId]);
 
-    useEffect(() => {
-        connect();
-        return () => {
-            eventSourceRef.current?.close();
-            clearTimeout(reconnectTimeoutRef.current);
-        };
-    }, [connect]);
+ useEffect(() => {
+ connect();
+ return () => {
+ eventSourceRef.current?.close();
+ clearTimeout(reconnectTimeoutRef.current);
+ };
+ }, [connect]);
 }

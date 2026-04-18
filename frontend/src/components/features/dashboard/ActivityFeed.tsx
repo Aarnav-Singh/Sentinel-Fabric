@@ -9,83 +9,83 @@ import { useLiveEvents } from "@/hooks/useLiveEvents";
 
 
 function severityToType(severity: string): string {
-    switch (severity) {
-        case "critical": return "critical";
-        case "high": return "high";
-        case "medium": return "high";
-        case "info": return "info";
-        default: return "info";
-    }
+ switch (severity) {
+ case "critical": return "critical";
+ case "high": return "high";
+ case "medium": return "high";
+ case "info": return "info";
+ default: return "info";
+ }
 }
 
 function timeAgo(timestamp: string): string {
-    const diff = Date.now() - new Date(timestamp).getTime();
-    const minutes = Math.floor(diff / 60000);
-    if (minutes < 1) return "Just now";
-    if (minutes < 60) return `${minutes} min ago`;
-    const hours = Math.floor(minutes / 60);
-    return `${hours} hour${hours > 1 ? "s" : ""} ago`;
+ const diff = Date.now() - new Date(timestamp).getTime();
+ const minutes = Math.floor(diff / 60000);
+ if (minutes < 1) return "Just now";
+ if (minutes < 60) return `${minutes} min ago`;
+ const hours = Math.floor(minutes / 60);
+ return `${hours} hour${hours > 1 ? "s" : ""} ago`;
 }
 
 export function ActivityFeed() {
-    const queryClient = useQueryClient();
+ const queryClient = useQueryClient();
 
-    const { data: events } = useQuery({
-        queryKey: ["recentEvents"],
-        queryFn: () => api.getRecentEvents(20),
-        placeholderData: [],
-    });
+ const { data: events } = useQuery({
+ queryKey: ["recentEvents"],
+ queryFn: () => api.getRecentEvents(20),
+ placeholderData: [],
+ });
 
-    // Prepend new SSE events to the list
-    const handleLiveEvent = useCallback(
-        (event: Record<string, unknown>) => {
-            queryClient.setQueryData<LiveEvent[]>(["recentEvents"], (old) => {
-                const liveEvent = event as unknown as LiveEvent;
-                return [liveEvent, ...(old ?? [])].slice(0, 50);
-            });
-        },
-        [queryClient]
-    );
+ // Prepend new SSE events to the list
+ const handleLiveEvent = useCallback(
+ (event: Record<string, unknown>) => {
+ queryClient.setQueryData<LiveEvent[]>(["recentEvents"], (old) => {
+ const liveEvent = event as unknown as LiveEvent;
+ return [liveEvent, ...(old ?? [])].slice(0, 50);
+ });
+ },
+ [queryClient]
+ );
 
-    useLiveEvents({ onEvent: handleLiveEvent });
+ useLiveEvents({ onEvent: handleLiveEvent });
 
-    const displayEvents = events ?? [];
+ const displayEvents = events ?? [];
 
-    const getIcon = (type: string) => {
-        switch (type) {
-            case 'critical': return <AlertCircle className="w-4 h-4 text-sf-warning" />;
-            case 'high': return <Target className="w-4 h-4 text-[var(--sf-warning)]" />;
-            case 'success': return <ShieldCheck className="w-4 h-4 text-green-500" />;
-            default: return <Activity className="w-4 h-4 text-sf-muted" />;
-        }
-    };
+ const getIcon = (type: string) => {
+ switch (type) {
+ case 'critical': return <AlertCircle className="w-4 h-4 text-ng-magenta" />;
+ case 'high': return <Target className="w-4 h-4 text-[var(--ng-magenta)]" />;
+ case 'success': return <ShieldCheck className="w-4 h-4 text-green-500" />;
+ default: return <Activity className="w-4 h-4 text-ng-muted" />;
+ }
+ };
 
-    return (
-        <div className="flex-1 overflow-y-auto hidden-scrollbar space-y-3">
-            {displayEvents.map((evt) => {
-                const type = severityToType(evt.severity);
-                return (
-                    <div key={evt.event_id} className="p-3 bg-sf-surface/50 rounded-none border border-sf-border/50 flex gap-3 text-sm transition-colors hover:bg-sf-surface group">
-                        <div className="pt-0.5 opacity-80 group-hover:opacity-100 transition-opacity">
-                            {getIcon(type)}
-                        </div>
-                        <div className="flex-1">
-                            <p className={`font-medium ${['critical', 'high'].includes(type) ? 'text-white' : 'text-sf-muted'}`}>
-                                {evt.message}
-                            </p>
-                            <div className="flex gap-3 items-center mt-1.5">
-                                <span className="text-xs text-sf-muted font-mono">{timeAgo(evt.timestamp)}</span>
-                                {evt.meta_score > 0.5 && (
-                                    <span className="text-[9px] font-bold uppercase tracking-wider text-sf-warning bg-sf-warning/10 px-1.5 py-0.5 rounded">
-                                        {(evt.meta_score * 100).toFixed(0)}%
-                                    </span>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                );
-            })}
-        </div>
-    );
+ return (
+ <div className="flex-1 overflow-y-auto hidden-scrollbar space-y-3">
+ {displayEvents.map((evt) => {
+ const type = severityToType(evt.severity);
+ return (
+ <div key={evt.event_id} className="p-3 bg-ng-mid/50 rounded-none border border-ng-outline-dim/40/50 flex gap-3 text-sm transition-colors hover:bg-ng-mid group">
+ <div className="pt-0.5 opacity-80 group-hover:opacity-100 transition-opacity">
+ {getIcon(type)}
+ </div>
+ <div className="flex-1">
+ <p className={`font-medium ${['critical', 'high'].includes(type) ? 'text-white' : 'text-ng-muted'}`}>
+ {evt.message}
+ </p>
+ <div className="flex gap-3 items-center mt-1.5">
+ <span className="text-xs text-ng-muted font-mono">{timeAgo(evt.timestamp)}</span>
+ {evt.meta_score > 0.5 && (
+ <span className="text-[9px] font-bold uppercase tracking-wider text-ng-magenta bg-ng-magenta/10 px-1.5 py-0.5 rounded">
+ {(evt.meta_score * 100).toFixed(0)}%
+ </span>
+ )}
+ </div>
+ </div>
+ </div>
+ );
+ })}
+ </div>
+ );
 }
 

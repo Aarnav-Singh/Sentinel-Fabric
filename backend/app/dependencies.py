@@ -43,7 +43,7 @@ def init_dependencies(
     stix: STIXGraphRepository | None,
     broadcaster: SSEBroadcaster,
 ) -> None:
-    global _clickhouse, _redis, _postgres, _qdrant, _scylla, _stix, _broadcaster, _pipeline, _engine
+    global _clickhouse, _redis, _postgres, _qdrant, _scylla, _stix, _broadcaster, _pipeline, _engine, _ratelimiter
     _clickhouse = ch
     _redis = redis
     _postgres = postgres

@@ -13,139 +13,139 @@ import useSWR from "swr";
 const fetcher = (url: string) => fetch(url).then(r => r.json());
 
 export function AnalystMode({ metrics, findings, threatMapData, liveFeed, setMaximizedWidget, eventsRate }: DashboardModeProps) {
-    const { data: postureHistory } = useSWR("/api/proxy/api/v1/posture/history", fetcher);
-    const pts = postureHistory?.data_points ?? [];
-    const delta = pts.length >= 2
-      ? ((pts[pts.length-1].score - pts[0].score) / (pts[0].score || 1) * 100).toFixed(1)
-      : null;
-    return (
-        <div className="flex flex-col gap-4 h-full w-full relative">
-            <div className="z-10 grid grid-cols-2 md:grid-cols-5 gap-2 xl:gap-4 shrink-0">
-                <PanelCard className="p-3 pt-5 flex flex-col gap-2 relative overflow-hidden group">
-                    <div className="flex items-center justify-between text-sf-muted text-[10px] font-mono tracking-widest z-10">
-                        <span className="flex items-center gap-1.5"><ShieldAlert className="w-3.5 h-3.5 text-sf-safe" /> POSTURE SCORE</span>
-                        <div className="flex items-center gap-2">
-                            <span className="text-sf-safe">{delta !== null ? `${Number(delta) > 0 ? "+" : ""}${delta}%` : "—"}</span>
-                        </div>
-                    </div>
-                    <div className="text-2xl font-mono text-sf-text z-10 mt-1">
-                        <AnimatedNumber value={Math.round(metrics.posture_score)} /><span className="text-sm text-sf-muted">/100</span>
-                    </div>
-                    <div className="h-4 w-full mt-1 opacity-50 z-10">
-                        <RealSparkline source="posture" width={200} height={16} />
-                    </div>
-                </PanelCard>
+ const { data: postureHistory } = useSWR("/api/proxy/api/v1/posture/history", fetcher);
+ const pts = postureHistory?.data_points ?? [];
+ const delta = pts.length >= 2
+ ? ((pts[pts.length-1].score - pts[0].score) / (pts[0].score || 1) * 100).toFixed(1)
+ : null;
+ return (
+ <div className="flex flex-col gap-4 h-full w-full relative">
+ <div className="z-10 grid grid-cols-2 md:grid-cols-5 gap-2 xl:gap-4 shrink-0">
+ <PanelCard className="p-3 pt-5 flex flex-col gap-2 relative overflow-hidden group">
+ <div className="flex items-center justify-between text-ng-muted text-[10px] font-mono tracking-widest z-10">
+ <span className="flex items-center gap-1.5"><ShieldAlert className="w-3.5 h-3.5 text-ng-lime" /> POSTURE SCORE</span>
+ <div className="flex items-center gap-2">
+ <span className="text-ng-lime">{delta !== null ? `${Number(delta) > 0 ? "+" : ""}${delta}%` : "—"}</span>
+ </div>
+ </div>
+ <div className="text-2xl font-mono text-ng-on z-10 mt-1">
+ <AnimatedNumber value={Math.round(metrics.posture_score)} /><span className="text-sm text-ng-muted">/100</span>
+ </div>
+ <div className="h-4 w-full mt-1 opacity-50 z-10">
+ <RealSparkline source="posture" width={200} height={16} />
+ </div>
+ </PanelCard>
 
-                <PanelCard className="p-3 pt-5 flex flex-col gap-2 relative overflow-hidden group">
-                    <div className="flex items-center justify-between text-sf-muted text-[10px] font-mono tracking-widest z-10">
-                        <span className="flex items-center gap-1.5"><Activity className="w-3.5 h-3.5 text-sf-warning" /> CAMPAIGNS</span>
-                    </div>
-                    <div className="text-2xl font-mono text-sf-text z-10 mt-1">
-                        <AnimatedNumber value={metrics.active_campaigns} />
-                    </div>
-                    <div className="h-4 w-full mt-1 opacity-50 z-10">
-                        <RealSparkline source="campaigns" width={200} height={16} />
-                    </div>
-                </PanelCard>
+ <PanelCard className="p-3 pt-5 flex flex-col gap-2 relative overflow-hidden group">
+ <div className="flex items-center justify-between text-ng-muted text-[10px] font-mono tracking-widest z-10">
+ <span className="flex items-center gap-1.5"><Activity className="w-3.5 h-3.5 text-ng-magenta" /> CAMPAIGNS</span>
+ </div>
+ <div className="text-2xl font-mono text-ng-on z-10 mt-1">
+ <AnimatedNumber value={metrics.active_campaigns} />
+ </div>
+ <div className="h-4 w-full mt-1 opacity-50 z-10">
+ <RealSparkline source="campaigns" width={200} height={16} />
+ </div>
+ </PanelCard>
 
-                <PanelCard className="p-3 pt-5 flex flex-col gap-2 relative overflow-hidden group border-[var(--sf-critical)]/30">
-                    <div className="flex items-center justify-between text-sf-muted text-[10px] font-mono tracking-widest z-10">
-                        <span className="flex items-center gap-1.5"><XCircle className="w-3.5 h-3.5 text-sf-critical animate-pulse-fast" /> CRITICAL</span>
-                        <div className="flex items-center gap-2">
-                            <span className="text-sf-critical bg-sf-critical/10 px-1 inline-block border border-sf-critical/20">ACT</span>
-                        </div>
-                    </div>
-                    <div className="text-2xl font-mono text-sf-critical z-10 mt-1">
-                        <AnimatedNumber value={metrics.critical_campaigns} />
-                    </div>
-                </PanelCard>
+ <PanelCard className="p-3 pt-5 flex flex-col gap-2 relative overflow-hidden group border-[var(--ng-error)]/30">
+ <div className="flex items-center justify-between text-ng-muted text-[10px] font-mono tracking-widest z-10">
+ <span className="flex items-center gap-1.5"><XCircle className="w-3.5 h-3.5 text-ng-error animate-pulse-fast" /> CRITICAL</span>
+ <div className="flex items-center gap-2">
+ <span className="text-ng-error bg-ng-error/10 px-1 inline-block border border-ng-error/20">ACT</span>
+ </div>
+ </div>
+ <div className="text-2xl font-mono text-ng-error z-10 mt-1">
+ <AnimatedNumber value={metrics.critical_campaigns} />
+ </div>
+ </PanelCard>
 
-                <PanelCard className="p-3 pt-5 flex flex-col gap-2 relative overflow-hidden group">
-                    <div className="flex items-center justify-between text-sf-muted text-[10px] font-mono tracking-widest z-10">
-                        <span className="flex items-center gap-1.5"><Terminal className="w-3.5 h-3.5 text-sf-accent" /> EVENT RATE</span>
-                    </div>
-                    <div className="text-2xl font-mono text-sf-text z-10 mt-1">
-                        <AnimatedNumber value={eventsRate} />
-                    </div>
-                    <div className="h-4 w-full mt-1 opacity-50 z-10">
-                        <RealSparkline source="eps" width={200} height={16} />
-                    </div>
-                </PanelCard>
+ <PanelCard className="p-3 pt-5 flex flex-col gap-2 relative overflow-hidden group">
+ <div className="flex items-center justify-between text-ng-muted text-[10px] font-mono tracking-widest z-10">
+ <span className="flex items-center gap-1.5"><Terminal className="w-3.5 h-3.5 text-ng-cyan" /> EVENT RATE</span>
+ </div>
+ <div className="text-2xl font-mono text-ng-on z-10 mt-1">
+ <AnimatedNumber value={eventsRate} />
+ </div>
+ <div className="h-4 w-full mt-1 opacity-50 z-10">
+ <RealSparkline source="eps" width={200} height={16} />
+ </div>
+ </PanelCard>
 
-                <PanelCard className="p-3 pt-5 flex flex-col gap-2 relative overflow-hidden group">
-                    <div className="flex items-center justify-between text-sf-muted text-[10px] font-mono tracking-widest z-10">
-                        <span className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-sf-safe" /> ASSETS</span>
-                    </div>
-                    <div className="text-2xl font-mono text-sf-text z-10 mt-1">
-                        <AnimatedNumber value={metrics.connectors_online} /><span className="text-sm text-sf-muted">/{metrics.connectors_total}</span>
-                    </div>
-                </PanelCard>
-            </div>
+ <PanelCard className="p-3 pt-5 flex flex-col gap-2 relative overflow-hidden group">
+ <div className="flex items-center justify-between text-ng-muted text-[10px] font-mono tracking-widest z-10">
+ <span className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-ng-lime" /> ASSETS</span>
+ </div>
+ <div className="text-2xl font-mono text-ng-on z-10 mt-1">
+ <AnimatedNumber value={metrics.connectors_online} /><span className="text-sm text-ng-muted">/{metrics.connectors_total}</span>
+ </div>
+ </PanelCard>
+ </div>
 
-            {/* MAIN CANVAS - Split Layout */}
-            <div className="flex-1 flex gap-4 min-h-0">
-                <PanelCard className="flex-1 relative overflow-hidden flex flex-col">
-                    <div className="absolute top-3 left-3 z-10">
-                        <h2 className="text-[10px] text-sf-muted font-mono tracking-widest bg-sf-bg border border-sf-border px-2 py-0.5">GLOBAL THREAT TOPOLOGY</h2>
-                    </div>
-                    <div className="absolute top-3 right-3 z-10 flex gap-2">
-                        <button onClick={() => setMaximizedWidget('map')} className="text-sf-muted hover:text-white transition-colors bg-sf-bg/80 backdrop-blur border border-sf-border p-1.5 rounded-none hover:bg-sf-surface">
-                            <Maximize2 className="w-3.5 h-3.5" />
-                        </button>
-                    </div>
-                    <div className="flex-1 w-full relative min-h-[200px]">
-                        <VectorMap threats={threatMapData} />
-                    </div>
-                    
-                    <div className="mt-auto shrink-0 bg-sf-bg border-t border-sf-border p-2 z-10 w-full relative">
-                         <div className="flex items-center justify-between mb-2 px-1">
-                             <span className="text-[10px] font-mono text-sf-muted uppercase tracking-widest">ACTIVE FINDINGS MATRIX</span>
-                         </div>
-                         <DataGrid
-                            data={findings.slice(0, 4)}
-                            rowKey="id"
-                            columns={[
-                                { header: "SEV", key: "severity", render: (val) => (<div className={`w-2 h-2 ${val === 'critical' ? 'bg-sf-critical' : val === 'high' ? 'bg-sf-warning' : 'bg-sf-safe'}`} />) },
-                                { header: "THREAT VECTOR", key: "title", render: (val) => <span className="truncate block max-w-[200px] xl:max-w-xs">{val}</span> },
-                                { header: "SOURCE", key: "srcIp", align: "right" }
-                            ]}
-                         />
-                    </div>
-                </PanelCard>
+ {/* MAIN CANVAS - Split Layout */}
+ <div className="flex-1 flex gap-4 min-h-0">
+ <PanelCard className="flex-1 relative overflow-hidden flex flex-col">
+ <div className="absolute top-3 left-3 z-10">
+ <h2 className="font-headline tracking-widest uppercase text-[10px] text-ng-muted font-mono tracking-widest bg-ng-base border border-ng-outline-dim/40 px-2 py-0.5">GLOBAL THREAT TOPOLOGY</h2>
+ </div>
+ <div className="absolute top-3 right-3 z-10 flex gap-2">
+ <button onClick={() => setMaximizedWidget('map')} className="text-ng-muted hover:text-ng-on transition-colors bg-ng-base/80 backdrop-blur border border-ng-outline-dim/40 p-1.5 rounded-none hover:bg-ng-mid">
+ <Maximize2 className="w-3.5 h-3.5" />
+ </button>
+ </div>
+ <div className="flex-1 w-full relative min-h-[200px]">
+ <VectorMap threats={threatMapData} />
+ </div>
+ 
+ <div className="mt-auto shrink-0 bg-ng-base border-t border-ng-outline-dim/40 p-2 z-10 w-full relative">
+ <div className="flex items-center justify-between mb-2 px-1">
+ <span className="text-[10px] font-mono text-ng-muted uppercase tracking-widest">ACTIVE FINDINGS MATRIX</span>
+ </div>
+ <DataGrid
+ data={findings.slice(0, 4)}
+ rowKey="id"
+ columns={[
+ { header: "SEV", key: "severity", render: (val) => (<div className={`w-2 h-2 ${val === 'critical' ? 'bg-ng-error' : val === 'high' ? 'bg-ng-magenta' : 'bg-ng-lime'}`} />) },
+ { header: "THREAT VECTOR", key: "title", render: (val) => <span className="truncate block max-w-[200px] xl:max-w-xs">{val}</span> },
+ { header: "SOURCE", key: "srcIp", align: "right" }
+ ]}
+ />
+ </div>
+ </PanelCard>
 
-                <PanelCard className="w-80 flex flex-col overflow-hidden hidden xl:flex relative">
-                    <div className="p-3 border-b border-sf-border bg-sf-surface shrink-0 flex items-center justify-between">
-                        <span className="text-[10px] font-mono tracking-widest text-sf-muted">TELEMETRY FEED</span>
-                        <div className="flex items-center gap-1.5 text-[9px] font-mono text-sf-accent border border-sf-accent/30 bg-sf-accent/10 px-1.5 py-0.5">
-                            <div className="w-1.5 h-1.5 bg-sf-accent animate-pulse-fast" /> LIVE
-                        </div>
-                    </div>
-                    <button onClick={() => setMaximizedWidget('telemetry')} className="absolute top-2.5 right-16 z-10 text-sf-muted hover:text-white transition-colors p-1 rounded-none hover:bg-white/10">
-                        <Maximize2 className="w-3.5 h-3.5" />
-                    </button>
-                    
-                    <div className="flex-1 overflow-y-auto custom-scrollbar p-2 space-y-1">
-                        <StaggerChildren staggerDelay={0.05}>
-                            {liveFeed.map((item, i) => (
-                                <motion.div key={`${item.timestamp}-${i}`} className="p-2 border border-transparent hover:border-sf-border hover:bg-sf-surface transition-colors cursor-pointer group">
-                                    <div className="flex items-start justify-between text-[10px] font-mono mb-1">
-                                        <span className={`uppercase font-bold ${String(item.severity).toLowerCase() === 'critical' ? 'text-sf-critical' : String(item.severity).toLowerCase() === 'high' ? 'text-sf-warning' : 'text-sf-safe'}`}>
-                                            [{item.action || 'LOG'}]
-                                        </span>
-                                        <span className="text-sf-muted" suppressHydrationWarning>{new Date(item.timestamp || Date.now()).toISOString().split('T')[1].slice(0, 8)}</span>
-                                    </div>
-                                    <div className="text-[11px] font-mono text-sf-text leading-tight truncate group-hover:text-sf-accent transition-colors">
-                                        {item.message || (item.source_type && `New event observed from ${item.source_type}`) || 'Background Activity'}
-                                    </div>
-                                    <div className="flex gap-2 mt-1 text-[9px] font-mono text-sf-muted">
-                                        <span>SRC: {item.source_type || 'NET'}</span>
-                                    </div>
-                                </motion.div>
-                            ))}
-                        </StaggerChildren>
-                    </div>
-                </PanelCard>
-            </div>
-        </div>
-    );
+ <PanelCard className="w-80 flex flex-col overflow-hidden hidden xl:flex relative">
+ <div className="p-3 border-b border-ng-outline-dim/40 bg-ng-mid shrink-0 flex items-center justify-between">
+ <span className="text-[10px] font-mono tracking-widest text-ng-muted">TELEMETRY FEED</span>
+ <div className="flex items-center gap-1.5 text-[9px] font-mono text-ng-cyan border border-ng-cyan/50/30 bg-ng-cyan-bright/10 px-1.5 py-0.5">
+ <div className="w-1.5 h-1.5 bg-ng-cyan-bright animate-pulse-fast" /> LIVE
+ </div>
+ </div>
+ <button onClick={() => setMaximizedWidget('telemetry')} className="absolute top-2.5 right-16 z-10 text-ng-muted hover:text-ng-on transition-colors p-1 rounded-none hover:bg-white/10">
+ <Maximize2 className="w-3.5 h-3.5" />
+ </button>
+ 
+ <div className="flex-1 overflow-y-auto custom-scrollbar p-2 space-y-1">
+ <StaggerChildren staggerDelay={0.05}>
+ {liveFeed.map((item, i) => (
+ <motion.div key={`${item.timestamp}-${i}`} className="p-2 border border-transparent hover:border-ng-outline-dim/40 hover:bg-ng-mid transition-colors cursor-pointer group">
+ <div className="flex items-start justify-between text-[10px] font-mono mb-1">
+ <span className={`uppercase font-bold ${String(item.severity).toLowerCase() === 'critical' ? 'text-ng-error' : String(item.severity).toLowerCase() === 'high' ? 'text-ng-magenta' : 'text-ng-lime'}`}>
+ [{item.action || 'LOG'}]
+ </span>
+ <span className="text-ng-muted" suppressHydrationWarning>{new Date(item.timestamp || Date.now()).toISOString().split('T')[1].slice(0, 8)}</span>
+ </div>
+ <div className="text-[11px] font-mono text-ng-on leading-tight truncate group-hover:text-ng-cyan transition-colors">
+ {item.message || (item.source_type && `New event observed from ${item.source_type}`) || 'Background Activity'}
+ </div>
+ <div className="flex gap-2 mt-1 text-[9px] font-mono text-ng-muted">
+ <span>SRC: {item.source_type || 'NET'}</span>
+ </div>
+ </motion.div>
+ ))}
+ </StaggerChildren>
+ </div>
+ </PanelCard>
+ </div>
+ </div>
+ );
 }

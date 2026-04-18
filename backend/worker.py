@@ -39,7 +39,15 @@ async def main():
     postgres = PostgresRepository()
     qdrant = QdrantRepository()
     
-    init_dependencies(ch, redis, postgres, qdrant, broadcaster)
+    init_dependencies(
+        ch=ch,
+        redis=redis,
+        postgres=postgres,
+        qdrant=qdrant,
+        scylla=None,
+        stix=None,
+        broadcaster=broadcaster
+    )
     pipeline = get_app_pipeline()
     
     try:

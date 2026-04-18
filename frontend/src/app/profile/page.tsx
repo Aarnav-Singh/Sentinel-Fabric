@@ -6,279 +6,279 @@ import { useState, useEffect } from "react";
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 function parseJwt(token: string): Record<string, any> | null {
-    try {
-        const payload = token.split('.')[1];
-        return JSON.parse(atob(payload));
-    } catch {
-        return null;
-    }
+ try {
+ const payload = token.split('.')[1];
+ return JSON.parse(atob(payload));
+ } catch {
+ return null;
+ }
 }
 
 function getToken() {
-    return typeof window !== "undefined" ? localStorage.getItem("sf_token") : null;
+ return typeof window !== "undefined" ? localStorage.getItem("sf_token") : null;
 }
 
 async function apiFetch(path: string, opts: RequestInit = {}) {
-    const token = getToken();
-    const res = await fetch(`/api/proxy${path}`, {
-        ...opts,
-        headers: {
-            "Content-Type": "application/json",
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-            ...(opts.headers || {}),
-        },
-    });
-    if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
-        throw new Error(body.detail || `Request failed: ${res.status}`);
-    }
-    return res.json();
+ const token = getToken();
+ const res = await fetch(`/api/proxy${path}`, {
+ ...opts,
+ headers: {
+ "Content-Type": "application/json",
+ ...(token ? { Authorization: `Bearer ${token}` } : {}),
+ ...(opts.headers || {}),
+ },
+ });
+ if (!res.ok) {
+ const body = await res.json().catch(() => ({}));
+ throw new Error(body.detail || `Request failed: ${res.status}`);
+ }
+ return res.json();
 }
 
 export default function ProfilePage() {
-    const [darkMode, setDarkMode] = useState(true);
-    const [claims, setClaims] = useState<Record<string, any>>({});
+ const [darkMode, setDarkMode] = useState(true);
+ const [claims, setClaims] = useState<Record<string, any>>({});
 
-    // MFA state
-    const [mfaStep, setMfaStep] = useState<"idle" | "setup" | "verify" | "done">("idle");
-    const [mfaSecret, setMfaSecret] = useState("");
-    const [mfaUri, setMfaUri] = useState("");
-    const [mfaCode, setMfaCode] = useState("");
-    const [backupCodes, setBackupCodes] = useState<string[]>([]);
-    const [mfaError, setMfaError] = useState<string | null>(null);
-    const [copied, setCopied] = useState(false);
+ // MFA state
+ const [mfaStep, setMfaStep] = useState<"idle" | "setup" | "verify" | "done">("idle");
+ const [mfaSecret, setMfaSecret] = useState("");
+ const [mfaUri, setMfaUri] = useState("");
+ const [mfaCode, setMfaCode] = useState("");
+ const [backupCodes, setBackupCodes] = useState<string[]>([]);
+ const [mfaError, setMfaError] = useState<string | null>(null);
+ const [copied, setCopied] = useState(false);
 
-    useEffect(() => {
-        const token = typeof window !== 'undefined' ? localStorage.getItem('sf_token') : null;
-        if (token) {
-            const parsed = parseJwt(token);
-            if (parsed) setClaims(parsed);
-        }
-    }, []);
+ useEffect(() => {
+ const token = typeof window !== 'undefined' ? localStorage.getItem('sf_token') : null;
+ if (token) {
+ const parsed = parseJwt(token);
+ if (parsed) setClaims(parsed);
+ }
+ }, []);
 
-    const name = claims.display_name || claims.sub || "Analyst";
-    const email = claims.email || claims.sub || "—";
-    const role = claims.role || "analyst";
-    const tenant = claims.tenant_id || "default";
-    const mfaEnabled = !!claims.mfa_enabled;
+ const name = claims.display_name || claims.sub || "Analyst";
+ const email = claims.email || claims.sub || "—";
+ const role = claims.role || "analyst";
+ const tenant = claims.tenant_id || "default";
+ const mfaEnabled = !!claims.mfa_enabled;
 
-    const roleColors: Record<string, string> = {
-        admin: "text-[var(--sf-critical)] bg-[var(--sf-critical)]/10 border-[var(--sf-critical)]/30",
-        analyst: "text-[var(--sf-accent)] bg-[var(--sf-accent)]/10 border-[var(--sf-accent)]/30",
-        viewer: "text-sf-muted bg-sf-muted/10 border-sf-border/30",
-    };
+ const roleColors: Record<string, string> = {
+ admin: "text-[var(--ng-error)] bg-[var(--ng-error)]/10 border-[var(--ng-error)]/30",
+ analyst: "text-[var(--ng-cyan-bright)] bg-[var(--ng-cyan-bright)]/10 border-[var(--ng-cyan-bright)]/30",
+ viewer: "text-ng-muted bg-ng-muted/10 border-ng-outline-dim/40/30",
+ };
 
-    const startMfaSetup = async () => {
-        try {
-            setMfaError(null);
-            const data = await apiFetch("/api/v1/auth/enable-mfa", { method: "POST" });
-            setMfaSecret(data.secret);
-            setMfaUri(data.provisioning_uri);
-            setMfaStep("setup");
-        } catch (err: any) {
-            setMfaError(err.message);
-        }
-    };
+ const startMfaSetup = async () => {
+ try {
+ setMfaError(null);
+ const data = await apiFetch("/api/v1/auth/enable-mfa", { method: "POST" });
+ setMfaSecret(data.secret);
+ setMfaUri(data.provisioning_uri);
+ setMfaStep("setup");
+ } catch (err: any) {
+ setMfaError(err.message);
+ }
+ };
 
-    const verifyMfa = async () => {
-        try {
-            setMfaError(null);
-            const data = await apiFetch("/api/v1/auth/verify-mfa-setup", {
-                method: "POST", body: JSON.stringify({ mfa_code: mfaCode }),
-            });
-            setBackupCodes(data.backup_codes || []);
-            setMfaStep("done");
-        } catch (err: any) {
-            setMfaError(err.message);
-        }
-    };
+ const verifyMfa = async () => {
+ try {
+ setMfaError(null);
+ const data = await apiFetch("/api/v1/auth/verify-mfa-setup", {
+ method: "POST", body: JSON.stringify({ mfa_code: mfaCode }),
+ });
+ setBackupCodes(data.backup_codes || []);
+ setMfaStep("done");
+ } catch (err: any) {
+ setMfaError(err.message);
+ }
+ };
 
-    const copyBackupCodes = () => {
-        navigator.clipboard.writeText(backupCodes.join("\n"));
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
-    };
+ const copyBackupCodes = () => {
+ navigator.clipboard.writeText(backupCodes.join("\n"));
+ setCopied(true);
+ setTimeout(() => setCopied(false), 2000);
+ };
 
-    return (
-        <div className="flex-1 overflow-auto custom-scrollbar p-8">
-            <div className="max-w-2xl mx-auto space-y-8">
-                <header>
-                    <h1 className="text-2xl font-bold text-white tracking-tight flex items-center gap-3">
-                        <User className="w-6 h-6 text-sf-accent" />
-                        Analyst Profile
-                    </h1>
-                    <p className="text-sf-muted text-sm mt-1">Account details and preferences</p>
-                </header>
+ return (
+ <div className="flex-1 overflow-auto custom-scrollbar p-8">
+ <div className="max-w-2xl mx-auto space-y-8">
+ <header>
+ <h1 className="font-headline tracking-widest uppercase text-2xl font-bold text-ng-on tracking-tight flex items-center gap-3">
+ <User className="w-6 h-6 text-ng-cyan" />
+ Analyst Profile
+ </h1>
+ <p className="text-ng-muted text-sm mt-1">Account details and preferences</p>
+ </header>
 
-                {/* Identity Card */}
-                <div className="bg-sf-surface border border-sf-border rounded-none p-6 space-y-5">
-                    <div className="flex items-center gap-4">
-                        <div className="w-16 h-16 rounded-none bg-gradient-to-br from-sf-accent/30 to-sf-accent/10 border border-sf-accent/40 flex items-center justify-center">
-                            <span className="text-2xl font-bold text-sf-accent">{name.charAt(0).toUpperCase()}</span>
-                        </div>
-                        <div>
-                            <h2 className="text-lg font-bold text-white">{name}</h2>
-                            <span className={`inline-block mt-1 px-2 py-0.5 rounded-none text-[10px] uppercase font-bold border ${roleColors[role] ?? roleColors.viewer}`}>
-                                {role}
-                            </span>
-                        </div>
-                    </div>
+ {/* Identity Card */}
+ <div className="bg-ng-mid border border-ng-outline-dim/40 rounded-none p-6 space-y-5">
+ <div className="flex items-center gap-4">
+ <div className="w-16 h-16 rounded-none bg-gradient-to-br from-ng-cyan-bright/30 to-ng-cyan-bright/10 border border-ng-cyan/50/40 flex items-center justify-center">
+ <span className="text-2xl font-bold text-ng-cyan">{name.charAt(0).toUpperCase()}</span>
+ </div>
+ <div>
+ <h2 className="font-headline tracking-widest uppercase text-lg font-bold text-ng-on">{name}</h2>
+ <span className={`inline-block mt-1 px-2 py-0.5 rounded-none text-[10px] uppercase font-bold border ${roleColors[role] ?? roleColors.viewer}`}>
+ {role}
+ </span>
+ </div>
+ </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t border-sf-border">
-                        <div className="flex items-center gap-3">
-                            <Mail className="w-4 h-4 text-sf-muted" />
-                            <div>
-                                <p className="text-[10px] text-sf-muted uppercase tracking-wider font-bold">Email</p>
-                                <p className={`text-sm font-mono ${email === "—" ? "text-sf-muted" : "text-white"}`}>
-                                    {email === "—" ? "Email not set — contact your administrator" : email}
-                                </p>
-                            </div>
-                        </div>
-                        <div className="flex items-center gap-3">
-                            <Building2 className="w-4 h-4 text-sf-muted" />
-                            <div>
-                                <p className="text-[10px] text-sf-muted uppercase tracking-wider font-bold">Tenant</p>
-                                <p className="text-sm text-white font-mono">{tenant}</p>
-                            </div>
-                        </div>
-                        <div className="flex items-center gap-3">
-                            <Shield className="w-4 h-4 text-sf-muted" />
-                            <div>
-                                <p className="text-[10px] text-sf-muted uppercase tracking-wider font-bold">Role</p>
-                                <p className="text-sm text-white capitalize">{role}</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+ <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t border-ng-outline-dim/40">
+ <div className="flex items-center gap-3">
+ <Mail className="w-4 h-4 text-ng-muted" />
+ <div>
+ <p className="text-[10px] text-ng-muted uppercase tracking-wider font-bold">Email</p>
+ <p className={`text-sm font-mono ${email === "—" ? "text-ng-muted" : "text-ng-on"}`}>
+ {email === "—" ? "Email not set — contact your administrator" : email}
+ </p>
+ </div>
+ </div>
+ <div className="flex items-center gap-3">
+ <Building2 className="w-4 h-4 text-ng-muted" />
+ <div>
+ <p className="text-[10px] text-ng-muted uppercase tracking-wider font-bold">Tenant</p>
+ <p className="text-sm text-ng-on font-mono">{tenant}</p>
+ </div>
+ </div>
+ <div className="flex items-center gap-3">
+ <Shield className="w-4 h-4 text-ng-muted" />
+ <div>
+ <p className="text-[10px] text-ng-muted uppercase tracking-wider font-bold">Role</p>
+ <p className="text-sm text-ng-on capitalize">{role}</p>
+ </div>
+ </div>
+ </div>
+ </div>
 
-                {/* MFA Management */}
-                <div className="bg-sf-surface border border-sf-border rounded-none p-6">
-                    <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-sf-accent/80 mb-4 flex items-center gap-2">
-                        <Key className="w-3.5 h-3.5" />
-                        Multi-Factor Authentication
-                    </h3>
+ {/* MFA Management */}
+ <div className="bg-ng-mid border border-ng-outline-dim/40 rounded-none p-6">
+ <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-ng-cyan/80 mb-4 flex items-center gap-2">
+ <Key className="w-3.5 h-3.5" />
+ Multi-Factor Authentication
+ </h3>
 
-                    {mfaError && (
-                        <div className="mb-4 px-3 py-2 rounded-none bg-[var(--sf-critical)]/10 border border-[var(--sf-critical)]/30 text-[var(--sf-critical)] text-xs flex items-center gap-2">
-                            <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" /> {mfaError}
-                        </div>
-                    )}
+ {mfaError && (
+ <div className="mb-4 px-3 py-2 rounded-none bg-[var(--ng-error)]/10 border border-[var(--ng-error)]/30 text-[var(--ng-error)] text-xs flex items-center gap-2">
+ <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" /> {mfaError}
+ </div>
+ )}
 
-                    {mfaStep === "idle" && (
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-sm text-white font-medium">
-                                    {mfaEnabled ? "MFA is enabled" : "MFA is not enabled"}
-                                </p>
-                                <p className="text-[10px] text-sf-muted">
-                                    {mfaEnabled
-                                        ? "Your account is protected with two-factor authentication."
-                                        : "Enable TOTP-based two-factor authentication for added security."}
-                                </p>
-                            </div>
-                            {!mfaEnabled && (
-                                <button
-                                    onClick={startMfaSetup}
-                                    className="px-4 py-2 bg-sf-accent text-sf-bg font-bold rounded-none text-xs hover:bg-sf-accent/90"
-                                >
-                                    Enable MFA
-                                </button>
-                            )}
-                            {mfaEnabled && (
-                                <span className="px-2 py-1 rounded-none text-[10px] font-bold text-[var(--sf-safe)] bg-[var(--sf-safe)]/10 border border-[var(--sf-safe)]/30">
-                                    ✓ Active
-                                </span>
-                            )}
-                        </div>
-                    )}
+ {mfaStep === "idle" && (
+ <div className="flex items-center justify-between">
+ <div>
+ <p className="text-sm text-ng-on font-medium">
+ {mfaEnabled ? "MFA is enabled" : "MFA is not enabled"}
+ </p>
+ <p className="text-[10px] text-ng-muted">
+ {mfaEnabled
+ ? "Your account is protected with two-factor authentication."
+ : "Enable TOTP-based two-factor authentication for added security."}
+ </p>
+ </div>
+ {!mfaEnabled && (
+ <button
+ onClick={startMfaSetup}
+ className="px-4 py-2 bg-ng-cyan-bright text-ng-base font-bold rounded-none text-xs hover:bg-ng-cyan-bright/90"
+ >
+ Enable MFA
+ </button>
+ )}
+ {mfaEnabled && (
+ <span className="px-2 py-1 rounded-none text-[10px] font-bold text-[var(--ng-lime)] bg-[var(--ng-lime)]/10 border border-[var(--ng-lime)]/30">
+ ✓ Active
+ </span>
+ )}
+ </div>
+ )}
 
-                    {mfaStep === "setup" && (
-                        <div className="space-y-4">
-                            <p className="text-sm text-sf-text">
-                                Scan this QR code with your authenticator app (Google Authenticator, Authy, etc.):
-                            </p>
-                            <div className="bg-white p-4 rounded-none w-fit mx-auto">
-                                {/* QR code placeholder — use provisioning URI */}
-                                {/* eslint-disable-next-line @next/next/no-img-element */}
-                                <img
-                                    src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(mfaUri)}`}
-                                    alt="MFA QR Code"
-                                    className="w-48 h-48"
-                                />
-                            </div>
-                            <div className="text-center">
-                                <p className="text-[10px] text-sf-muted mb-1">Or enter this secret manually:</p>
-                                <code className="text-xs text-sf-accent font-mono bg-sf-surface px-3 py-1 rounded-none border border-sf-border">
-                                    {mfaSecret}
-                                </code>
-                            </div>
-                            <div className="flex gap-3">
-                                <input
-                                    placeholder="Enter 6-digit code"
-                                    value={mfaCode}
-                                    onChange={e => setMfaCode(e.target.value)}
-                                    maxLength={6}
-                                    className="flex-1 px-3 py-2 bg-sf-surface border border-sf-border rounded-none text-white text-sm text-center tracking-[0.3em] focus:outline-none focus:border-sf-accent"
-                                />
-                                <button
-                                    onClick={verifyMfa}
-                                    disabled={mfaCode.length < 6}
-                                    className="px-4 py-2 bg-sf-accent text-sf-bg font-bold rounded-none text-xs hover:bg-sf-accent/90 disabled:opacity-40"
-                                >
-                                    Verify
-                                </button>
-                            </div>
-                        </div>
-                    )}
+ {mfaStep === "setup" && (
+ <div className="space-y-4">
+ <p className="text-sm text-ng-on">
+ Scan this QR code with your authenticator app (Google Authenticator, Authy, etc.):
+ </p>
+ <div className="bg-white p-4 rounded-none w-fit mx-auto">
+ {/* QR code placeholder — use provisioning URI */}
+ {/* eslint-disable-next-line @next/next/no-img-element */}
+ <img
+ src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(mfaUri)}`}
+ alt="MFA QR Code"
+ className="w-48 h-48"
+ />
+ </div>
+ <div className="text-center">
+ <p className="text-[10px] text-ng-muted mb-1">Or enter this secret manually:</p>
+ <code className="text-xs text-ng-cyan font-mono bg-ng-mid px-3 py-1 rounded-none border border-ng-outline-dim/40">
+ {mfaSecret}
+ </code>
+ </div>
+ <div className="flex gap-3">
+ <input
+ placeholder="Enter 6-digit code"
+ value={mfaCode}
+ onChange={e => setMfaCode(e.target.value)}
+ maxLength={6}
+ className="flex-1 px-3 py-2 bg-ng-mid border border-ng-outline-dim/40 rounded-none text-ng-on text-sm text-center tracking-[0.3em] focus:outline-none focus:border-ng-cyan/50"
+ />
+ <button
+ onClick={verifyMfa}
+ disabled={mfaCode.length < 6}
+ className="px-4 py-2 bg-ng-cyan-bright text-ng-base font-bold rounded-none text-xs hover:bg-ng-cyan-bright/90 disabled:opacity-40"
+ >
+ Verify
+ </button>
+ </div>
+ </div>
+ )}
 
-                    {mfaStep === "done" && (
-                        <div className="space-y-4">
-                            <div className="flex items-center gap-2 text-[var(--sf-safe)]">
-                                <CheckCircle2 className="w-5 h-5" />
-                                <p className="font-bold text-sm">MFA enabled successfully!</p>
-                            </div>
-                            <p className="text-xs text-sf-muted">
-                                Save these backup codes in a safe place. Each code can only be used once.
-                            </p>
-                            <div className="bg-sf-surface border border-sf-border rounded-none p-4">
-                                <div className="grid grid-cols-2 gap-2">
-                                    {backupCodes.map((code, i) => (
-                                        <code key={i} className="text-xs text-sf-text font-mono">{code}</code>
-                                    ))}
-                                </div>
-                            </div>
-                            <button
-                                onClick={copyBackupCodes}
-                                className="px-3 py-1.5 text-xs text-sf-muted hover:text-white flex items-center gap-1.5 bg-sf-surface border border-sf-border rounded-none"
-                            >
-                                {copied ? <CheckCircle2 className="w-3 h-3 text-[var(--sf-safe)]" /> : <Copy className="w-3 h-3" />}
-                                {copied ? "Copied!" : "Copy All"}
-                            </button>
-                        </div>
-                    )}
-                </div>
+ {mfaStep === "done" && (
+ <div className="space-y-4">
+ <div className="flex items-center gap-2 text-[var(--ng-lime)]">
+ <CheckCircle2 className="w-5 h-5" />
+ <p className="font-bold text-sm">MFA enabled successfully!</p>
+ </div>
+ <p className="text-xs text-ng-muted">
+ Save these backup codes in a safe place. Each code can only be used once.
+ </p>
+ <div className="bg-ng-mid border border-ng-outline-dim/40 rounded-none p-4">
+ <div className="grid grid-cols-2 gap-2">
+ {backupCodes.map((code, i) => (
+ <code key={i} className="text-xs text-ng-on font-mono">{code}</code>
+ ))}
+ </div>
+ </div>
+ <button
+ onClick={copyBackupCodes}
+ className="px-3 py-1.5 text-xs text-ng-muted hover:text-ng-on flex items-center gap-1.5 bg-ng-mid border border-ng-outline-dim/40 rounded-none"
+ >
+ {copied ? <CheckCircle2 className="w-3 h-3 text-[var(--ng-lime)]" /> : <Copy className="w-3 h-3" />}
+ {copied ? "Copied!" : "Copy All"}
+ </button>
+ </div>
+ )}
+ </div>
 
-                {/* Preferences */}
-                <div className="bg-sf-surface border border-sf-border rounded-none p-6">
-                    <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-sf-accent/80 mb-4">Preferences</h3>
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                            {darkMode ? <Moon className="w-4 h-4 text-sf-muted" /> : <Sun className="w-4 h-4 text-yellow-400" />}
-                            <div>
-                                <p className="text-sm text-white font-medium">Dark Mode</p>
-                                <p className="text-[10px] text-sf-muted">Toggle interface theme</p>
-                            </div>
-                        </div>
-                        <button
-                            onClick={() => setDarkMode(!darkMode)}
-                            className={`w-10 h-5 rounded-full transition-colors relative ${darkMode ? 'bg-sf-accent' : 'bg-sf-surface'}`}
-                        >
-                            <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${darkMode ? 'left-5' : 'left-0.5'}`} />
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    );
+ {/* Preferences */}
+ <div className="bg-ng-mid border border-ng-outline-dim/40 rounded-none p-6">
+ <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-ng-cyan/80 mb-4">Preferences</h3>
+ <div className="flex items-center justify-between">
+ <div className="flex items-center gap-3">
+ {darkMode ? <Moon className="w-4 h-4 text-ng-muted" /> : <Sun className="w-4 h-4 text-ng-magenta" />}
+ <div>
+ <p className="text-sm text-ng-on font-medium">Dark Mode</p>
+ <p className="text-[10px] text-ng-muted">Toggle interface theme</p>
+ </div>
+ </div>
+ <button
+ onClick={() => setDarkMode(!darkMode)}
+ className={`w-10 h-5 rounded-full transition-colors relative ${darkMode ? 'bg-ng-cyan-bright' : 'bg-ng-mid'}`}
+ >
+ <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${darkMode ? 'left-5' : 'left-0.5'}`} />
+ </button>
+ </div>
+ </div>
+ </div>
+ </div>
+ );
 }
 

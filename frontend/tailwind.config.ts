@@ -10,43 +10,40 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        sf: {
-          bg:              'rgb(var(--sf-bg) / <alpha-value>)',
-          surface:         'rgb(var(--sf-surface) / <alpha-value>)',
-          'surface-2':     'rgb(var(--sf-surface-2) / <alpha-value>)',
-          border:          'rgb(var(--sf-border) / <alpha-value>)',
-          'border-active': 'rgb(var(--sf-border-active) / <alpha-value>)',
-          accent:          'rgb(var(--sf-accent) / <alpha-value>)',
-          'accent-2':      'rgb(var(--sf-accent-2) / <alpha-value>)',
-          text:            'rgb(var(--sf-text) / <alpha-value>)',
-          muted:           'rgb(var(--sf-muted) / <alpha-value>)',
-          critical:        'rgb(var(--sf-critical) / <alpha-value>)',
-          warning:         'rgb(var(--sf-warning) / <alpha-value>)',
-          safe:            'rgb(var(--sf-safe) / <alpha-value>)',
-          disabled:        'rgb(var(--sf-disabled) / <alpha-value>)',
+        ng: {
+          base:           'rgb(var(--ng-base) / <alpha-value>)',
+          low:            'rgb(var(--ng-low) / <alpha-value>)',
+          mid:            'rgb(var(--ng-mid) / <alpha-value>)',
+          high:           'rgb(var(--ng-high) / <alpha-value>)',
+          highest:        'rgb(var(--ng-highest) / <alpha-value>)',
+          cyan:           'rgb(var(--ng-cyan) / <alpha-value>)',
+          'cyan-bright':  'rgb(var(--ng-cyan-bright) / <alpha-value>)',
+          magenta:        'rgb(var(--ng-magenta) / <alpha-value>)',
+          lime:           'rgb(var(--ng-lime) / <alpha-value>)',
+          error:          'rgb(var(--ng-error) / <alpha-value>)',
+          on:             'rgb(var(--ng-on) / <alpha-value>)',
+          muted:          'rgb(var(--ng-muted) / <alpha-value>)',
+          outline:        'rgb(var(--ng-outline) / <alpha-value>)',
+          'outline-dim':  'rgb(var(--ng-outline-dim) / <alpha-value>)',
         },
       },
-      borderColor: {
-        sf: "rgb(var(--sf-border))",
-        "sf-active": "rgb(var(--sf-border-active))",
+      borderRadius: {
+        none: '0px', DEFAULT: '0px', sm: '0px', md: '0px',
+        lg: '0px', xl: '0px', '2xl': '0px', full: '9999px',
+      },
+      fontFamily: {
+        sans:     ['var(--font-inter)', 'sans-serif'],
+        mono:     ['var(--font-jetbrains-mono)', 'monospace'],
+        headline: ['var(--font-space-grotesk)', 'sans-serif'],
+        display:  ['var(--font-space-grotesk)', 'sans-serif'],
       },
       transitionDuration: {
         "sf-fast": "150ms",
         "sf-base": "250ms",
         "sf-moderate": "400ms",
       },
-      fontFamily: {
-        sans: ["var(--font-inter)", "sans-serif"],
-        display: ["var(--font-sora)", "sans-serif"],
-        mono: ["var(--font-jetbrains-mono)", "monospace"],
-      },
       backgroundImage: {},
       backdropBlur: {},
-      boxShadow: {
-        "sf-panel": "0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -2px rgba(0, 0, 0, 0.5)",
-        "sf-glow-accent": "0 0 10px rgba(13, 148, 136, 0.2)",
-        "sf-glow-critical": "0 0 10px rgba(220, 38, 38, 0.25)",
-      },
       animation: {
         "sf-blink": "sf-blink 1s infinite steps(2)",
         "sf-fadeIn": "sf-fadeIn 0.2s ease-out both",
