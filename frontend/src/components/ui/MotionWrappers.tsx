@@ -3,7 +3,7 @@
 import React, { useRef, useEffect } from "react";
 import { motion, useInView } from "framer-motion";
 
-const tacticalEase = [0.2, 0.8, 0.2, 1];
+const tacticalEase = [0.2, 0.8, 0.2, 1] as any;
 
 interface MotionProps {
   children: React.ReactNode;
@@ -123,3 +123,26 @@ export function AnimatedNumber({ value, duration = 0.5, className = "", format }
 
   return <span ref={ref} className={className}>{prevValue.current}</span>;
 }
+
+export function StaggerChildren({ children, className = "", delay = 0, stagger = 0.05, staggerDelay, ...props }: MotionProps & { stagger?: number, staggerDelay?: number }) {
+  const finalStagger = staggerDelay !== undefined ? staggerDelay : stagger;
+  return (
+    <motion.div
+      initial="initial"
+      animate="animate"
+      variants={{
+        animate: {
+          transition: {
+            staggerChildren: finalStagger,
+            delayChildren: delay,
+          }
+        }
+      }}
+      className={className}
+      {...props}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
